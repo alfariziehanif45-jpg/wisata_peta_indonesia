@@ -1,0 +1,32 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Category;
+use Illuminate\Database\Seeder;
+
+class CategorySeeder extends Seeder
+{
+    public function run(): void
+    {
+        Category::create([
+            'name' => 'Wisata',
+            'slug' => 'wisata',
+        ]);
+
+        Category::create([
+            'name' => 'Kuliner',
+            'slug' => 'kuliner',
+        ]);
+
+        Category::create([
+            'name' => 'Budaya',
+            'slug' => 'budaya',
+        ]);
+
+        Category::create([
+            'name' => 'Sejarah',
+            'slug' => 'sejarah',
+        ]);
+    }
+}
