@@ -54,177 +54,6 @@
             background: #000;
         }
 
-
-        /* =====================================================
-           OPENING
-        ====================================================== */
-
-        #opening {
-
-            position: fixed;
-
-            inset: 0;
-
-            z-index: 99999;
-
-            background: #000;
-
-            overflow: hidden;
-
-            transition:
-                opacity 1s ease,
-                visibility 1s ease;
-
-        }
-
-
-        #opening.hide-opening {
-
-            opacity: 0;
-
-            visibility: hidden;
-
-            pointer-events: none;
-
-        }
-
-
-        #openingVideo {
-
-            position: absolute;
-
-            inset: 0;
-
-            width: 100%;
-            height: 100%;
-
-            object-fit: cover;
-
-        }
-
-
-        .opening-overlay {
-
-            position: absolute;
-
-            inset: 0;
-
-            background:
-                linear-gradient(
-                    to bottom,
-                    rgba(0,0,0,.35),
-                    rgba(0,0,0,.15),
-                    rgba(0,0,0,.75)
-                );
-
-        }
-
-
-        .opening-content {
-
-            position: absolute;
-
-            left: 50%;
-            bottom: 15%;
-
-            transform:
-                translateX(-50%);
-
-            width: 90%;
-
-            text-align: center;
-
-            color: white;
-
-            z-index: 2;
-
-            animation:
-                openingText 1.8s ease;
-
-        }
-
-
-        .opening-small {
-
-            font-size: 15px;
-
-            letter-spacing: 6px;
-
-            margin-bottom: 15px;
-
-        }
-
-
-        .opening-content h1 {
-
-            font-size:
-                clamp(40px, 7vw, 90px);
-
-            font-weight: 800;
-
-            letter-spacing: 5px;
-
-        }
-
-
-        .opening-content h1 span {
-
-            display: block;
-
-        }
-
-
-        .opening-line {
-
-            width: 100px;
-
-            height: 3px;
-
-            background: white;
-
-            margin: 25px auto;
-
-        }
-
-
-        .opening-content p {
-
-            font-size: 16px;
-
-            letter-spacing: 1px;
-
-        }
-
-
-        @keyframes openingText {
-
-            from {
-
-                opacity: 0;
-
-                transform:
-                    translate(
-                        -50%,
-                        40px
-                    );
-
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    translate(
-                        -50%,
-                        0
-                    );
-
-            }
-
-        }
-
-
         /* =====================================================
            HEADER
         ====================================================== */
@@ -885,15 +714,7 @@
                 max-width: none;
 
             }
-
-
-            .opening-content h1 {
-
-                font-size: 42px;
-
-            }
-
-        }
+}
 
     </style>
 
@@ -902,71 +723,9 @@
 
 <body>
 
-
-    <!-- =====================================================
-         OPENING SCREEN
-    ====================================================== -->
-
-    <div id="opening">
-
-        <video
-            id="openingVideo"
-            autoplay
-            muted
-            playsinline>
-        </video>
-
-        <div class="opening-overlay"></div>
-
-        <div class="opening-content">
-
-            <div class="opening-small">
-
-                EXPLORE THE BEAUTY OF
-
-            </div>
-
-            <h1>
-
-                WELCOME TO
-
-                <span>
-                    INDONESIA
-                </span>
-
-            </h1>
-
-            <div class="opening-line"></div>
-
-            <p>
-
-                Discover the beauty,
-                culture and diversity
-                of Indonesia
-
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <div class="header">
-
-        <h1>
-            🌍 Jelajah Wisata Indonesia
-        </h1>
-
-    </div>
-
-
     <!-- =====================================================
          MAP
-    ====================================================== -->
+====================================================== -->
 
     <div id="map"></div>
 
@@ -989,7 +748,7 @@
         <div class="search-header">
 
             <h3 id="searchTitle">
-                🔍 Cari Provinsi
+                🔍 Cari Negara ASEAN
             </h3>
 
             <button id="closeSearch">
@@ -1004,15 +763,15 @@
             Mode:
 
             <strong id="searchMode">
-                Provinsi Indonesia
+                Negara ASEAN
             </strong>
 
         </div>
 
 
-        <button id="backToProvince">
+        <button id="backToProvince" style="display:none;">
 
-            ← Kembali ke Daftar Provinsi
+            ← Kembali
 
         </button>
 
@@ -1022,7 +781,7 @@
             <input
                 type="text"
                 id="searchInput"
-                placeholder="Cari provinsi..."
+                placeholder="Cari negara ASEAN..."
                 autocomplete="off"
             >
 
@@ -1156,88 +915,21 @@
         const cities =
             @json($cities);
 
-
-        /* =====================================================
-           OPENING VIDEO
-        ====================================================== */
-
-        const indonesiaVideos = [
-
-            '/videos/indonesia-1.mp4',
-            '/videos/indonesia-2.mp4',
-            '/videos/indonesia-3.mp4',
-            '/videos/indonesia-4.mp4',
-            '/videos/indonesia-5.mp4'
-
+        // 11 negara ASEAN. Provinsi dan kota yang tersedia di database
+        // saat ini tetap difokuskan untuk Indonesia.
+        const aseanCountries = [
+            { name: 'Brunei Darussalam', code: 'bn' },
+            { name: 'Cambodia', code: 'kh' },
+            { name: 'Indonesia', code: 'id' },
+            { name: 'Laos', code: 'la' },
+            { name: 'Malaysia', code: 'my' },
+            { name: 'Myanmar', code: 'mm' },
+            { name: 'Philippines', code: 'ph' },
+            { name: 'Singapore', code: 'sg' },
+            { name: 'Thailand', code: 'th' },
+            { name: 'Timor-Leste', code: 'tl' },
+            { name: 'Vietnam', code: 'vn' }
         ];
-
-
-        let currentVideo = 0;
-
-
-        const opening =
-            document.getElementById(
-                'opening'
-            );
-
-
-        const openingVideo =
-            document.getElementById(
-                'openingVideo'
-            );
-
-
-        function playNextVideo() {
-
-            if (
-                currentVideo >=
-                indonesiaVideos.length
-            ) {
-
-                currentVideo = 0;
-
-            }
-
-
-            openingVideo.src =
-                indonesiaVideos[
-                    currentVideo
-                ];
-
-
-            openingVideo.load();
-
-
-            openingVideo
-                .play()
-                .catch(() => {});
-
-
-            currentVideo++;
-
-        }
-
-
-        openingVideo.addEventListener(
-            'ended',
-            playNextVideo
-        );
-
-
-        playNextVideo();
-
-
-        setTimeout(
-            function () {
-
-                opening.classList.add(
-                    'hide-opening'
-                );
-
-            },
-            10000
-        );
-
 
         /* =====================================================
            MAP
@@ -1446,9 +1138,13 @@
            STATE
         ====================================================== */
 
+        let currentCountry = null;
+
         let currentProvince = null;
 
         let currentCity = null;
+
+        let currentCountryMarker = null;
 
         let currentProvinceMarker = null;
 
@@ -1461,6 +1157,137 @@
         let loadedPlaces = [];
 
         let currentPlaceCategory = '';
+
+        let remoteProvinces = [];
+        let remoteCities = [];
+        let remoteProvinceCache = {};
+        let remoteCityCache = {};
+
+        /*
+         * Fallback lokal: daftar awal ditampilkan TANPA menunggu API.
+         * API CountriesNow tetap berjalan di belakang layar untuk melengkapi/
+         * memperbarui data. Jadi koneksi lambat tidak membuat panel kosong.
+         */
+        const instantRemoteRegions = {
+            bn: [
+                'Belait', 'Brunei-Muara', 'Temburong', 'Tutong'
+            ],
+            kh: [
+                'Banteay Meanchey', 'Battambang', 'Kampong Cham', 'Kampong Chhnang',
+                'Kampong Speu', 'Kampong Thom', 'Kampot', 'Kandal', 'Kep', 'Koh Kong',
+                'Kratie', 'Mondulkiri', 'Oddar Meanchey', 'Pailin', 'Phnom Penh',
+                'Preah Sihanouk', 'Preah Vihear', 'Pursat', 'Prey Veng', 'Ratanakiri',
+                'Siem Reap', 'Stung Treng', 'Svay Rieng', 'Takeo', 'Tbong Khmum'
+            ],
+            la: [
+                'Attapeu', 'Bokeo', 'Bolikhamsai', 'Champasak', 'Houaphanh', 'Khammouane',
+                'Luang Namtha', 'Luang Prabang', 'Oudomxay', 'Phongsaly', 'Salavan',
+                'Savannakhet', 'Sekong', 'Vientiane Capital', 'Vientiane Province',
+                'Xaignabouli', 'Xaisomboun', 'Xieng Khouang'
+            ],
+            my: [
+                'Johor', 'Kedah', 'Kelantan', 'Malacca', 'Negeri Sembilan', 'Pahang',
+                'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak', 'Selangor',
+                'Kuala Lumpur', 'Labuan', 'Putrajaya'
+            ],
+            mm: [
+                'Ayeyarwady', 'Bago', 'Chin', 'Kachin', 'Kayah', 'Kayin', 'Magway',
+                'Mandalay', 'Mon', 'Naypyidaw', 'Rakhine', 'Sagaing', 'Shan', 'Tanintharyi',
+                'Yangon'
+            ],
+            ph: [
+                'Ilocos Region', 'Cagayan Valley', 'Central Luzon', 'CALABARZON',
+                'MIMAROPA', 'Bicol Region', 'Western Visayas', 'Central Visayas',
+                'Eastern Visayas', 'Zamboanga Peninsula', 'Northern Mindanao',
+                'Davao Region', 'SOCCSKSARGEN', 'Caraga', 'Bangsamoro Autonomous Region in Muslim Mindanao',
+                'Cordillera Administrative Region', 'National Capital Region', 'Central Luzon'
+            ],
+            sg: [
+                'Singapore'
+            ],
+            th: [
+                'Amnat Charoen', 'Ang Thong', 'Bangkok', 'Bueng Kan', 'Buri Ram', 'Chachoengsao',
+                'Chai Nat', 'Chaiyaphum', 'Chanthaburi', 'Chiang Mai', 'Chiang Rai', 'Chon Buri',
+                'Chumphon', 'Kalasin', 'Kamphaeng Phet', 'Kanchanaburi', 'Khon Kaen', 'Krabi',
+                'Lampang', 'Lamphun', 'Loei', 'Lopburi', 'Mae Hong Son', 'Maha Sarakham',
+                'Mukdahan', 'Nakhon Nayok', 'Nakhon Pathom', 'Nakhon Phanom', 'Nakhon Ratchasima',
+                'Nakhon Sawan', 'Nakhon Si Thammarat', 'Nan', 'Narathiwat', 'Nong Bua Lamphu',
+                'Nong Khai', 'Nonthaburi', 'Pathum Thani', 'Pattani', 'Phang Nga', 'Phatthalung',
+                'Phayao', 'Phetchabun', 'Phetchaburi', 'Phichit', 'Phitsanulok', 'Phra Nakhon Si Ayutthaya',
+                'Phrae', 'Phuket', 'Prachin Buri', 'Prachuap Khiri Khan', 'Ranong', 'Ratchaburi',
+                'Rayong', 'Roi Et', 'Sa Kaeo', 'Sakon Nakhon', 'Samut Prakan', 'Samut Sakhon',
+                'Samut Songkhram', 'Saraburi', 'Satun', 'Sing Buri', 'Sisaket', 'Songkhla',
+                'Sukhothai', 'Suphan Buri', 'Surat Thani', 'Surin', 'Tak', 'Trang', 'Trat',
+                'Ubon Ratchathani', 'Udon Thani', 'Uthai Thani', 'Uttaradit', 'Yala', 'Yasothon'
+            ],
+            tl: [
+                'Aileu', 'Ainaro', 'Baucau', 'Bobonaro', 'Cova Lima', 'Dili', 'Ermera',
+                'Lautem', 'Liquica', 'Manatuto', 'Manufahi', 'Oecusse', 'Viqueque'
+            ],
+            vn: [
+                'An Giang', 'Bắc Ninh', 'Cà Mau', 'Cao Bằng', 'Cần Thơ', 'Đà Nẵng',
+                'Đắk Lắk', 'Điện Biên', 'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Nội',
+                'Hà Tĩnh', 'Hải Phòng', 'Hưng Yên', 'Huế', 'Khánh Hòa', 'Lai Châu',
+                'Lâm Đồng', 'Lạng Sơn', 'Lào Cai', 'Nghệ An', 'Ninh Bình', 'Phú Thọ',
+                'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị', 'Sơn La', 'Tây Ninh', 'Thái Nguyên',
+                'Thanh Hóa', 'Thành phố Hồ Chí Minh', 'Tuyên Quang', 'Vĩnh Long'
+            ]
+        };
+
+        const instantRemoteCities = {
+            'vn|Hà Nội': ['Hà Nội'],
+            'vn|Thành phố Hồ Chí Minh': ['Thành phố Hồ Chí Minh', 'Thủ Đức'],
+            'vn|Đà Nẵng': ['Đà Nẵng'],
+            'vn|Hải Phòng': ['Hải Phòng'],
+            'vn|Cần Thơ': ['Cần Thơ'],
+            'vn|Huế': ['Huế'],
+            'my|Johor': ['Johor Bahru', 'Batu Pahat', 'Muar', 'Kluang'],
+            'my|Selangor': ['Shah Alam', 'Petaling Jaya', 'Klang', 'Subang Jaya'],
+            'my|Penang': ['George Town', 'Butterworth'],
+            'my|Sarawak': ['Kuching', 'Miri', 'Sibu'],
+            'my|Sabah': ['Kota Kinabalu', 'Sandakan', 'Tawau'],
+            'th|Bangkok': ['Bangkok'],
+            'kh|Siem Reap': ['Siem Reap'],
+            'kh|Phnom Penh': ['Phnom Penh'],
+            'la|Vientiane Capital': ['Vientiane'],
+            'mm|Yangon': ['Yangon'],
+            'mm|Mandalay': ['Mandalay'],
+            'tl|Dili': ['Dili'],
+            'bn|Brunei-Muara': ['Bandar Seri Begawan'],
+            'sg|Singapore': ['Singapore']
+        };
+
+        function buildInstantRegions(countryCode) {
+            return (instantRemoteRegions[countryCode] || []).map((name, index) => ({
+                id: 'instant-' + countryCode + '-' + index,
+                name,
+                type: 'Wilayah',
+                latitude: null,
+                longitude: null,
+                country_code: countryCode,
+                instant: true
+            }));
+        }
+
+        function buildInstantCities(countryCode, provinceName) {
+            const names = instantRemoteCities[
+                countryCode + '|' + provinceName
+            ] || [];
+
+            return names.map((name, index) => ({
+                id: 'instant-city-' + countryCode + '-' + index,
+                name,
+                type: 'Kota/Kabupaten',
+                latitude: null,
+                longitude: null,
+                country_code: countryCode,
+                region_name: provinceName,
+                instant: true
+            }));
+        }
+        let remoteCityLoading = {};
+        let remoteCitySearchTimer = null;
+        let remoteCityRequestId = 0;
 
 
         /* =====================================================
@@ -1603,7 +1430,8 @@
 
                 searchInput.focus();
 
-                renderProvinceResults();
+                renderCountryResults();
+        prefetchRemoteProvinces();
 
             }
         );
@@ -1652,6 +1480,65 @@
 
 
         /* =====================================================
+           NEGARA ASEAN
+        ====================================================== */
+
+        function renderCountryResults(keyword = '') {
+
+            searchTitle.textContent =
+                '🔍 Cari Negara ASEAN';
+
+            searchMode.textContent =
+                'Negara ASEAN';
+
+            searchInput.placeholder =
+                'Cari negara ASEAN...';
+
+            backToProvince.style.display =
+                'none';
+
+            const search =
+                keyword.toLowerCase().trim();
+
+            const filtered =
+                aseanCountries.filter(country =>
+                    country.name.toLowerCase().includes(search)
+                );
+
+            searchResults.innerHTML = '';
+
+            if (filtered.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="no-result">
+                        Negara ASEAN tidak ditemukan.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(country => {
+                const item = document.createElement('div');
+                item.className = 'search-result';
+
+                item.innerHTML = `
+                    <div class="result-name">
+                        🌏 ${country.name}
+                    </div>
+                    <div class="result-info">
+                        Negara ASEAN
+                    </div>
+                `;
+
+                item.addEventListener('click', function () {
+                    selectCountry(country);
+                });
+
+                searchResults.appendChild(item);
+            });
+        }
+
+
+        /* =====================================================
            PROVINSI
         ====================================================== */
 
@@ -1659,108 +1546,291 @@
             keyword = ''
         ) {
 
+            if (
+                currentCountry &&
+                currentCountry.code !== 'id'
+            ) {
+                renderRemoteProvinceResults(keyword);
+                return;
+            }
+
             searchTitle.textContent =
                 '🔍 Cari Provinsi';
 
             searchMode.textContent =
-                'Provinsi Indonesia';
+                'Indonesia';
 
             searchInput.placeholder =
                 'Cari provinsi...';
 
             backToProvince.style.display =
-                'none';
+                'block';
 
+            backToProvince.textContent =
+                '← Kembali ke Negara';
 
             const search =
-                keyword
-                    .toLowerCase()
-                    .trim();
-
+                keyword.toLowerCase().trim();
 
             const filtered =
                 provinces.filter(
                     province =>
-
                         province.name
                             .toLowerCase()
                             .includes(search)
-
                 );
 
+            searchResults.innerHTML = '';
 
-            searchResults.innerHTML =
-                '';
-
-
-            if (
-                filtered.length === 0
-            ) {
-
+            if (filtered.length === 0) {
                 searchResults.innerHTML = `
-
                     <div class="no-result">
-
                         Provinsi tidak ditemukan.
-
                     </div>
-
                 `;
-
                 return;
-
             }
 
+            filtered.forEach(province => {
+                const item = document.createElement('div');
+                item.className = 'search-result';
 
-            filtered.forEach(
-                province => {
+                item.innerHTML = `
+                    <div class="result-name">
+                        📍 ${escapeHtml(province.name)}
+                    </div>
+                    <div class="result-info">
+                        ${currentCountry ? currentCountry.name : 'Indonesia'}
+                    </div>
+                `;
 
-                    const item =
-                        document.createElement(
-                            'div'
-                        );
+                item.addEventListener('click', function () {
+                    selectProvince(province);
+                });
 
-
-                    item.className =
-                        'search-result';
-
-
-                    item.innerHTML = `
-
-                        <div class="result-name">
-
-                            📍 ${province.name}
-
-                        </div>
-
-                        <div class="result-info">
-
-                            Provinsi Indonesia
-
-                        </div>
-
-                    `;
+                searchResults.appendChild(item);
+            });
+        }
 
 
-                    item.addEventListener(
-                        'click',
-                        function () {
+        /* =====================================================
+           PROVINSI / WILAYAH NEGARA LAIN
+           Data diambil dari batas administrasi OpenStreetMap.
+        ====================================================== */
 
-                            selectProvince(
-                                province
-                            );
+        async function loadRemoteProvinces(country) {
 
-                        }
-                    );
+            searchTitle.textContent =
+                '🔍 Cari Wilayah / Provinsi';
 
+            searchMode.textContent =
+                country.name;
 
-                    searchResults.appendChild(
-                        item
-                    );
+            searchInput.placeholder =
+                'Cari provinsi / wilayah...';
 
+            backToProvince.style.display = 'block';
+            backToProvince.textContent = '← Kembali ke Negara';
+
+            const cacheKey = country.code.toLowerCase();
+
+            // Jika data sudah pernah diambil, tampilkan langsung tanpa menunggu server.
+            if (remoteProvinceCache[cacheKey]?.length) {
+                remoteProvinces = remoteProvinceCache[cacheKey];
+                renderRemoteProvinceResults('');
+                return remoteProvinces;
+            }
+
+            const storageKey = 'jelajah_remote_provinces_' + cacheKey;
+
+            try {
+                const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                if (Array.isArray(saved) && saved.length) {
+                    remoteProvinceCache[cacheKey] = saved;
+                    remoteProvinces = saved;
+                    renderRemoteProvinceResults('');
+                    // Refresh di belakang layar, tanpa mengganggu daftar yang sudah tampil.
+                    fetchRemoteProvinces(country, cacheKey, storageKey);
+                    return saved;
                 }
+            } catch (error) {
+                console.warn('Cache wilayah tidak dapat dibaca:', error);
+            }
+
+            // Jangan tampilkan spinner kosong. Gunakan daftar lokal terlebih dahulu.
+            const instant = buildInstantRegions(cacheKey);
+            if (instant.length) {
+                remoteProvinceCache[cacheKey] = instant;
+                remoteProvinces = instant;
+                renderRemoteProvinceResults('');
+            }
+
+            // API tetap dipanggil di belakang layar untuk mengganti data fallback
+            // dengan data yang lebih lengkap ketika tersedia.
+            fetchRemoteProvinces(country, cacheKey, storageKey);
+            return remoteProvinces;
+        }
+
+
+        async function fetchRemoteProvinces(country, cacheKey, storageKey) {
+
+            try {
+                const response = await fetch(
+                    '/api/regions/' + encodeURIComponent(country.code),
+                    {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message || 'Daftar wilayah tidak dapat diambil.'
+                    );
+                }
+
+                remoteProvinces = data.regions || [];
+                remoteProvinceCache[cacheKey] = remoteProvinces;
+
+                try {
+                    localStorage.setItem(
+                        storageKey,
+                        JSON.stringify(remoteProvinces)
+                    );
+                } catch (error) {
+                    console.warn('Cache wilayah tidak dapat disimpan:', error);
+                }
+
+                // Tampilkan segera setelah data tersedia.
+                if (currentCountry && currentCountry.code === country.code && !currentProvince) {
+                    renderRemoteProvinceResults('');
+                }
+
+                return remoteProvinces;
+
+            } catch (error) {
+                console.error('Wilayah negara:', error);
+
+                if (!remoteProvinces.length && currentCountry && currentCountry.code === country.code) {
+                    searchResults.innerHTML = `
+                        <div class="no-result">
+                            ❌ ${escapeHtml(error.message || 'Gagal mengambil wilayah.')}
+                            <br><br>
+                            Coba buka kembali negara tersebut setelah beberapa saat.
+                        </div>
+                    `;
+                }
+
+                return [];
+            }
+        }
+
+        function renderRemoteProvinceResults(keyword = '') {
+
+            const search =
+                keyword.toLowerCase().trim();
+
+            searchTitle.textContent =
+                '🔍 Cari Wilayah / Provinsi';
+
+            searchMode.textContent =
+                currentCountry ? currentCountry.name : 'Negara';
+
+            searchInput.placeholder =
+                'Cari provinsi / wilayah...';
+
+            backToProvince.style.display = 'block';
+            backToProvince.textContent = '← Kembali ke Negara';
+
+            const filtered = remoteProvinces.filter(region =>
+                region.name.toLowerCase().includes(search)
             );
 
+            searchResults.innerHTML = '';
+
+            if (filtered.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="no-result">
+                        Wilayah tidak ditemukan.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(region => {
+                const item = document.createElement('div');
+                item.className = 'search-result';
+
+                item.innerHTML = `
+                    <div class="result-name">
+                        📍 ${escapeHtml(region.name)}
+                    </div>
+                    <div class="result-info">
+                        ${escapeHtml(region.type || 'Wilayah')} • ${escapeHtml(currentCountry.name)}
+                    </div>
+                `;
+
+                item.addEventListener('click', function () {
+                    selectRemoteProvince(region);
+                });
+
+                searchResults.appendChild(item);
+            });
+        }
+
+
+        async function searchRemoteProvinceByName(keyword) {
+
+            try {
+                const response = await fetch(
+                    '/api/location-search?' +
+                    new URLSearchParams({
+                        name: keyword,
+                        type: 'province',
+                        country_code: currentCountry.code,
+                        country_name: currentCountry.name
+                    }),
+                    {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+                const data = await response.json();
+                const results = data.results || [];
+
+                if (!results.length) {
+                    return;
+                }
+
+                searchResults.innerHTML = '';
+
+                results.forEach(region => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result';
+                    item.innerHTML = `
+                        <div class="result-name">
+                            📍 ${escapeHtml(region.name)}
+                        </div>
+                        <div class="result-info">
+                            Wilayah • OpenStreetMap
+                        </div>
+                    `;
+
+                    item.addEventListener('click', function () {
+                        selectRemoteProvince(region);
+                    });
+
+                    searchResults.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error('Pencarian wilayah OSM:', error);
+            }
         }
 
 
@@ -1771,6 +1841,11 @@
         function renderCityResults(
             keyword = ''
         ) {
+
+            if (currentProvince && currentProvince.remote) {
+                renderRemoteCityResults(keyword);
+                return;
+            }
 
             if (
                 !currentProvince
@@ -1795,6 +1870,9 @@
 
             backToProvince.style.display =
                 'block';
+
+            backToProvince.textContent =
+                '← Kembali ke Provinsi';
 
 
             const search =
@@ -1906,6 +1984,151 @@
 
 
         /* =====================================================
+           PILIH NEGARA ASEAN
+        ====================================================== */
+
+        async function selectCountry(country) {
+
+            currentCountry = country;
+            currentProvince = null;
+            currentCity = null;
+            remoteProvinces = [];
+            remoteCities = [];
+
+            clearPlaceMarkers();
+
+            if (currentCountryMarker) {
+                map.removeLayer(currentCountryMarker);
+                currentCountryMarker = null;
+            }
+
+            if (currentProvinceMarker) {
+                map.removeLayer(currentProvinceMarker);
+                currentProvinceMarker = null;
+            }
+
+            if (currentCityMarker) {
+                map.removeLayer(currentCityMarker);
+                currentCityMarker = null;
+            }
+
+            categoryOptions.style.display = 'none';
+            placeSearchPanel.style.display = 'none';
+            placesLoading.style.display = 'none';
+            clearPlaces.style.display = 'none';
+            locationInfo.style.display = 'none';
+
+            searchInput.value = '';
+
+            if (country.code === 'id') {
+                renderProvinceResults();
+                await searchCountryOpenStreetMap(country);
+                return;
+            }
+
+            // Daftar wilayah ditampilkan dari cache jika sudah ada.
+            // Jika belum ada, pengambilan data berjalan di belakang layar.
+            renderRemoteProvinceResults('');
+
+            loadRemoteProvinces(country);
+            searchCountryOpenStreetMap(country);
+        }
+
+
+        /* =====================================================
+           CARI NEGARA OSM
+        ====================================================== */
+
+        async function searchCountryOpenStreetMap(country) {
+
+            try {
+                const url =
+                    '/api/geocode?' +
+                    new URLSearchParams({
+                        name: country.name,
+                        type: 'country',
+                        country_code: country.code
+                    });
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message || 'Negara tidak ditemukan.'
+                    );
+                }
+
+                showCountryOnMap(
+                    parseFloat(data.latitude),
+                    parseFloat(data.longitude),
+                    country.name,
+                    data.display_name
+                );
+
+            } catch (error) {
+                console.error('Geocoding negara:', error);
+                alert(
+                    'Koordinat negara tidak ditemukan dari OpenStreetMap.'
+                );
+            }
+        }
+
+
+        /* =====================================================
+           TAMPILKAN NEGARA
+        ====================================================== */
+
+        function showCountryOnMap(
+            latitude,
+            longitude,
+            name,
+            address
+        ) {
+
+            currentCountryMarker = L.marker(
+                [latitude, longitude],
+                { icon: createProvinceIcon() }
+            ).addTo(map);
+
+            currentCountryMarker
+                .bindPopup(`
+                    <div class="place-popup-title">
+                        ${escapeHtml(name)}
+                    </div>
+                    <div class="place-popup-type">
+                        Negara ASEAN
+                    </div>
+                `);
+
+            currentCountryMarker.openPopup();
+
+            map.flyTo(
+                [latitude, longitude],
+                name === 'Singapore' ? 11 : 6,
+                { animate: true, duration: 1.8 }
+            );
+
+            locationInfo.style.display = 'block';
+            locationName.textContent = name;
+            locationAddress.textContent =
+                name === 'Indonesia'
+                    ? 'Pilih provinsi untuk melihat kota/kabupaten.'
+                    : 'Pilih wilayah/provinsi untuk melihat kota atau kabupaten negara yang dipilih.';
+
+            if (name !== 'Indonesia') {
+                backToProvince.style.display = 'block';
+                backToProvince.textContent = '← Kembali ke Wilayah';
+            }
+        }
+
+
+        /* =====================================================
            PILIH PROVINSI
         ====================================================== */
 
@@ -1915,7 +2138,13 @@
 
             currentProvince = province;
             currentCity = null;
+            remoteCities = [];
             clearPlaceMarkers();
+
+            if (currentCountryMarker) {
+                map.removeLayer(currentCountryMarker);
+                currentCountryMarker = null;
+            }
 
             if (currentProvinceMarker) {
                 map.removeLayer(currentProvinceMarker);
@@ -1932,8 +2161,41 @@
             clearPlaces.style.display = 'none';
             locationInfo.style.display = 'none';
 
-            // Utamakan koordinat OpenStreetMap melalui Laravel/Nominatim.
+            if (province.remote) {
+                // Mulai mengambil daftar kota di belakang layar.
+                loadRemoteCities(province);
+
+                const latitude = parseFloat(province.latitude);
+                const longitude = parseFloat(province.longitude);
+
+                // Fallback lokal tidak memiliki koordinat. Dalam kondisi itu,
+                // geocode hanya dijalankan saat wilayah benar-benar dipilih.
+                if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                    showProvinceOnMap(
+                        latitude,
+                        longitude,
+                        province.name,
+                        province.display_name ||
+                            `${province.name} • ${currentCountry.name}`
+                    );
+                } else {
+                    await searchProvinceOpenStreetMap(province);
+                }
+                return;
+            }
+
             await searchProvinceOpenStreetMap(province);
+        }
+
+
+        async function selectRemoteProvince(region) {
+            selectProvince({
+                ...region,
+                remote: true,
+                display_name:
+                    region.display_name ||
+                    `${region.name} • ${currentCountry.name}`
+            });
         }
 
 
@@ -1950,7 +2212,9 @@
                     '/api/geocode?' +
                     new URLSearchParams({
                         name: province.name,
-                        type: 'province'
+                        type: 'province',
+                        country_code: currentCountry ? currentCountry.code : 'id',
+                        country_name: currentCountry ? currentCountry.name : 'Indonesia'
                     });
 
                 const response = await fetch(url, {
@@ -2033,7 +2297,7 @@
                     </div>
 
                     <div class="place-popup-type">
-                        Provinsi Indonesia
+                        ${currentCountry ? currentCountry.name : 'Indonesia'}
                     </div>
 
                 `);
@@ -2089,6 +2353,279 @@
 
         }
 
+
+        /* =====================================================
+           KOTA NEGARA LAIN
+        ====================================================== */
+
+        function renderRemoteCityResults(keyword = '') {
+
+            searchTitle.textContent =
+                '🔍 Cari Kota / Kabupaten';
+
+            searchMode.textContent =
+                currentProvince
+                    ? currentProvince.name
+                    : (currentCountry ? currentCountry.name : 'Negara');
+
+            searchInput.placeholder =
+                'Cari kota atau kabupaten...';
+
+            backToProvince.style.display = 'block';
+            backToProvince.textContent = '← Kembali ke Wilayah';
+
+            if (!currentProvince) {
+                return;
+            }
+
+            const search = keyword.toLowerCase().trim();
+            const cacheKey = remoteCityCacheKey(currentProvince);
+
+            // Data belum datang: request sudah dimulai saat provinsi dipilih.
+            if (!remoteCities.length && !remoteCityLoading[cacheKey]) {
+                loadRemoteCities(currentProvince);
+            }
+
+            if (!remoteCities.length) {
+                const instant = buildInstantCities(
+                    currentCountry.code.toLowerCase(),
+                    currentProvince.name
+                );
+
+                if (instant.length) {
+                    remoteCityCache[cacheKey] = instant;
+                    remoteCities = instant;
+                }
+            }
+
+            // Tidak lagi menahan UI dengan spinner. Jika fallback tersedia,
+            // tampilkan sekarang; data API akan menggantinya di belakang layar.
+            if (remoteCityLoading[cacheKey] && !remoteCities.length) {
+                searchResults.innerHTML = `
+                    <div class="no-result">
+                        Daftar kota akan dilengkapi otomatis.
+                        <br><br>
+                        🔎 Ketik nama kota untuk mencari langsung.
+                    </div>
+                `;
+                return;
+            }
+
+            const filtered = remoteCities.filter(city =>
+                city.name.toLowerCase().includes(search)
+            );
+
+            searchResults.innerHTML = '';
+
+            if (!filtered.length) {
+                searchResults.innerHTML = `
+                    <div class="no-result">
+                        Kota/kabupaten tidak ditemukan.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(city => {
+                const item = document.createElement('div');
+                item.className = 'search-result';
+
+                item.innerHTML = `
+                    <div class="result-name">
+                        📍 ${escapeHtml(city.name)}
+                    </div>
+                    <div class="result-info">
+                        ${escapeHtml(city.type || 'Kota/Kabupaten')} • OpenStreetMap
+                    </div>
+                `;
+
+                item.addEventListener('click', function () {
+                    selectRemoteCity(city);
+                });
+
+                searchResults.appendChild(item);
+            });
+        }
+
+
+        function remoteCityCacheKey(province) {
+            return [
+                currentCountry ? currentCountry.code.toLowerCase() : 'xx',
+                province.osm_id || province.id || province.name
+            ].join('_');
+        }
+
+
+        async function loadRemoteCities(province) {
+
+            if (!currentCountry || !province) {
+                return [];
+            }
+
+            const cacheKey = remoteCityCacheKey(province);
+
+            if (remoteCityCache[cacheKey]?.length) {
+                remoteCities = remoteCityCache[cacheKey];
+                return remoteCities;
+            }
+
+            if (remoteCityLoading[cacheKey]) {
+                return remoteCityLoading[cacheKey];
+            }
+
+            const storageKey = 'jelajah_remote_cities_' + cacheKey;
+
+            try {
+                const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                if (Array.isArray(saved) && saved.length) {
+                    remoteCityCache[cacheKey] = saved;
+                    remoteCities = saved;
+                    renderRemoteCityResults(searchInput.value);
+                    return saved;
+                }
+            } catch (error) {
+                console.warn('Cache kota tidak dapat dibaca:', error);
+            }
+
+            remoteCityLoading[cacheKey] = (async function () {
+                try {
+                    const response = await fetch(
+                        '/api/regions/' + encodeURIComponent(currentCountry.code) + '/cities?' +
+                        new URLSearchParams({
+                            country_code: currentCountry.code,
+                            region_name: province.name
+                        }),
+                        {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(
+                            data.message || 'Daftar kota tidak dapat diambil.'
+                        );
+                    }
+
+                    const cities = data.cities || [];
+                    remoteCityCache[cacheKey] = cities;
+                    remoteCities = cities;
+
+                    try {
+                        localStorage.setItem(
+                            storageKey,
+                            JSON.stringify(cities)
+                        );
+                    } catch (error) {
+                        console.warn('Cache kota tidak dapat disimpan:', error);
+                    }
+
+                    if (currentProvince && remoteCityCacheKey(currentProvince) === cacheKey) {
+                        renderRemoteCityResults(searchInput.value);
+                    }
+
+                    return cities;
+
+                } catch (error) {
+                    console.error('Daftar kota OSM:', error);
+
+                    if (currentProvince && remoteCityCacheKey(currentProvince) === cacheKey) {
+                        searchResults.innerHTML = `
+                            <div class="no-result">
+                                ❌ Daftar kota belum tersedia. Coba pilih provinsi lagi.
+                            </div>
+                        `;
+                    }
+
+                    return [];
+                } finally {
+                    delete remoteCityLoading[cacheKey];
+                }
+            })();
+
+            return remoteCityLoading[cacheKey];
+        }
+
+        async function selectRemoteCity(city) {
+
+            currentCity = {
+                ...city,
+                remote: true,
+                latitude: city.latitude !== null && city.latitude !== undefined
+                    ? parseFloat(city.latitude)
+                    : null,
+                longitude: city.longitude !== null && city.longitude !== undefined
+                    ? parseFloat(city.longitude)
+                    : null
+            };
+
+            clearPlaceMarkers();
+
+            if (currentCityMarker) {
+                map.removeLayer(currentCityMarker);
+                currentCityMarker = null;
+            }
+
+            categoryOptions.style.display = 'none';
+            placeSearchPanel.style.display = 'none';
+            placeSearchInput.value = '';
+            placeSearchResults.innerHTML = '';
+            loadedPlaces = [];
+            currentPlaceCategory = '';
+            placesLoading.style.display = 'none';
+            clearPlaces.style.display = 'none';
+
+            // CountriesNow dipakai untuk membuat daftar kota cepat.
+            // Koordinat kota diambil dari OSM hanya saat kota benar-benar dipilih.
+            if (
+                !Number.isFinite(currentCity.latitude) ||
+                !Number.isFinite(currentCity.longitude)
+            ) {
+                try {
+                    const response = await fetch(
+                        '/api/geocode?' +
+                        new URLSearchParams({
+                            name: currentCity.name,
+                            type: 'city',
+                            province: currentProvince.name,
+                            country_code: currentCountry.code,
+                            country_name: currentCountry.name
+                        }),
+                        {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Koordinat kota tidak ditemukan.');
+                    }
+
+                    currentCity.latitude = parseFloat(data.latitude);
+                    currentCity.longitude = parseFloat(data.longitude);
+                    currentCity.display_name = data.display_name || currentCity.display_name;
+
+                } catch (error) {
+                    console.error('Geocoding kota:', error);
+                    alert('Koordinat kota tidak ditemukan dari OpenStreetMap.');
+                    return;
+                }
+            }
+
+            showCityOnMap(
+                currentCity.latitude,
+                currentCity.longitude,
+                currentCity.name,
+                currentCity.display_name ||
+                    `${currentCity.name} • ${currentProvince.name}, ${currentCountry.name}`
+            );
+        }
 
         /* =====================================================
            PILIH KOTA
@@ -2299,132 +2836,120 @@
             'input',
             function () {
 
-                if (
-                    currentProvince
+                if (currentProvince) {
+                    renderCityResults(this.value);
+                } else if (
+                    currentCountry &&
+                    currentCountry.code !== 'id'
                 ) {
-
-                    renderCityResults(
-                        this.value
-                    );
-
+                    renderRemoteProvinceResults(this.value);
+                } else if (currentCountry && currentCountry.code === 'id') {
+                    renderProvinceResults(this.value);
+                } else {
+                    renderCountryResults(this.value);
                 }
-                else {
-
-                    renderProvinceResults(
-                        this.value
-                    );
-
-                }
-
             }
         );
 
 
         /* =====================================================
-           KEMBALI KE PROVINSI
+           TOMBOL KEMBALI HIERARKI
         ====================================================== */
 
         backToProvince.addEventListener(
             'click',
             function () {
 
-                currentProvince =
-                    null;
+                // Jika sedang di kota negara lain -> kembali ke daftar wilayah.
+                if (currentCity && currentProvince && currentProvince.remote) {
 
-                currentCity =
-                    null;
+                    if (currentCityMarker) {
+                        map.removeLayer(currentCityMarker);
+                        currentCityMarker = null;
+                    }
 
+                    clearPlaceMarkers();
+                    currentCity = null;
+                    categoryOptions.style.display = 'none';
+                    placeSearchPanel.style.display = 'none';
+                    locationInfo.style.display = 'none';
+                    searchInput.value = '';
+                    renderRemoteProvinceResults();
+                    return;
+                }
+
+                // Jika sedang di kota Indonesia -> kembali ke daftar provinsi.
+                if (currentCity && currentProvince) {
+
+                    if (currentCityMarker) {
+                        map.removeLayer(currentCityMarker);
+                        currentCityMarker = null;
+                    }
+
+                    clearPlaceMarkers();
+                    currentCity = null;
+
+                    categoryOptions.style.display = 'none';
+                    placeSearchPanel.style.display = 'none';
+                    placeSearchInput.value = '';
+                    placeSearchResults.innerHTML = '';
+                    loadedPlaces = [];
+                    currentPlaceCategory = '';
+                    placesLoading.style.display = 'none';
+                    clearPlaces.style.display = 'none';
+                    locationInfo.style.display = 'none';
+
+                    searchInput.value = '';
+                    renderProvinceResults();
+                    return;
+                }
+
+                // Jika sedang di level negara non-Indonesia -> kembali ke daftar negara.
+                if (currentCountry && currentCountry.code !== 'id' && !currentProvince) {
+                    currentCountry = null;
+                    locationInfo.style.display = 'none';
+                    searchInput.value = '';
+                    renderCountryResults();
+        prefetchRemoteProvinces();
+                    return;
+                }
+
+                // Jika sedang di level provinsi -> kembali ke negara ASEAN.
+                currentProvince = null;
+                currentCity = null;
 
                 clearPlaceMarkers();
 
-
-                if (
-                    currentProvinceMarker
-                ) {
-
-                    map.removeLayer(
-                        currentProvinceMarker
-                    );
-
-                    currentProvinceMarker =
-                        null;
-
+                if (currentProvinceMarker) {
+                    map.removeLayer(currentProvinceMarker);
+                    currentProvinceMarker = null;
                 }
 
-
-                if (
-                    currentCityMarker
-                ) {
-
-                    map.removeLayer(
-                        currentCityMarker
-                    );
-
-                    currentCityMarker =
-                        null;
-
+                if (currentCountryMarker) {
+                    map.removeLayer(currentCountryMarker);
+                    currentCountryMarker = null;
                 }
 
-
-                locationInfo.style.display =
-                    'none';
-
-
-                categoryOptions.style.display =
-                    'none';
-
-
-                placeSearchPanel.style.display =
-                    'none';
-
-
-                placeSearchInput.value =
-                    '';
-
-
-                placeSearchResults.innerHTML =
-                    '';
-
-
+                categoryOptions.style.display = 'none';
+                placeSearchPanel.style.display = 'none';
+                placeSearchInput.value = '';
+                placeSearchResults.innerHTML = '';
                 loadedPlaces = [];
-
                 currentPlaceCategory = '';
+                placesLoading.style.display = 'none';
+                clearPlaces.style.display = 'none';
+                locationInfo.style.display = 'none';
 
-
-                placesLoading.style.display =
-                    'none';
-
-
-                clearPlaces.style.display =
-                    'none';
-
+                searchInput.value = '';
+                currentCountry = null;
+                renderCountryResults();
+        prefetchRemoteProvinces();
 
                 map.flyTo(
-
-                    [
-                        -2.5,
-                        118
-                    ],
-
-                    5,
-
-                    {
-
-                        animate: true,
-
-                        duration: 1.5
-
-                    }
-
+                    [1.0, 117.0],
+                    4,
+                    { animate: true, duration: 1.5 }
                 );
-
-
-                searchInput.value =
-                    '';
-
-
-                renderProvinceResults();
-
             }
         );
 
@@ -2885,11 +3410,28 @@
         }
 
 
+
+
+        /* =====================================================
+           PREFETCH WILAYAH NEGARA LAIN
+           Daftar provinsi/wilayah mulai diambil sejak halaman dibuka.
+           Jadi saat user memilih negara, daftar biasanya sudah tersedia.
+        ====================================================== */
+
+        function prefetchRemoteProvinces() {
+            aseanCountries
+                .filter(country => country.code !== 'id')
+                .forEach(country => {
+                    loadRemoteProvinces(country);
+                });
+        }
+
         /* =====================================================
            INITIAL
         ====================================================== */
 
-        renderProvinceResults();
+        renderCountryResults();
+        prefetchRemoteProvinces();
 
     </script>
 
