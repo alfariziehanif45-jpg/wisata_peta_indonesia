@@ -19,6 +19,3 @@ Route::get('/api/countries/{country}/provinces', [MapController::class, 'provinc
 
 Route::get('/api/provinces/{province}/cities', [MapController::class, 'cities'])->name('map.cities');
 
-Route::get('/api/regions/{countryCode}', [MapController::class, 'regions'])->name('map.regions');
-Route::get('/api/regions/{countryCode}/cities', [MapController::class, 'remoteCities'])->name('map.remote-cities');
-Route::get('/api/location-search', [MapController::class, 'locationSearch'])->name('map.location-search');

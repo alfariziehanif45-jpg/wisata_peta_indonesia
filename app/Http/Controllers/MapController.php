@@ -8,29 +8,60 @@ use App\Models\Province;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class MapController extends Controller
 {
     public function index()
     {
-        $provinces = Province::orderBy('name')->get();
+        $indonesia = Country::where('code', 'ID')->first();
 
-        $cities = City::with('province')
-            ->orderBy('name')
-            ->get();
+        // Sistem hanya fokus pada Indonesia.
+        $countries = $indonesia
+            ? collect([$indonesia->only([
+                'id', 'name', 'code', 'latitude', 'longitude'
+            ])])
+            : collect();
+
+        // HANYA ambil provinsi Indonesia untuk mode Indonesia.
+        // Ini mencegah data wilayah negara lain ikut masuk ke daftar.
+        $provinces = $indonesia
+            ? Province::where('country_id', $indonesia->id)
+                ->orderBy('name')
+                ->get()
+            : collect();
+
+        // Kota Indonesia hanya yang provinsinya juga milik Indonesia.
+        $cities = $indonesia
+            ? City::with('province')
+                ->whereHas('province', function ($query) use ($indonesia) {
+                    $query->where('country_id', $indonesia->id);
+                })
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         return view(
             'map.index',
-            compact('provinces', 'cities')
+            compact('countries', 'provinces', 'cities')
         );
     }
 
     public function province($slug)
     {
+        $indonesia = Country::where('code', 'ID')->firstOrFail();
+
         $province = Province::where('slug', $slug)
+            ->where('country_id', $indonesia->id)
             ->firstOrFail();
 
-        $provinces = Province::orderBy('name')->get();
+        $countries = collect([$indonesia->only([
+            'id', 'name', 'code', 'latitude', 'longitude'
+        ])]);
+
+        $provinces = Province::where('country_id', $indonesia->id)
+            ->orderBy('name')
+            ->get();
 
         $cities = City::with('province')
             ->where('province_id', $province->id)
@@ -39,40 +70,59 @@ class MapController extends Controller
 
         return view(
             'map.index',
-            compact('provinces', 'province', 'cities')
+            compact('countries', 'provinces', 'province', 'cities')
         );
     }
 
     public function city($slug)
     {
+        $indonesia = Country::where('code', 'ID')->firstOrFail();
+
         $city = City::with('province')
             ->where('slug', $slug)
+            ->whereHas('province', function ($query) use ($indonesia) {
+                $query->where('country_id', $indonesia->id);
+            })
             ->firstOrFail();
 
-        $provinces = Province::orderBy('name')->get();
+        $countries = collect([$indonesia->only([
+            'id', 'name', 'code', 'latitude', 'longitude'
+        ])]);
+
+        $provinces = Province::where('country_id', $indonesia->id)
+            ->orderBy('name')
+            ->get();
 
         $cities = City::with('province')
+            ->where('province_id', $city->province_id)
             ->orderBy('name')
             ->get();
 
         return view(
             'map.index',
-            compact('provinces', 'cities', 'city')
+            compact('countries', 'provinces', 'cities', 'city')
         );
     }
 
     public function countries()
     {
-        return response()->json(
-            Country::orderBy('name')->get([
-                'id', 'name', 'code', 'latitude', 'longitude'
-            ])
+        $indonesia = Country::where('code', 'ID')->first();
+
+        return response()->json($indonesia
+            ? [$indonesia->only(['id', 'name', 'code', 'latitude', 'longitude'])]
+            : []
         );
     }
 
     public function provinces($countryId)
     {
-        $provinces = Province::where('country_id', $countryId)
+        $indonesia = Country::where('code', 'ID')->first();
+
+        if (!$indonesia || (string) $countryId !== (string) $indonesia->id) {
+            return response()->json([]);
+        }
+
+        $provinces = Province::where('country_id', $indonesia->id)
             ->orderBy('name')
             ->get([
                 'id', 'country_id', 'name', 'type', 'slug',
@@ -84,7 +134,16 @@ class MapController extends Controller
 
     public function cities($provinceId)
     {
+        $indonesia = Country::where('code', 'ID')->first();
+
+        if (!$indonesia) {
+            return response()->json([]);
+        }
+
         $cities = City::where('province_id', $provinceId)
+            ->whereHas('province', function ($query) use ($indonesia) {
+                $query->where('country_id', $indonesia->id);
+            })
             ->orderBy('name')
             ->get([
                 'id', 'province_id', 'name', 'type', 'slug',
@@ -94,6 +153,204 @@ class MapController extends Controller
         return response()->json($cities);
     }
 
+
+    /**
+     * Kode provinsi resmi yang digunakan oleh API wilayah Indonesia.
+     * Nilai ini dipakai untuk mengambil koordinat provinsi dan kabupaten/kota
+     * yang sudah terikat ke provinsi yang benar, sehingga tidak bergantung
+     * pada koordinat database lama yang mungkin keliru.
+     */
+    private function indonesiaProvinceCode(string $provinceName): ?string
+    {
+        $normalise = static function (string $value): string {
+            $value = Str::ascii($value);
+            $value = Str::lower(trim($value));
+            $value = str_replace(['daerah khusus ibukota ', 'daerah khusus ', 'provinsi '], '', $value);
+            return preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
+        };
+
+        $codes = [
+            'aceh' => '11',
+            'sumaterautara' => '12',
+            'sumaterabarat' => '13',
+            'riau' => '14',
+            'jambi' => '15',
+            'sumateraselatan' => '16',
+            'bengkulu' => '17',
+            'lampung' => '18',
+                        'kepulauanbangkabelitung' => '19',
+            'kepulauanriau' => '21',
+            'dki jakarta' => '31',
+            'dkijakarta' => '31',
+            'jakarta' => '31',
+            'jawabarat' => '32',
+            'jawatengah' => '33',
+            'daerahistimewayogyakarta' => '34',
+            'diyogyakarta' => '34',
+            'yogyakarta' => '34',
+            'jawatimur' => '35',
+            'banten' => '36',
+            'bali' => '51',
+            'nusatenggarabarat' => '52',
+            'nusatenggaratimur' => '53',
+            'kalimantanbarat' => '61',
+            'kalimantantengah' => '62',
+            'kalimantanselatan' => '63',
+            'kalimantantimur' => '64',
+            'kalimantanutara' => '65',
+            'sulawesiutara' => '71',
+            'sulawesitengah' => '72',
+            'sulawesiselatan' => '73',
+            'sulawesitenggara' => '74',
+            'gorontalo' => '75',
+            'sulawesibarat' => '76',
+            'maluku' => '81',
+            'malukuutara' => '82',
+            'papua' => '91',
+            'papuabarat' => '92',
+            'papuaselatan' => '93',
+            'papuatengah' => '94',
+            'papuapegunungan' => '95',
+            'papuabaratdaya' => '96',
+        ];
+
+        $key = $normalise($provinceName);
+        return $codes[$key] ?? null;
+    }
+
+    /**
+     * Ambil koordinat provinsi/kabupaten/kota Indonesia dari dataset
+     * wilayah Indonesia yang menyediakan koordinat per wilayah.
+     */
+    private function indonesiaCoordinatesFromApi(
+        string $type,
+        string $name,
+        string $provinceName = ''
+    ): ?array {
+        if (!in_array($type, ['province', 'city'], true)) {
+            return null;
+        }
+
+        $provinceCode = $type === 'province'
+            ? $this->indonesiaProvinceCode($name)
+            : $this->indonesiaProvinceCode($provinceName);
+
+        if (!$provinceCode) {
+            return null;
+        }
+
+        $baseUrl = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
+
+        try {
+            if ($type === 'province') {
+                $cacheKey = 'map.indonesia.v2.province-coordinate.' . $provinceCode;
+
+                return Cache::remember($cacheKey, now()->addDays(30), function () use ($baseUrl, $provinceCode, $name) {
+                    $response = Http::timeout(15)
+                        ->connectTimeout(8)
+                        ->withHeaders([
+                            'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                            'Accept' => 'application/json',
+                        ])
+                        ->get($baseUrl . '/provinces/' . $provinceCode . '.json');
+
+                    if (!$response->successful()) {
+                        return null;
+                    }
+
+                    $data = $response->json();
+                    $row = $data['data'] ?? null;
+
+                    if (!is_array($row) || !isset($row['lat'], $row['lng'])) {
+                        return null;
+                    }
+
+                    return [
+                        'latitude' => (float) $row['lat'],
+                        'longitude' => (float) $row['lng'],
+                        'display_name' => ($row['name'] ?? $name) . ', Indonesia',
+                        'source' => 'Emsifa',
+                    ];
+                });
+            }
+
+            $cacheKey = 'map.indonesia.v2.regencies-coordinate.' . $provinceCode;
+
+            $rows = Cache::remember($cacheKey, now()->addDays(30), function () use ($baseUrl, $provinceCode) {
+                $response = Http::timeout(20)
+                    ->connectTimeout(8)
+                    ->withHeaders([
+                        'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                        'Accept' => 'application/json',
+                    ])
+                    ->get($baseUrl . '/regencies/' . $provinceCode . '.json');
+
+                if (!$response->successful()) {
+                    return [];
+                }
+
+                return is_array($response->json()['data'] ?? null)
+                    ? $response->json()['data']
+                    : [];
+            });
+
+            $normaliseCity = static function (string $value): string {
+                $value = Str::ascii($value);
+                $value = Str::lower(trim($value));
+                $value = preg_replace('/^(kabupaten|kota|kota administrasi)\s+/i', '', $value) ?? $value;
+                $value = preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
+                return $value;
+            };
+
+            $wanted = $normaliseCity($name);
+            $best = null;
+            $bestScore = -1;
+
+            foreach ($rows as $row) {
+                if (!is_array($row) || !isset($row['lat'], $row['lng'])) {
+                    continue;
+                }
+
+                $candidateName = (string) ($row['name'] ?? '');
+                if ($candidateName === '') {
+                    continue;
+                }
+
+                $candidate = $normaliseCity($candidateName);
+                $score = 0;
+
+                if ($candidate === $wanted) {
+                    $score += 200;
+                }
+
+                if (str_contains($candidate, $wanted) || str_contains($wanted, $candidate)) {
+                    $score += 50;
+                }
+
+                if (str_contains(Str::lower((string) ($row['name'] ?? '')), Str::lower($name))) {
+                    $score += 30;
+                }
+
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $best = $row;
+                }
+            }
+
+            if (!$best || !isset($best['lat'], $best['lng'])) {
+                return null;
+            }
+
+            return [
+                'latitude' => (float) $best['lat'],
+                'longitude' => (float) $best['lng'],
+                'display_name' => ($best['name'] ?? $name) . ', ' . ($provinceName ?: 'Indonesia') . ', Indonesia',
+                'source' => 'Emsifa',
+            ];
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 
     public function regions(string $countryCode)
     {
@@ -554,6 +811,40 @@ OVERPASS;
             ], 422);
         }
 
+        // Untuk Indonesia, utamakan dataset wilayah yang memiliki koordinat
+        // langsung pada level provinsi dan kabupaten/kota. Ini mencegah
+        // marker jatuh ke POI atau koordinat database lama yang salah.
+        if ($type === 'province' || $type === 'city') {
+            $isIndonesia = $countryCode === ''
+                ? ($countryName === '' || stripos($countryName, 'indonesia') !== false)
+                : $countryCode === 'id';
+
+            if ($isIndonesia) {
+                $exact = $this->indonesiaCoordinatesFromApi(
+                    $type,
+                    $name,
+                    $province
+                );
+
+                if ($exact
+                    && is_numeric($exact['latitude'] ?? null)
+                    && is_numeric($exact['longitude'] ?? null)
+                    && $exact['latitude'] >= -11.5
+                    && $exact['latitude'] <= 6.5
+                    && $exact['longitude'] >= 94.0
+                    && $exact['longitude'] <= 141.5
+                ) {
+                    return response()->json([
+                        'success' => true,
+                        'latitude' => (float) $exact['latitude'],
+                        'longitude' => (float) $exact['longitude'],
+                        'display_name' => $exact['display_name'],
+                        'source' => $exact['source'],
+                    ]);
+                }
+            }
+        }
+
         /*
          * PENTING:
          * Jangan melakukan pencarian kota sebagai POI umum.
@@ -578,7 +869,6 @@ OVERPASS;
                 'format' => 'jsonv2',
                 'limit' => 10,
                 'layer' => 'address',
-                'featureType' => 'city',
                 'addressdetails' => 1,
             ];
 
@@ -597,7 +887,6 @@ OVERPASS;
                 'format' => 'jsonv2',
                 'limit' => 10,
                 'layer' => 'address',
-                'featureType' => 'state',
                 'addressdetails' => 1,
             ];
 
@@ -699,7 +988,11 @@ OVERPASS;
 
                 if ($type === 'city') {
                     if ($addressType === 'city') {
-                        $score += 100;
+                        $score += 120;
+                    } elseif (in_array($addressType, [
+                        'town', 'municipality', 'village'
+                    ], true)) {
+                        $score += 95;
                     }
 
                     if ($candidateType === 'administrative') {
@@ -710,14 +1003,16 @@ OVERPASS;
                         $score += 50;
                     }
 
-                    if (isset($address['city'])) {
-                        similar_text(
-                            strtolower($name),
-                            strtolower((string) $address['city']),
-                            $percent
-                        );
+                    foreach (['city', 'town', 'municipality', 'village'] as $placeKey) {
+                        if (isset($address[$placeKey])) {
+                            similar_text(
+                                strtolower($name),
+                                strtolower((string) $address[$placeKey]),
+                                $percent
+                            );
 
-                        $score += (int) round($percent);
+                            $score += (int) round($percent);
+                        }
                     }
 
                     if (
@@ -739,26 +1034,41 @@ OVERPASS;
                         $score -= 200;
                     }
                 } elseif ($type === 'province') {
-                    if ($addressType === 'state') {
-                        $score += 100;
+                    if (in_array($addressType, [
+                        'state', 'province', 'region', 'administrative',
+                        'state_district'
+                    ], true)) {
+                        $score += 120;
                     }
 
                     if ($candidateType === 'administrative') {
-                        $score += 80;
+                        $score += 100;
                     }
 
                     if ($candidateClass === 'boundary') {
-                        $score += 50;
+                        $score += 60;
                     }
 
-                    if (isset($address['state'])) {
-                        similar_text(
-                            strtolower($name),
-                            strtolower((string) $address['state']),
-                            $percent
-                        );
+                    foreach ([
+                        'state', 'province', 'region', 'state_district',
+                        'municipality', 'county'
+                    ] as $regionKey) {
+                        if (isset($address[$regionKey])) {
+                            similar_text(
+                                strtolower($name),
+                                strtolower((string) $address[$regionKey]),
+                                $percent
+                            );
 
-                        $score += (int) round($percent);
+                            $score += (int) round($percent);
+                        }
+                    }
+
+                    if (stripos(
+                        strtolower((string) ($candidate['display_name'] ?? '')),
+                        strtolower($name)
+                    ) !== false) {
+                        $score += 50;
                     }
                 } elseif ($type === 'country') {
                     if ($addressType === 'country') {
