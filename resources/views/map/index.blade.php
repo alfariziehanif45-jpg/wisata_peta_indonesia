@@ -864,6 +864,16 @@
                 "
             >
 
+            <select
+                id="placeRatingSort"
+                aria-label="Urutkan rating"
+                style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:9px;margin-bottom:8px;font-size:13px;background:#fff;"
+            >
+                <option value="default">Urutan terdekat (default)</option>
+                <option value="rating-desc">Rating tertinggi ke terendah</option>
+                <option value="rating-asc">Rating terendah ke tertinggi</option>
+            </select>
+            <div id="placeRatingNotice" style="font-size:11px;color:#666;margin:0 0 8px;">Rating akan ditampilkan jika tersedia dari Google Places.</div>
             <div
                 id="placeSearchResults"
                 style="
@@ -1159,6 +1169,9 @@
             document.getElementById(
                 'placeSearchResults'
             );
+
+        const placeRatingSort = document.getElementById('placeRatingSort');
+        const placeRatingNotice = document.getElementById('placeRatingNotice');
 
 
         /* =====================================================
@@ -1650,6 +1663,207 @@
 
                 `);
 
+            // Tautan informasi khusus untuk provinsi yang memiliki halaman Wikipedia.
+            // Provinsi lainnya tetap memakai perilaku marker dan zoom seperti biasa.
+            const provinceWikipediaLinks = {
+                'sumatera selatan': {
+                    url: 'https://id.wikipedia.org/wiki/Sumatera_Selatan',
+                    label: 'Sumatera Selatan'
+                },
+                'sumatera barat': {
+                    url: 'https://id.wikipedia.org/wiki/Sumatera_Barat',
+                    label: 'Sumatera Barat'
+                },
+                'sumatera utara': {
+                    url: 'https://id.wikipedia.org/wiki/Sumatera_Utara',
+                    label: 'Sumatera Utara'
+                },
+                'aceh': {
+                    url: 'https://id.wikipedia.org/wiki/Aceh',
+                    label: 'Aceh'
+                },
+                'bengkulu': {
+                    url: 'https://id.wikipedia.org/wiki/Bengkulu',
+                    label: 'Bengkulu'
+                },
+                'bali': {
+                    url: 'https://id.wikipedia.org/wiki/Bali',
+                    label: 'Bali'
+                },
+                'banten': {
+                    url: 'https://id.wikipedia.org/wiki/Banten',
+                    label: 'Banten'
+                },
+                'daerah istimewa yogyakarta': {
+                    url: 'https://id.wikipedia.org/wiki/Daerah_Istimewa_Yogyakarta',
+                    label: 'Daerah Istimewa Yogyakarta'
+                },
+                'di yogyakarta': {
+                    url: 'https://id.wikipedia.org/wiki/Daerah_Istimewa_Yogyakarta',
+                    label: 'Daerah Istimewa Yogyakarta'
+                },
+                'daerah khusus ibukota jakarta': {
+                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
+                    label: 'Daerah Khusus Ibukota Jakarta'
+                },
+                'dki jakarta': {
+                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
+                    label: 'Daerah Khusus Ibukota Jakarta'
+                },
+                'jakarta': {
+                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
+                    label: 'Daerah Khusus Ibukota Jakarta'
+                },
+                'gorontalo': {
+                    url: 'https://id.wikipedia.org/wiki/Gorontalo',
+                    label: 'Gorontalo'
+                },
+                'jambi': {
+                    url: 'https://id.wikipedia.org/wiki/Jambi',
+                    label: 'Jambi'
+                },
+                'jawa barat': {
+                    url: 'https://id.wikipedia.org/wiki/Jawa_Barat',
+                    label: 'Jawa Barat'
+                },
+                'jawa tengah': {
+                    url: 'https://id.wikipedia.org/wiki/Jawa_Tengah',
+                    label: 'Jawa Tengah'
+                },
+                'jawa timur': {
+                    url: 'https://id.wikipedia.org/wiki/Jawa_Timur',
+                    label: 'Jawa Timur'
+                },
+                'kalimantan barat': {
+                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Barat',
+                    label: 'Kalimantan Barat'
+                },
+                'kalimantan selatan': {
+                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Selatan',
+                    label: 'Kalimantan Selatan'
+                },
+                'kalimantan tengah': {
+                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Tengah',
+                    label: 'Kalimantan Tengah'
+                },
+                'kalimantan timur': {
+                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Timur',
+                    label: 'Kalimantan Timur'
+                },
+                'kalimantan utara': {
+                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Utara',
+                    label: 'Kalimantan Utara'
+                },
+                'kepulauan bangka belitung': {
+                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Bangka_Belitung',
+                    label: 'Kepulauan Bangka Belitung'
+                },
+                'bangka belitung': {
+                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Bangka_Belitung',
+                    label: 'Kepulauan Bangka Belitung'
+                },
+                'kepulauan riau': {
+                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Riau',
+                    label: 'Kepulauan Riau'
+                },
+                'lampung': {
+                    url: 'https://id.wikipedia.org/wiki/Lampung',
+                    label: 'Lampung'
+                },
+                'maluku': {
+                    url: 'https://id.wikipedia.org/wiki/Maluku',
+                    label: 'Maluku'
+                },
+                'maluku utara': {
+                    url: 'https://id.wikipedia.org/wiki/Maluku_Utara',
+                    label: 'Maluku Utara'
+                },
+                'nusa tenggara barat': {
+                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Barat',
+                    label: 'Nusa Tenggara Barat'
+                },
+                'ntb': {
+                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Barat',
+                    label: 'Nusa Tenggara Barat'
+                },
+                'nusa tenggara timur': {
+                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Timur',
+                    label: 'Nusa Tenggara Timur'
+                },
+                'ntt': {
+                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Timur',
+                    label: 'Nusa Tenggara Timur'
+                },
+                'papua': {
+                    url: 'https://id.wikipedia.org/wiki/Papua',
+                    label: 'Papua'
+                },
+                'papua barat': {
+                    url: 'https://id.wikipedia.org/wiki/Papua_Barat',
+                    label: 'Papua Barat'
+                },
+                'papua barat daya': {
+                    url: 'https://id.wikipedia.org/wiki/Papua_Barat_Daya',
+                    label: 'Papua Barat Daya'
+                },
+                'papua pegunungan': {
+                    url: 'https://id.wikipedia.org/wiki/Papua_Pegunungan',
+                    label: 'Papua Pegunungan'
+                },
+                'papua selatan': {
+                    url: 'https://id.wikipedia.org/wiki/Papua_Selatan',
+                    label: 'Papua Selatan'
+                },
+                'papua tengah': {
+                    url: 'https://id.wikipedia.org/wiki/Papua_Tengah',
+                    label: 'Papua Tengah'
+                },
+                'riau': {
+                    url: 'https://id.wikipedia.org/wiki/Riau',
+                    label: 'Riau'
+                },
+                'sulawesi barat': {
+                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Barat',
+                    label: 'Sulawesi Barat'
+                },
+                'sulawesi selatan': {
+                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Selatan',
+                    label: 'Sulawesi Selatan'
+                },
+                'sulawesi tengah': {
+                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Tengah',
+                    label: 'Sulawesi Tengah'
+                },
+                'sulawesi tenggara': {
+                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Tenggara',
+                    label: 'Sulawesi Tenggara'
+                },
+                'sulawesi utara': {
+                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Utara',
+                    label: 'Sulawesi Utara'
+                }
+            };
+
+            const provinceWikipedia = provinceWikipediaLinks[normalizeProvinceName(name)];
+
+            if (provinceWikipedia) {
+                currentProvinceMarker.bindTooltip(
+                    `Klik marker untuk membuka informasi ${provinceWikipedia.label}`,
+                    {
+                        direction: 'top',
+                        offset: [0, -28],
+                        opacity: 0.95
+                    }
+                );
+
+                currentProvinceMarker.on('click', function () {
+                    window.open(
+                        provinceWikipedia.url,
+                        '_blank',
+                        'noopener,noreferrer'
+                    );
+                });
+            }
 
             currentProvinceMarker
                 .openPopup();
@@ -2094,9 +2308,14 @@
                 }
 
                 loadedPlaces = data.places || [];
+                if (placeRatingNotice) {
+                    placeRatingNotice.textContent = data.ratings_available
+                        ? 'Rating Google Places diperbarui saat data tempat dimuat.'
+                        : 'Rating real-time memerlukan GOOGLE_MAPS_API_KEY di file .env; tanpa kunci, rating tidak tersedia.';
+                }
 
                 renderPlaceSearchResults(
-                    loadedPlaces,
+                    sortPlacesByRating(loadedPlaces),
                     category
                 );
 
@@ -2164,6 +2383,9 @@
                         place.distance !== undefined
                             ? `${place.distance} km`
                             : '';
+                    const ratingText = (place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating)))
+                        ? `⭐ ${Number(place.rating).toFixed(1)}/5${place.user_rating_count ? ` (${Number(place.user_rating_count).toLocaleString('id-ID')} ulasan)` : ''}`
+                        : '⭐ Rating belum tersedia';
 
                     return `
                         <div
@@ -2199,6 +2421,9 @@
                             >
                                 ${escapeHtml(place.type || '')}
                                 ${distance ? ` • ${distance}` : ''}
+                            </div>
+                            <div style="margin-top:5px;font-size:12px;color:${(place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating))) ? '#b77900' : '#888'};font-weight:600;">
+                                ${ratingText}
                             </div>
                         </div>
                     `;
@@ -2251,6 +2476,36 @@
            SEARCH INPUT TEMPAT
         ====================================================== */
 
+        function sortPlacesByRating(places) {
+            const sortMode = placeRatingSort ? placeRatingSort.value : 'default';
+            const sorted = [...places];
+            if (sortMode === 'rating-desc') {
+                sorted.sort((a, b) => {
+                    const ar = (a.rating !== null && a.rating !== undefined && a.rating !== '' && Number.isFinite(Number(a.rating))) ? Number(a.rating) : -1;
+                    const br = (b.rating !== null && b.rating !== undefined && b.rating !== '' && Number.isFinite(Number(b.rating))) ? Number(b.rating) : -1;
+                    return br - ar;
+                });
+            } else if (sortMode === 'rating-asc') {
+                sorted.sort((a, b) => {
+                    const ar = (a.rating !== null && a.rating !== undefined && a.rating !== '' && Number.isFinite(Number(a.rating))) ? Number(a.rating) : 6;
+                    const br = (b.rating !== null && b.rating !== undefined && b.rating !== '' && Number.isFinite(Number(b.rating))) ? Number(b.rating) : 6;
+                    return ar - br;
+                });
+            }
+            return sorted;
+        }
+
+        if (placeRatingSort) {
+            placeRatingSort.addEventListener('change', function () {
+                const keyword = placeSearchInput.value.trim().toLowerCase();
+                const filtered = loadedPlaces.filter(place =>
+                    (place.name || '').toLowerCase().includes(keyword) ||
+                    (place.type || '').toLowerCase().includes(keyword)
+                );
+                renderPlaceSearchResults(sortPlacesByRating(filtered), currentPlaceCategory);
+            });
+        }
+
         placeSearchInput.addEventListener(
             'input',
             function () {
@@ -2261,7 +2516,7 @@
                 if (keyword === '') {
 
                     renderPlaceSearchResults(
-                        loadedPlaces,
+                        sortPlacesByRating(loadedPlaces),
                         currentPlaceCategory
                     );
 
@@ -2284,7 +2539,7 @@
                     });
 
                 renderPlaceSearchResults(
-                    filtered,
+                    sortPlacesByRating(filtered),
                     currentPlaceCategory
                 );
             }
@@ -2333,6 +2588,9 @@
                     ${categoryName}
                     •
                     ${escapeHtml(place.type || '')}
+                </div>
+                <div style="margin-top:6px;font-size:13px;color:#b77900;font-weight:600;">
+                    ${(place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating))) ? `⭐ ${Number(place.rating).toFixed(1)}/5${place.user_rating_count ? ` (${Number(place.user_rating_count).toLocaleString('id-ID')} ulasan)` : ''}` : '⭐ Rating belum tersedia'}
                 </div>
 
                 ${

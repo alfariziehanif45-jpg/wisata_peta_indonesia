@@ -1333,7 +1333,73 @@ OVERPASS;
                                 $tags['website'] ??
                                 $tags['contact:website'] ??
                                 null,
+                            'rating' => null,
+                            'user_rating_count' => null,
                         ];
+                    }
+
+                    // Rating real-time dari Google Places API (New), jika API key tersedia.
+                    $ratingsAvailable = false;
+                    $googleApiKey = (string) env('GOOGLE_MAPS_API_KEY', '');
+                    if ($googleApiKey !== '') {
+                        try {
+                            $googleTypes = $category === 'wisata'
+                                ? ['tourist_attraction', 'museum', 'park']
+                                : ['restaurant', 'cafe'];
+                            $googleResponse = Http::timeout(12)
+                                ->connectTimeout(5)
+                                ->withHeaders([
+                                    'Content-Type' => 'application/json',
+                                    'X-Goog-Api-Key' => $googleApiKey,
+                                    'X-Goog-FieldMask' => 'places.displayName,places.location,places.rating,places.userRatingCount,places.formattedAddress',
+                                ])
+                                ->post('https://places.googleapis.com/v1/places:searchNearby', [
+                                    'includedTypes' => $googleTypes,
+                                    'maxResultCount' => 20,
+                                    'rankPreference' => 'DISTANCE',
+                                    'locationRestriction' => [
+                                        'circle' => [
+                                            'center' => ['latitude' => $latitude, 'longitude' => $longitude],
+                                            'radius' => 10000.0,
+                                        ],
+                                    ],
+                                ]);
+                            if ($googleResponse->successful()) {
+                                $googlePlaces = $googleResponse->json('places', []);
+                                foreach ($places as &$placeItem) {
+                                    $osmName = mb_strtolower(trim($placeItem['name']));
+                                    $bestMatch = null;
+                                    $bestDistance = INF;
+                                    foreach ($googlePlaces as $googlePlace) {
+                                        $googleName = trim((string) data_get($googlePlace, 'displayName.text', ''));
+                                        if ($googleName === '' || !isset($googlePlace['location']['latitude'], $googlePlace['location']['longitude'])) continue;
+                                        $nameMatch = mb_strtolower($googleName) === $osmName
+                                            || str_contains(mb_strtolower($googleName), $osmName)
+                                            || str_contains($osmName, mb_strtolower($googleName));
+                                        if (!$nameMatch) continue;
+                                        $matchDistance = $this->calculateDistance(
+                                            $placeItem['latitude'], $placeItem['longitude'],
+                                            (float) $googlePlace['location']['latitude'],
+                                            (float) $googlePlace['location']['longitude']
+                                        );
+                                        if ($matchDistance < $bestDistance && $matchDistance <= 2) {
+                                            $bestDistance = $matchDistance;
+                                            $bestMatch = $googlePlace;
+                                        }
+                                    }
+                                    if ($bestMatch && isset($bestMatch['rating'])) {
+                                        $placeItem['rating'] = (float) $bestMatch['rating'];
+                                        $placeItem['user_rating_count'] = (int) ($bestMatch['userRatingCount'] ?? 0);
+                                        if (empty($placeItem['address'])) $placeItem['address'] = $bestMatch['formattedAddress'] ?? null;
+                                        $ratingsAvailable = true;
+                                    }
+                                }
+                                unset($placeItem);
+                            }
+                        } catch (\Throwable $ratingError) {
+                            // Data tempat tetap ditampilkan meski layanan rating tidak tersedia.
+                            report($ratingError);
+                        }
                     }
 
                     usort(
@@ -1350,6 +1416,7 @@ OVERPASS;
                         'latitude' => $latitude,
                         'longitude' => $longitude,
                         'count' => count($places),
+                        'ratings_available' => $ratingsAvailable,
                         'places' => $places,
                     ]);
                 }
