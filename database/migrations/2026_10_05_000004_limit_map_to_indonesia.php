@@ -7,6 +7,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('countries')) {
+            Schema::create('countries', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('code', 2)->unique();
+                $table->decimal('latitude', 10, 7)->nullable();
+                $table->decimal('longitude', 10, 7)->nullable();
+                $table->text('description')->nullable();
+                $table->timestamps();
+            });
+        }
+
         $indonesia = DB::table('countries')->where('code', 'ID')->first();
 
         if (!$indonesia) {

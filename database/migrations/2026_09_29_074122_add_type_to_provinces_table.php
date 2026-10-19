@@ -8,17 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('provinces', function (Blueprint $table) {
-            $table->string('type')
-                ->default('Province')
-                ->after('country_id');
-        });
+        if (!Schema::hasColumn('provinces', 'type')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->string('type')->default('Province')->after('country_id');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('provinces', function (Blueprint $table) {
-            $table->dropColumn('type');
-        });
+        if (Schema::hasColumn('provinces', 'type')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->dropColumn('type');
+            });
+        }
     }
 };

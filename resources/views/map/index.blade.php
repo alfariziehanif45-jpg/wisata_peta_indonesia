@@ -4,840 +4,495 @@
 <head>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Jelajah Wisata Indonesia
-    </title>
+    <title>Jelajah Wisata Indonesia</title>
 
 
-    <!-- =====================================================
-         LEAFLET CSS
-    ====================================================== -->
+<!-- LEAFLET CSS -->
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+>
 
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, Helvetica, sans-serif;
+    }
 
-    <style>
+    body {
+        background: #f1f5f9;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    /* MAP */
+    #map {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 300px;
+        background: #e5e7eb;
+        z-index: 1;
+    }
 
+    /* Pastikan tile Leaflet berada di bawah kontrol */
+    .leaflet-container {
+        width: 100%;
+        height: 100%;
+        background: #e5e7eb;
+        font-family: Arial, Helvetica, sans-serif;
+    }
 
-        html,
-        body {
+    .leaflet-tile {
+        visibility: visible;
+    }
 
-            width: 100%;
-            height: 100%;
+    .leaflet-control-container {
+        z-index: 500;
+    }
 
-            overflow: hidden;
+    /* HEADER */
+    .header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 20px 30px;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, .7),
+            transparent
+        );
+        color: white;
+        pointer-events: none;
+    }
 
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
+    .header h1 {
+        font-size: 24px;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, .8);
+    }
 
-        }
+    /* SEARCH BUTTON */
+    #searchToggle {
+        position: absolute;
+        top: 85px;
+        right: 20px;
+        z-index: 2000;
+        width: 50px;
+        height: 50px;
+        border: none;
+        border-radius: 50%;
+        background: white;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, .3);
+    }
 
+    #searchToggle:hover {
+        transform: scale(1.08);
+    }
 
-        body {
-            background: #000;
-        }
+    /* SEARCH PANEL */
+    #searchPanel {
+        display: none;
+        position: absolute;
+        top: 85px;
+        right: 20px;
+        width: 350px;
+        max-height: 75vh;
+        z-index: 2000;
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, .35);
+        overflow: hidden;
+    }
 
-        /* =====================================================
-           HEADER
-        ====================================================== */
+    .search-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px;
+        background: #111;
+        color: white;
+    }
 
+    .search-header h3 {
+        font-size: 17px;
+    }
+
+    #closeSearch {
+        border: none;
+        background: transparent;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    /* SEARCH MODE */
+    .search-mode {
+        padding: 12px 16px;
+        background: #f4f4f4;
+        font-size: 13px;
+        color: #555;
+    }
+
+    .search-mode strong {
+        color: #111;
+    }
+
+    /* BACK */
+    #backToProvince {
+        display: none;
+        width: calc(100% - 30px);
+        margin: 12px 15px 0;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        background: #222;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* SEARCH INPUT */
+    .search-input-wrapper {
+        padding: 15px;
+    }
+
+    #searchInput {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid #ddd;
+        border-radius: 9px;
+        outline: none;
+        font-size: 14px;
+    }
+
+    /* SEARCH RESULT */
+    #searchResults {
+        max-height: 45vh;
+        overflow-y: auto;
+    }
+
+    .search-result {
+        padding: 13px 16px;
+        border-top: 1px solid #eee;
+        cursor: pointer;
+    }
+
+    .search-result:hover {
+        background: #f3f3f3;
+    }
+
+    .result-name {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .result-info {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    .no-result {
+        padding: 25px 15px;
+        text-align: center;
+        color: #777;
+        font-size: 13px;
+    }
+
+    /* LOCATION INFO */
+    #locationInfo {
+        position: absolute;
+        left: 20px;
+        bottom: 25px;
+        z-index: 1500;
+        display: none;
+        max-width: 430px;
+        background: rgba(255, 255, 255, .97);
+        padding: 15px 18px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, .25);
+    }
+
+    #locationName {
+        display: block;
+        font-size: 17px;
+        margin-bottom: 5px;
+    }
+
+    #locationAddress {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.5;
+        margin-bottom: 13px;
+    }
+
+    /* CATEGORY BUTTON */
+    #categoryOptions {
+        display: none;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .category-btn {
+        border: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: .2s;
+    }
+
+    .category-btn.wisata {
+        background: #2e7d32;
+        color: white;
+    }
+
+    .category-btn.kuliner {
+        background: #e65100;
+        color: white;
+    }
+
+    .category-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
+    }
+
+    /* CLEAR PLACES */
+    #clearPlaces {
+        display: none;
+        margin-top: 8px;
+        padding: 7px 10px;
+        border: none;
+        border-radius: 6px;
+        background: #eee;
+        color: #444;
+        cursor: pointer;
+        font-size: 11px;
+    }
+
+    /* MARKER WISATA */
+    .tourism-marker {
+        width: 34px;
+        height: 34px;
+        border-radius: 50% 50% 50% 0;
+        background: #2e7d32;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .4);
+        position: relative;
+    }
+
+    .tourism-marker::after {
+        content: "★";
+        position: absolute;
+        color: white;
+        font-size: 15px;
+        top: 5px;
+        left: 7px;
+        transform: rotate(45deg);
+    }
+
+    /* MARKER KULINER */
+    .food-marker {
+        width: 34px;
+        height: 34px;
+        border-radius: 50% 50% 50% 0;
+        background: #e65100;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .4);
+        position: relative;
+    }
+
+    .food-marker::after {
+        content: "🍜";
+        position: absolute;
+        font-size: 14px;
+        top: 5px;
+        left: 5px;
+        transform: rotate(45deg);
+    }
+
+    /* PLACE POPUP */
+    .place-popup-title {
+        font-weight: bold;
+        font-size: 15px;
+        margin-bottom: 5px;
+    }
+
+    .place-popup-type {
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 5px;
+    }
+
+    .place-popup-address {
+        font-size: 11px;
+        color: #555;
+    }
+
+    /* LOADING */
+    #placesLoading {
+        display: none;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
         .header {
-
-            position: absolute;
-
-            top: 0;
-            left: 0;
-            right: 0;
-
-            z-index: 1000;
-
-            padding: 20px 30px;
-
-            background:
-                linear-gradient(
-                    to bottom,
-                    rgba(0,0,0,.7),
-                    transparent
-                );
-
-            color: white;
-
-            pointer-events: none;
-
+            padding: 15px 18px;
         }
-
 
         .header h1 {
-
-            font-size: 24px;
-
-            text-shadow:
-                0 2px 6px rgba(0,0,0,.8);
-
+            font-size: 18px;
         }
-
-
-        /* =====================================================
-           MAP
-        ====================================================== */
-
-        #map {
-
-            width: 100%;
-
-            height: 100vh;
-
-        }
-
-
-        /* =====================================================
-           SEARCH BUTTON
-        ====================================================== */
 
         #searchToggle {
-
-            position: absolute;
-
-            top: 85px;
-            right: 20px;
-
-            z-index: 2000;
-
-            width: 50px;
-            height: 50px;
-
-            border: none;
-
-            border-radius: 50%;
-
-            background: white;
-
-            font-size: 22px;
-
-            cursor: pointer;
-
-            box-shadow:
-                0 4px 15px
-                rgba(0,0,0,.3);
-
+            top: 70px;
+            right: 15px;
         }
-
-
-        #searchToggle:hover {
-
-            transform: scale(1.08);
-
-        }
-
-
-        /* =====================================================
-           SEARCH PANEL
-        ====================================================== */
 
         #searchPanel {
-
-            display: none;
-
-            position: absolute;
-
-            top: 85px;
-            right: 20px;
-
-            width: 350px;
-
-            max-height: 75vh;
-
-            z-index: 2000;
-
-            background: white;
-
-            border-radius: 14px;
-
-            box-shadow:
-                0 10px 35px
-                rgba(0,0,0,.35);
-
-            overflow: hidden;
-
+            top: 70px;
+            left: 15px;
+            right: 15px;
+            width: auto;
         }
-
-
-        .search-header {
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content:
-                space-between;
-
-            padding: 16px 18px;
-
-            background: #111;
-
-            color: white;
-
-        }
-
-
-        .search-header h3 {
-
-            font-size: 17px;
-
-        }
-
-
-        #closeSearch {
-
-            border: none;
-
-            background: transparent;
-
-            color: white;
-
-            font-size: 24px;
-
-            cursor: pointer;
-
-        }
-
-
-        /* =====================================================
-           SEARCH MODE
-        ====================================================== */
-
-        .search-mode {
-
-            padding: 12px 16px;
-
-            background: #f4f4f4;
-
-            font-size: 13px;
-
-            color: #555;
-
-        }
-
-
-        .search-mode strong {
-
-            color: #111;
-
-        }
-
-
-        /* =====================================================
-           BACK
-        ====================================================== */
-
-        #backToProvince {
-
-            display: none;
-
-            width:
-                calc(100% - 30px);
-
-            margin:
-                12px 15px 0;
-
-            padding: 10px;
-
-            border: none;
-
-            border-radius: 8px;
-
-            background: #222;
-
-            color: white;
-
-            cursor: pointer;
-
-        }
-
-
-        /* =====================================================
-           SEARCH INPUT
-        ====================================================== */
-
-        .search-input-wrapper {
-
-            padding: 15px;
-
-        }
-
-
-        #searchInput {
-
-            width: 100%;
-
-            padding: 13px 15px;
-
-            border:
-                1px solid #ddd;
-
-            border-radius: 9px;
-
-            outline: none;
-
-            font-size: 14px;
-
-        }
-
-
-        /* =====================================================
-           SEARCH RESULT
-        ====================================================== */
-
-        #searchResults {
-
-            max-height: 45vh;
-
-            overflow-y: auto;
-
-        }
-
-
-        .search-result {
-
-            padding: 13px 16px;
-
-            border-top:
-                1px solid #eee;
-
-            cursor: pointer;
-
-        }
-
-
-        .search-result:hover {
-
-            background: #f3f3f3;
-
-        }
-
-
-        .result-name {
-
-            font-weight: bold;
-
-            font-size: 14px;
-
-        }
-
-
-        .result-info {
-
-            margin-top: 4px;
-
-            font-size: 12px;
-
-            color: #777;
-
-        }
-
-
-        .no-result {
-
-            padding: 25px 15px;
-
-            text-align: center;
-
-            color: #777;
-
-            font-size: 13px;
-
-        }
-
-
-        /* =====================================================
-           LOCATION INFO
-        ====================================================== */
 
         #locationInfo {
-
-            position: absolute;
-
-            left: 20px;
-            bottom: 25px;
-
-            z-index: 1500;
-
-            display: none;
-
-            max-width: 430px;
-
-            background:
-                rgba(255,255,255,.97);
-
-            padding: 15px 18px;
-
-            border-radius: 12px;
-
-            box-shadow:
-                0 5px 20px
-                rgba(0,0,0,.25);
-
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            max-width: none;
         }
-
-
-        #locationName {
-
-            display: block;
-
-            font-size: 17px;
-
-            margin-bottom: 5px;
-
-        }
-
-
-        #locationAddress {
-
-            display: block;
-
-            font-size: 12px;
-
-            color: #666;
-
-            line-height: 1.5;
-
-            margin-bottom: 13px;
-
-        }
-
-
-        /* =====================================================
-           CATEGORY BUTTON
-        ====================================================== */
-
-        #categoryOptions {
-
-            display: none;
-
-            gap: 8px;
-
-            flex-wrap: wrap;
-
-        }
-
-
-        .category-btn {
-
-            border: none;
-
-            padding:
-                10px 14px;
-
-            border-radius: 8px;
-
-            cursor: pointer;
-
-            font-size: 13px;
-
-            font-weight: bold;
-
-            transition: .2s;
-
-        }
-
-
-        .category-btn.wisata {
-
-            background: #2e7d32;
-
-            color: white;
-
-        }
-
-
-        .category-btn.kuliner {
-
-            background: #e65100;
-
-            color: white;
-
-        }
-
-
-        .category-btn:hover {
-
-            transform:
-                translateY(-2px);
-
-            box-shadow:
-                0 4px 10px
-                rgba(0,0,0,.2);
-
-        }
-
-
-        /* =====================================================
-           CLEAR PLACES
-        ====================================================== */
-
-        #clearPlaces {
-
-            display: none;
-
-            margin-top: 8px;
-
-            padding:
-                7px 10px;
-
-            border: none;
-
-            border-radius: 6px;
-
-            background: #eee;
-
-            color: #444;
-
-            cursor: pointer;
-
-            font-size: 11px;
-
-        }
-
-
-        /* =====================================================
-           MARKER WISATA
-        ====================================================== */
-
-        .tourism-marker {
-
-            width: 34px;
-            height: 34px;
-
-            border-radius:
-                50% 50% 50% 0;
-
-            background: #2e7d32;
-
-            transform:
-                rotate(-45deg);
-
-            border:
-                3px solid white;
-
-            box-shadow:
-                0 3px 10px
-                rgba(0,0,0,.4);
-
-            position: relative;
-
-        }
-
-
-        .tourism-marker::after {
-
-            content: "★";
-
-            position: absolute;
-
-            color: white;
-
-            font-size: 15px;
-
-            top: 5px;
-            left: 7px;
-
-            transform:
-                rotate(45deg);
-
-        }
-
-
-        /* =====================================================
-           MARKER KULINER
-        ====================================================== */
-
-        .food-marker {
-
-            width: 34px;
-            height: 34px;
-
-            border-radius:
-                50% 50% 50% 0;
-
-            background: #e65100;
-
-            transform:
-                rotate(-45deg);
-
-            border:
-                3px solid white;
-
-            box-shadow:
-                0 3px 10px
-                rgba(0,0,0,.4);
-
-            position: relative;
-
-        }
-
-
-        .food-marker::after {
-
-            content: "🍜";
-
-            position: absolute;
-
-            font-size: 14px;
-
-            top: 5px;
-            left: 5px;
-
-            transform:
-                rotate(45deg);
-
-        }
-
-
-        /* =====================================================
-           PLACE POPUP
-        ====================================================== */
-
-        .place-popup-title {
-
-            font-weight: bold;
-
-            font-size: 15px;
-
-            margin-bottom: 5px;
-
-        }
-
-
-        .place-popup-type {
-
-            font-size: 12px;
-
-            color: #777;
-
-            margin-bottom: 5px;
-
-        }
-
-
-        .place-popup-address {
-
-            font-size: 11px;
-
-            color: #555;
-
-        }
-
-
-        /* =====================================================
-           LOADING
-        ====================================================== */
-
-        #placesLoading {
-
-            display: none;
-
-            margin-top: 8px;
-
-            font-size: 12px;
-
-            color: #777;
-
-        }
-
-
-        /* =====================================================
-           MOBILE
-        ====================================================== */
-
-        @media (max-width: 600px) {
-
-            .header {
-
-                padding:
-                    15px 18px;
-
-            }
-
-
-            .header h1 {
-
-                font-size: 18px;
-
-            }
-
-
-            #searchToggle {
-
-                top: 70px;
-
-                right: 15px;
-
-            }
-
-
-            #searchPanel {
-
-                top: 70px;
-
-                left: 15px;
-                right: 15px;
-
-                width: auto;
-
-            }
-
-
-            #locationInfo {
-
-                left: 15px;
-                right: 15px;
-
-                bottom: 15px;
-
-                max-width: none;
-
-            }
-}
-
-    </style>
+    }
+</style>
 
 </head>
 
 
 <body>
 
-    <!-- =====================================================
-         MAP
-====================================================== -->
+    <!-- Akses akun: ditambahkan tanpa mengubah tampilan dan fungsi peta -->
+    <div style="position:fixed;top:18px;right:20px;z-index:5000;display:flex;align-items:center;gap:8px;font-family:Arial,Helvetica,sans-serif">
+        @auth
+            <a href="{{ route('profile.show') }}" title="Profil Saya" style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;border-radius:9px;padding:10px 14px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;font-weight:700;border:1px solid rgba(255,255,255,.25)">
+                <span aria-hidden="true">👤</span><span>Profil</span>
+            </a>
+            <span style="background:rgba(0,0,0,.72);color:#fff;padding:10px 13px;border-radius:9px;font-size:13px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Halo, {{ auth()->user()->name }}</span>
+            <form method="POST" action="{{ route('logout') }}" style="margin:0">
+                @csrf
+                <button type="submit" style="border:0;border-radius:9px;padding:10px 14px;background:#fff;color:#17212b;font-weight:700;cursor:pointer">Keluar</button>
+            </form>
+        @else
+            <a href="{{ route('login') }}" style="text-decoration:none;border-radius:9px;padding:10px 14px;background:rgba(0,0,0,.72);color:#fff;font-size:13px;font-weight:700">Masuk</a>
+            <a href="{{ route('register') }}" style="text-decoration:none;border-radius:9px;padding:10px 14px;background:#fff;color:#17212b;font-size:13px;font-weight:700;box-shadow:0 3px 12px #0003">Daftar</a>
+        @endauth
+    </div>
 
+
+    <!-- MAP -->
     <div id="map"></div>
 
 
-    <!-- =====================================================
-         SEARCH BUTTON
-    ====================================================== -->
-
-    <button id="searchToggle">
-        🔍
-    </button>
+    <!-- SEARCH BUTTON -->
+    <button id="searchToggle">🔍</button>
 
 
-    <!-- =====================================================
-         SEARCH PANEL
-    ====================================================== -->
-
+    <!-- SEARCH PANEL -->
     <div id="searchPanel">
 
         <div class="search-header">
-
-            <h3 id="searchTitle">
-                🔍 Cari Provinsi Indonesia
-            </h3>
-
-            <button id="closeSearch">
-                ×
-            </button>
-
+            <h3 id="searchTitle">🔍 Cari Provinsi Indonesia</h3>
+            <button id="closeSearch">×</button>
         </div>
-
 
         <div class="search-mode">
-
             Mode:
-
-            <strong id="searchMode">
-                Indonesia
-            </strong>
-
+            <strong id="searchMode">Indonesia</strong>
         </div>
 
-
-        <button id="backToProvince" style="display:none;">
-
-            ← Kembali
-
-        </button>
-
+        <button id="backToProvince" style="display:none;">← Kembali</button>
 
         <div class="search-input-wrapper">
-
             <input
                 type="text"
                 id="searchInput"
                 placeholder="Cari provinsi Indonesia..."
                 autocomplete="off"
             >
-
         </div>
-
 
         <div id="searchResults"></div>
 
     </div>
 
 
-    <!-- =====================================================
-         LOCATION INFO
-    ====================================================== -->
-
+    <!-- LOCATION INFO -->
     <div id="locationInfo">
 
         <strong id="locationName"></strong>
 
         <span id="locationAddress"></span>
 
+        <div id="cityWikiContainer" style="display:none;margin-top:8px;margin-bottom:8px;">
+            <a
+                id="cityWikiLink"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="
+                    display:inline-flex;
+                    align-items:center;
+                    gap:6px;
+                    background:#e8f5e9;
+                    color:#198754;
+                    border:1px solid #c8e6c9;
+                    padding:5px 11px;
+                    border-radius:8px;
+                    font-size:12px;
+                    font-weight:600;
+                    text-decoration:none;
+                    transition:all .2s ease;
+                "
+            >
+                🌐 Buka Wikipedia <span id="cityWikiLabel"></span> &nearr;
+            </a>
+        </div>
 
-        <!-- ===============================================
-             CATEGORY
-        ================================================ -->
 
+        <!-- CATEGORY -->
         <div id="categoryOptions">
 
-            <button
-                type="button"
-                class="category-btn wisata"
-                id="wisataButton"
-            >
-
+            <button type="button" class="category-btn wisata" id="wisataButton">
                 🏞️ Wisata
-
             </button>
 
-
-            <button
-                type="button"
-                class="category-btn kuliner"
-                id="kulinerButton"
-            >
-
+            <button type="button" class="category-btn kuliner" id="kulinerButton">
                 🍜 Kuliner
-
             </button>
 
         </div>
 
 
-        <!-- =====================================================
-             SEARCH TEMPAT WISATA / KULINER
-        ====================================================== -->
-
+        <!-- SEARCH TEMPAT WISATA / KULINER -->
         <div
             id="placeSearchPanel"
             style="
@@ -850,34 +505,68 @@
             <input
                 type="text"
                 id="placeSearchInput"
-                placeholder="🔎 Cari tempat wisata atau kuliner..."
+                placeholder="🔎 Cari nama tempat wisata atau kuliner..."
                 autocomplete="off"
                 style="
                     width:100%;
                     box-sizing:border-box;
-                    padding:11px 14px;
-                    border:1px solid #ddd;
+                    padding:10px 13px;
+                    border:1px solid #d1d5db;
                     border-radius:10px;
                     outline:none;
-                    font-size:14px;
+                    font-size:13.5px;
                     margin-bottom:8px;
+                    background:#fff;
                 "
             >
 
-            <select
-                id="placeRatingSort"
-                aria-label="Urutkan rating"
-                style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:9px;margin-bottom:8px;font-size:13px;background:#fff;"
-            >
-                <option value="default">Urutan terdekat (default)</option>
-                <option value="rating-desc">Rating tertinggi ke terendah</option>
-                <option value="rating-asc">Rating terendah ke tertinggi</option>
-            </select>
-            <div id="placeRatingNotice" style="font-size:11px;color:#666;margin:0 0 8px;">Rating akan ditampilkan jika tersedia dari Google Places.</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <div style="flex:1;">
+                    <label for="placeRatingSort" style="display:block;font-size:11px;font-weight:700;color:#4b5563;margin-bottom:3px;">
+                        ↕️ Urutkan:
+                    </label>
+                    <select
+                        id="placeRatingSort"
+                        aria-label="Urutkan tempat"
+                        style="width:100%;box-sizing:border-box;padding:8px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;background:#fff;color:#1f2937;cursor:pointer;"
+                    >
+                        <option value="rating-desc">⭐ Rating Tertinggi (5 → 1)</option>
+                        <option value="rating-asc">⭐ Rating Terendah (1 → 5)</option>
+                        <option value="default">📍 Jarak Terdekat (Default)</option>
+                        <option value="reviews-desc">💬 Ulasan Terbanyak</option>
+                    </select>
+                </div>
+
+                <div style="flex:1;">
+                    <label for="placeRatingFilter" style="display:block;font-size:11px;font-weight:700;color:#4b5563;margin-bottom:3px;">
+                        🔍 Filter Rating:
+                    </label>
+                    <select
+                        id="placeRatingFilter"
+                        aria-label="Filter rating minimum"
+                        style="width:100%;box-sizing:border-box;padding:8px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;background:#fff;color:#1f2937;cursor:pointer;"
+                    >
+                        <option value="all">Semua Rating</option>
+                        <option value="4.5">⭐ 4.5 ke atas (Sangat Bagus)</option>
+                        <option value="4.0">⭐ 4.0 ke atas (Bagus)</option>
+                        <option value="3.5">⭐ 3.5 ke atas (Cukup)</option>
+                        <option value="under-4">⭐ Di bawah 4.0</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:11px;">
+                <div id="placeRatingNotice" style="color:#374151;font-weight:600;display:flex;align-items:center;gap:5px;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    <span>Google Maps Rating</span>
+                </div>
+                <div id="placeResultCount" style="color:#6b7280;font-weight:700;">0 tempat</div>
+            </div>
+
             <div
                 id="placeSearchResults"
                 style="
-                    max-height:260px;
+                    max-height:290px;
                     overflow-y:auto;
                 "
             ></div>
@@ -885,32 +574,18 @@
         </div>
 
 
-        <div id="placesLoading">
-
-            ⏳ Mencari tempat...
-
-        </div>
+        <div id="placesLoading">⏳ Mencari tempat...</div>
 
 
-        <button
-            type="button"
-            id="clearPlaces"
-        >
-
+        <button type="button" id="clearPlaces">
             ✕ Hapus marker tempat
-
         </button>
 
     </div>
 
 
-    <!-- =====================================================
-         LEAFLET
-    ====================================================== -->
-
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+    <!-- LEAFLET -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
     <script>
@@ -919,14 +594,11 @@
            DATA LARAVEL
         ====================================================== */
 
-        const countries =
-            @json($countries);
+        const countries = @json($countries);
 
-        const provinces =
-            @json($provinces);
+        const provinces = @json($provinces);
 
-        const cities =
-            @json($cities);
+        const cities = @json($cities);
 
         // Daftar resmi provinsi Indonesia yang boleh tampil di mode Indonesia.
         // Filter ini menjadi pengaman tambahan apabila database lama masih
@@ -972,206 +644,72 @@
            MAP
         ====================================================== */
 
-        const map =
-            L.map(
-                'map',
-                {
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true,
+            zoomAnimation: true,
+            fadeAnimation: true,
+            markerZoomAnimation: true,
+            zoomSnap: 1,
+            zoomDelta: 1,
+            wheelPxPerZoomLevel: 80
+        });
 
-                    zoomControl: true,
-
-                    attributionControl: true,
-
-                    zoomAnimation: true,
-
-                    fadeAnimation: true,
-
-                    markerZoomAnimation: true,
-
-                    zoomSnap: 1,
-
-                    zoomDelta: 1,
-
-                    wheelPxPerZoomLevel: 80
-
-                }
-            );
-
-
-        /* =====================================================
-           OSM
-        ====================================================== */
-
-        const osm =
-            L.tileLayer(
-
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-
-                {
-
-                    minZoom: 2,
-
-                    maxZoom: 19,
-
-                    maxNativeZoom: 19,
-
-                    detectRetina: true,
-
-                    updateWhenZooming: true,
-
-                    updateWhenIdle: true,
-
-                    keepBuffer: 2,
-
-                    attribution:
-                        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
-
-                }
-
-            );
-
+        /* OSM */
+        const osm = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                minZoom: 2,
+                maxZoom: 19,
+                maxNativeZoom: 19,
+                detectRetina: true,
+                updateWhenZooming: true,
+                updateWhenIdle: true,
+                keepBuffer: 2,
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+            }
+        );
 
         osm.addTo(map);
 
-
-        map.setView(
-
-            [
-                -2.5,
-                118
-            ],
-
-            5
-
-        );
-
+        map.setView([-2.5, 118], 5);
 
         /* =====================================================
            SEARCH ELEMENT
         ====================================================== */
 
-        const searchToggle =
-            document.getElementById(
-                'searchToggle'
-            );
+        const searchToggle = document.getElementById('searchToggle');
+        const searchPanel = document.getElementById('searchPanel');
+        const closeSearch = document.getElementById('closeSearch');
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        const searchTitle = document.getElementById('searchTitle');
+        const searchMode = document.getElementById('searchMode');
+        const backToProvince = document.getElementById('backToProvince');
 
+        /* LOCATION ELEMENT */
+        const locationInfo = document.getElementById('locationInfo');
+        const locationName = document.getElementById('locationName');
+        const locationAddress = document.getElementById('locationAddress');
+        const cityWikiContainer = document.getElementById('cityWikiContainer');
+        const cityWikiLink = document.getElementById('cityWikiLink');
+        const cityWikiLabel = document.getElementById('cityWikiLabel');
 
-        const searchPanel =
-            document.getElementById(
-                'searchPanel'
-            );
-
-
-        const closeSearch =
-            document.getElementById(
-                'closeSearch'
-            );
-
-
-        const searchInput =
-            document.getElementById(
-                'searchInput'
-            );
-
-
-        const searchResults =
-            document.getElementById(
-                'searchResults'
-            );
-
-
-        const searchTitle =
-            document.getElementById(
-                'searchTitle'
-            );
-
-
-        const searchMode =
-            document.getElementById(
-                'searchMode'
-            );
-
-
-        const backToProvince =
-            document.getElementById(
-                'backToProvince'
-            );
-
-
-        /* =====================================================
-           LOCATION ELEMENT
-        ====================================================== */
-
-        const locationInfo =
-            document.getElementById(
-                'locationInfo'
-            );
-
-
-        const locationName =
-            document.getElementById(
-                'locationName'
-            );
-
-
-        const locationAddress =
-            document.getElementById(
-                'locationAddress'
-            );
-
-
-        /* =====================================================
-           CATEGORY ELEMENT
-        ====================================================== */
-
-        const categoryOptions =
-            document.getElementById(
-                'categoryOptions'
-            );
-
-
-        const wisataButton =
-            document.getElementById(
-                'wisataButton'
-            );
-
-
-        const kulinerButton =
-            document.getElementById(
-                'kulinerButton'
-            );
-
-
-        const placesLoading =
-            document.getElementById(
-                'placesLoading'
-            );
-
-
-        const clearPlaces =
-            document.getElementById(
-                'clearPlaces'
-            );
-
-
-        const placeSearchPanel =
-            document.getElementById(
-                'placeSearchPanel'
-            );
-
-
-        const placeSearchInput =
-            document.getElementById(
-                'placeSearchInput'
-            );
-
-
-        const placeSearchResults =
-            document.getElementById(
-                'placeSearchResults'
-            );
+        /* CATEGORY ELEMENT */
+        const categoryOptions = document.getElementById('categoryOptions');
+        const wisataButton = document.getElementById('wisataButton');
+        const kulinerButton = document.getElementById('kulinerButton');
+        const placesLoading = document.getElementById('placesLoading');
+        const clearPlaces = document.getElementById('clearPlaces');
+        const placeSearchPanel = document.getElementById('placeSearchPanel');
+        const placeSearchInput = document.getElementById('placeSearchInput');
+        const placeSearchResults = document.getElementById('placeSearchResults');
 
         const placeRatingSort = document.getElementById('placeRatingSort');
         const placeRatingNotice = document.getElementById('placeRatingNotice');
+        const placeRatingFilter = document.getElementById('placeRatingFilter');
+        const placeResultCount = document.getElementById('placeResultCount');
 
 
         /* =====================================================
@@ -1179,23 +717,14 @@
         ====================================================== */
 
         let currentCountry = indonesiaCountry;
-
         let currentProvince = null;
-
         let currentCity = null;
-
         let currentCountryMarker = null;
-
         let currentProvinceMarker = null;
-
         let currentCityMarker = null;
-
         let placeMarkers = [];
-
         let selectedPlaceMarker = null;
-
         let loadedPlaces = [];
-
         let currentPlaceCategory = '';
 
         /* =====================================================
@@ -1219,24 +748,16 @@
                     'box-shadow:0 3px 10px rgba(0,0,0,.4);' +
                     '"></div>',
 
-                iconSize:
-                    [34, 34],
-
-                iconAnchor:
-                    [17, 34],
-
-                popupAnchor:
-                    [0, -34]
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -34]
 
             });
 
         }
 
 
-        /* =====================================================
-           ICON KOTA
-        ====================================================== */
-
+        /* ICON KOTA */
         function createCityIcon() {
 
             return L.divIcon({
@@ -1254,68 +775,45 @@
                     'box-shadow:0 3px 10px rgba(0,0,0,.4);' +
                     '"></div>',
 
-                iconSize:
-                    [30, 30],
-
-                iconAnchor:
-                    [15, 30],
-
-                popupAnchor:
-                    [0, -30]
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
 
             });
 
         }
 
 
-        /* =====================================================
-           ICON WISATA
-        ====================================================== */
-
+        /* ICON WISATA */
         function createTourismIcon() {
 
             return L.divIcon({
 
                 className: '',
 
-                html:
-                    '<div class="tourism-marker"></div>',
+                html: '<div class="tourism-marker"></div>',
 
-                iconSize:
-                    [34, 34],
-
-                iconAnchor:
-                    [17, 34],
-
-                popupAnchor:
-                    [0, -34]
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -34]
 
             });
 
         }
 
 
-        /* =====================================================
-           ICON KULINER
-        ====================================================== */
-
+        /* ICON KULINER */
         function createFoodIcon() {
 
             return L.divIcon({
 
                 className: '',
 
-                html:
-                    '<div class="food-marker"></div>',
+                html: '<div class="food-marker"></div>',
 
-                iconSize:
-                    [34, 34],
-
-                iconAnchor:
-                    [17, 34],
-
-                popupAnchor:
-                    [0, -34]
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -34]
 
             });
 
@@ -1326,64 +824,41 @@
            SEARCH OPEN
         ====================================================== */
 
-        searchToggle.addEventListener(
-            'click',
-            function () {
+        searchToggle.addEventListener('click', function () {
 
-                searchPanel.style.display =
-                    'block';
+            searchPanel.style.display = 'block';
 
-                searchToggle.style.display =
-                    'none';
+            searchToggle.style.display = 'none';
 
-                searchInput.focus();
+            searchInput.focus();
 
-                renderProvinceResults();
+            renderProvinceResults();
 
-            }
-        );
+        });
 
 
-        /* =====================================================
-           SEARCH CLOSE
-        ====================================================== */
+        /* SEARCH CLOSE */
+        closeSearch.addEventListener('click', function () {
 
-        closeSearch.addEventListener(
-            'click',
-            function () {
+            searchPanel.style.display = 'none';
 
-                searchPanel.style.display =
-                    'none';
+            searchToggle.style.display = 'block';
 
-                searchToggle.style.display =
-                    'block';
-
-            }
-        );
+        });
 
 
-        /* =====================================================
-           ESC
-        ====================================================== */
+        /* ESC */
+        document.addEventListener('keydown', function (event) {
 
-        document.addEventListener(
-            'keydown',
-            function (event) {
+            if (event.key === 'Escape') {
 
-                if (
-                    event.key === 'Escape'
-                ) {
+                searchPanel.style.display = 'none';
 
-                    searchPanel.style.display =
-                        'none';
-
-                    searchToggle.style.display =
-                        'block';
-
-                }
+                searchToggle.style.display = 'block';
 
             }
-        );
+
+        });
 
 
         /* =====================================================
@@ -1392,17 +867,13 @@
 
         function renderProvinceResults(keyword = '') {
 
-            searchTitle.textContent =
-                '🔍 Cari Provinsi Indonesia';
+            searchTitle.textContent = '🔍 Cari Provinsi Indonesia';
 
-            searchMode.textContent =
-                'Indonesia';
+            searchMode.textContent = 'Indonesia';
 
-            searchInput.placeholder =
-                'Cari provinsi Indonesia...';
+            searchInput.placeholder = 'Cari provinsi Indonesia...';
 
-            backToProvince.style.display =
-                'none';
+            backToProvince.style.display = 'none';
 
             const search =
                 String(keyword || '').toLowerCase().trim();
@@ -1410,11 +881,12 @@
             const filtered = provinces
                 .filter(province => {
                     const name = normalizeProvinceName(province.name);
-                    return indonesiaProvinceNames.has(name) &&
-                        String(province.country_id) === String(indonesiaCountry.id);
+                    return indonesiaProvinceNames.has(name);
                 })
                 .filter(province =>
-                    String(province.name || '').toLowerCase().includes(search)
+                    normalizeProvinceName(province.name).includes(
+                        normalizeProvinceName(search)
+                    ) || String(province.name || '').toLowerCase().includes(search)
                 );
 
             searchResults.innerHTML = '';
@@ -1457,20 +929,15 @@
                 return;
             }
 
-            searchTitle.textContent =
-                '🔍 Cari Kota / Kabupaten';
+            searchTitle.textContent = '🔍 Cari Kota / Kabupaten';
 
-            searchMode.textContent =
-                currentProvince.name;
+            searchMode.textContent = currentProvince.name;
 
-            searchInput.placeholder =
-                'Cari kota atau kabupaten...';
+            searchInput.placeholder = 'Cari kota atau kabupaten...';
 
-            backToProvince.style.display =
-                'block';
+            backToProvince.style.display = 'block';
 
-            backToProvince.textContent =
-                '← Kembali ke Provinsi';
+            backToProvince.textContent = '← Kembali ke Provinsi';
 
             const search =
                 String(keyword || '').toLowerCase().trim();
@@ -1557,13 +1024,7 @@
            CARI PROVINSI OSM
         ====================================================== */
 
-        /* =====================================================
-           CARI PROVINSI OSM
-        ====================================================== */
-
-        async function searchProvinceOpenStreetMap(
-            province
-        ) {
+        async function searchProvinceOpenStreetMap(province) {
 
             try {
                 const url =
@@ -1615,14 +1076,7 @@
            TAMPILKAN PROVINSI
         ====================================================== */
 
-        function showProvinceOnMap(
-
-            latitude,
-            longitude,
-            name,
-            address
-
-        ) {
+        function showProvinceOnMap(latitude, longitude, name, address) {
 
             latitude = Number(latitude);
             longitude = Number(longitude);
@@ -1636,17 +1090,8 @@
 
             currentProvinceMarker =
                 L.marker(
-
-                    [
-                        latitude,
-                        longitude
-                    ],
-
-                    {
-                        icon:
-                            createProvinceIcon()
-                    }
-
+                    [latitude, longitude],
+                    { icon: createProvinceIcon() }
                 ).addTo(map);
 
 
@@ -1865,41 +1310,22 @@
                 });
             }
 
-            currentProvinceMarker
-                .openPopup();
-
+            currentProvinceMarker.openPopup();
 
             map.flyTo(
-
-                [
-                    latitude,
-                    longitude
-                ],
-
+                [latitude, longitude],
                 8,
-
                 {
-
                     animate: true,
-
                     duration: 1.8
-
                 }
-
             );
 
+            locationInfo.style.display = 'block';
 
-            locationInfo.style.display =
-                'block';
+            locationName.textContent = name;
 
-
-            locationName.textContent =
-                name;
-
-
-            locationAddress.textContent =
-                address;
-
+            locationAddress.textContent = address;
 
             searchInput.value = '';
 
@@ -1910,9 +1336,7 @@
            PILIH KOTA
         ====================================================== */
 
-        async function selectCity(
-            city
-        ) {
+        async function selectCity(city) {
 
             currentCity = {
                 ...city,
@@ -1946,9 +1370,7 @@
            CARI KOTA OSM / DATA WILAYAH
         ====================================================== */
 
-        async function searchCityOpenStreetMap(
-            city
-        ) {
+        async function searchCityOpenStreetMap(city) {
 
             try {
                 const url =
@@ -2007,14 +1429,7 @@
            TAMPILKAN KOTA
         ====================================================== */
 
-        function showCityOnMap(
-
-            latitude,
-            longitude,
-            name,
-            address
-
-        ) {
+        function showCityOnMap(latitude, longitude, name, address) {
 
             latitude = Number(latitude);
             longitude = Number(longitude);
@@ -2028,17 +1443,8 @@
 
             currentCityMarker =
                 L.marker(
-
-                    [
-                        latitude,
-                        longitude
-                    ],
-
-                    {
-                        icon:
-                            createCityIcon()
-                    }
-
+                    [latitude, longitude],
+                    { icon: createCityIcon() }
                 ).addTo(map);
 
 
@@ -2055,54 +1461,26 @@
 
                 `);
 
-
-            currentCityMarker
-                .openPopup();
-
+            currentCityMarker.openPopup();
 
             map.flyTo(
-
-                [
-                    latitude,
-                    longitude
-                ],
-
+                [latitude, longitude],
                 13,
-
                 {
-
                     animate: true,
-
                     duration: 1.8
-
                 }
-
             );
 
+            locationInfo.style.display = 'block';
 
-            locationInfo.style.display =
-                'block';
+            locationName.textContent = name;
 
+            locationAddress.textContent = address;
 
-            locationName.textContent =
-                name;
-
-
-            locationAddress.textContent =
-                address;
-
-
-            /*
-            =====================================================
-            INI YANG BARU
-
-            Setelah kota berhasil dipilih,
-            tombol Wisata dan Kuliner muncul.
-            =====================================================
-            */
-
-            categoryOptions.style.display =
-                'flex';
+            // Setelah kota berhasil dipilih,
+            // tombol Wisata dan Kuliner muncul.
+            categoryOptions.style.display = 'flex';
 
         }
 
@@ -2111,17 +1489,14 @@
            INPUT SEARCH
         ====================================================== */
 
-        searchInput.addEventListener(
-            'input',
-            function () {
+        searchInput.addEventListener('input', function () {
 
-                if (currentProvince) {
-                    renderCityResults(this.value);
-                } else {
-                    renderProvinceResults(this.value);
-                }
+            if (currentProvince) {
+                renderCityResults(this.value);
+            } else {
+                renderProvinceResults(this.value);
             }
-        );
+        });
 
 
         /* =====================================================
@@ -2202,38 +1577,25 @@
            WISATA
         ====================================================== */
 
-        /* =====================================================
-           WISATA
-        ====================================================== */
+        wisataButton.addEventListener('click', function () {
 
-        wisataButton.addEventListener(
-            'click',
-            function () {
-
-                if (!currentCity) {
-                    return;
-                }
-
-                loadPlaces('wisata');
+            if (!currentCity) {
+                return;
             }
-        );
+
+            loadPlaces('wisata');
+        });
 
 
-        /* =====================================================
-           KULINER
-        ====================================================== */
+        /* KULINER */
+        kulinerButton.addEventListener('click', function () {
 
-        kulinerButton.addEventListener(
-            'click',
-            function () {
-
-                if (!currentCity) {
-                    return;
-                }
-
-                loadPlaces('kuliner');
+            if (!currentCity) {
+                return;
             }
-        );
+
+            loadPlaces('kuliner');
+        });
 
 
         /* =====================================================
@@ -2257,8 +1619,7 @@
 
                 if (currentCityMarker) {
 
-                    const position =
-                        currentCityMarker.getLatLng();
+                    const position = currentCityMarker.getLatLng();
 
                     latitude = position.lat;
                     longitude = position.lng;
@@ -2308,16 +1669,17 @@
                 }
 
                 loadedPlaces = data.places || [];
+                if (placeRatingFilter) {
+                    placeRatingFilter.value = 'all';
+                }
                 if (placeRatingNotice) {
-                    placeRatingNotice.textContent = data.ratings_available
-                        ? 'Rating Google Places diperbarui saat data tempat dimuat.'
-                        : 'Rating real-time memerlukan GOOGLE_MAPS_API_KEY di file .env; tanpa kunci, rating tidak tersedia.';
+                    placeRatingNotice.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        <span>Google Maps Rating (${loadedPlaces.length} data)</span>
+                    `;
                 }
 
-                renderPlaceSearchResults(
-                    sortPlacesByRating(loadedPlaces),
-                    category
-                );
+                applyFiltersAndSort();
 
             } catch (error) {
 
@@ -2358,17 +1720,19 @@
                 placeSearchResults.innerHTML = `
                     <div
                         style="
-                            padding:12px;
-                            color:#666;
-                            background:#f5f5f5;
-                            border-radius:8px;
-                            font-size:13px;
+                            padding:14px;
+                            color:#64748b;
+                            background:#f8fafc;
+                            border:1px dashed #cbd5e1;
+                            border-radius:9px;
+                            font-size:12.5px;
+                            text-align:center;
                         "
                     >
                         ${
                             category === 'wisata'
-                                ? 'Tidak ditemukan tempat wisata.'
-                                : 'Tidak ditemukan tempat kuliner.'
+                                ? 'Tidak ada tempat wisata yang sesuai dengan filter atau pencarian.'
+                                : 'Tidak ada tempat kuliner yang sesuai dengan filter atau pencarian.'
                         }
                     </div>
                 `;
@@ -2383,9 +1747,12 @@
                         place.distance !== undefined
                             ? `${place.distance} km`
                             : '';
-                    const ratingText = (place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating)))
-                        ? `⭐ ${Number(place.rating).toFixed(1)}/5${place.user_rating_count ? ` (${Number(place.user_rating_count).toLocaleString('id-ID')} ulasan)` : ''}`
-                        : '⭐ Rating belum tersedia';
+                    const rating = Number(place.rating || 0);
+                    const reviewCount = Number(place.user_rating_count || 0);
+                    const fullStars = Math.min(5, Math.max(0, Math.round(rating)));
+                    const starsHtml = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
+                    const googleMapsUrl = place.google_maps_url ||
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.address || ''))}`;
 
                     return `
                         <div
@@ -2393,157 +1760,213 @@
                             data-index="${index}"
                             style="
                                 padding:11px 12px;
-                                margin-bottom:6px;
+                                margin-bottom:7px;
                                 background:white;
-                                border:1px solid #e0e0e0;
-                                border-radius:9px;
+                                border:1px solid #e2e8f0;
+                                border-radius:10px;
                                 cursor:pointer;
-                                transition:.2s;
+                                transition:all .2s ease;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.03);
                             "
                         >
-                            <div
-                                style="
-                                    font-weight:600;
-                                    font-size:14px;
-                                    color:#222;
-                                "
-                            >
-                                ${category === 'wisata' ? '🏞️' : '🍜'}
-                                ${escapeHtml(place.name)}
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                                <div
+                                    style="
+                                        font-weight:700;
+                                        font-size:13.5px;
+                                        color:#1e293b;
+                                        line-height:1.35;
+                                    "
+                                >
+                                    ${category === 'wisata' ? '🏞️' : '🍜'}
+                                    ${escapeHtml(place.name)}
+                                </div>
+                                ${distance ? `
+                                    <span style="flex-shrink:0;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;">
+                                        ${distance}
+                                    </span>
+                                ` : ''}
                             </div>
 
                             <div
                                 style="
-                                    margin-top:4px;
-                                    font-size:12px;
-                                    color:#777;
+                                    margin-top:3px;
+                                    font-size:11.5px;
+                                    color:#64748b;
                                 "
                             >
                                 ${escapeHtml(place.type || '')}
-                                ${distance ? ` • ${distance}` : ''}
                             </div>
-                            <div style="margin-top:5px;font-size:12px;color:${(place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating))) ? '#b77900' : '#888'};font-weight:600;">
-                                ${ratingText}
+
+                            <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="display:inline-flex;align-items:center;gap:2px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:700;font-size:11.5px;">
+                                        ⭐ ${rating.toFixed(1)}
+                                    </span>
+                                    <span style="color:#d97706;font-size:11px;letter-spacing:0.5px;">
+                                        ${starsHtml}
+                                    </span>
+                                    <span style="font-size:11px;color:#64748b;">
+                                        (${reviewCount.toLocaleString('id-ID')})
+                                    </span>
+                                </div>
+
+                                <a
+                                    href="${googleMapsUrl}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="place-google-btn"
+                                    style="font-size:11px;color:#2563eb;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:5px;background:#eff6ff;"
+                                    title="Lihat ulasan dan foto di Google Maps"
+                                >
+                                    Google ↗
+                                </a>
                             </div>
                         </div>
                     `;
                 }).join('');
 
             const items =
-                placeSearchResults.querySelectorAll(
-                    '.place-search-item'
-                );
+                placeSearchResults.querySelectorAll('.place-search-item');
 
             items.forEach(item => {
 
-                item.addEventListener(
-                    'mouseenter',
-                    function () {
-                        this.style.background = '#f5f5f5';
+                item.addEventListener('mouseenter', function () {
+                    this.style.background = '#f8fafc';
+                    this.style.borderColor = '#cbd5e1';
+                });
+
+                item.addEventListener('mouseleave', function () {
+                    this.style.background = 'white';
+                    this.style.borderColor = '#e2e8f0';
+                });
+
+                item.addEventListener('click', function () {
+
+                    const index = parseInt(this.dataset.index, 10);
+
+                    const place = places[index];
+
+                    if (place) {
+                        showSelectedPlace(place, category);
                     }
-                );
+                });
+            });
 
-                item.addEventListener(
-                    'mouseleave',
-                    function () {
-                        this.style.background = 'white';
-                    }
-                );
-
-                item.addEventListener(
-                    'click',
-                    function () {
-
-                        const index =
-                            parseInt(this.dataset.index, 10);
-
-                        const place =
-                            places[index];
-
-                        if (place) {
-                            showSelectedPlace(
-                                place,
-                                category
-                            );
-                        }
-                    }
-                );
+            const googleButtons = placeSearchResults.querySelectorAll('.place-google-btn');
+            googleButtons.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
             });
         }
 
 
         /* =====================================================
-           SEARCH INPUT TEMPAT
+           FILTER & SORT TEMPAT (GOOGLE RATING & JARAK)
         ====================================================== */
 
-        function sortPlacesByRating(places) {
-            const sortMode = placeRatingSort ? placeRatingSort.value : 'default';
-            const sorted = [...places];
-            if (sortMode === 'rating-desc') {
-                sorted.sort((a, b) => {
-                    const ar = (a.rating !== null && a.rating !== undefined && a.rating !== '' && Number.isFinite(Number(a.rating))) ? Number(a.rating) : -1;
-                    const br = (b.rating !== null && b.rating !== undefined && b.rating !== '' && Number.isFinite(Number(b.rating))) ? Number(b.rating) : -1;
-                    return br - ar;
-                });
-            } else if (sortMode === 'rating-asc') {
-                sorted.sort((a, b) => {
-                    const ar = (a.rating !== null && a.rating !== undefined && a.rating !== '' && Number.isFinite(Number(a.rating))) ? Number(a.rating) : 6;
-                    const br = (b.rating !== null && b.rating !== undefined && b.rating !== '' && Number.isFinite(Number(b.rating))) ? Number(b.rating) : 6;
-                    return ar - br;
-                });
+        function applyFiltersAndSort() {
+            if (!loadedPlaces || loadedPlaces.length === 0) {
+                renderPlaceSearchResults([], currentPlaceCategory);
+                if (placeResultCount) placeResultCount.textContent = '0 tempat';
+                return;
             }
-            return sorted;
+
+            const keyword = placeSearchInput ? placeSearchInput.value.trim().toLowerCase() : '';
+            const sortMode = placeRatingSort ? placeRatingSort.value : 'rating-desc';
+            const filterRating = placeRatingFilter ? placeRatingFilter.value : 'all';
+
+            // 1. Filter pencarian teks
+            let filtered = loadedPlaces.filter(place => {
+                if (!keyword) return true;
+                const name = (place.name || '').toLowerCase();
+                const type = (place.type || '').toLowerCase();
+                const address = (place.address || '').toLowerCase();
+                return name.includes(keyword) || type.includes(keyword) || address.includes(keyword);
+            });
+
+            // 2. Filter batas rating minimum / kategori rating
+            if (filterRating !== 'all') {
+                if (filterRating === 'under-4') {
+                    filtered = filtered.filter(place => {
+                        const r = Number(place.rating);
+                        return Number.isFinite(r) && r < 4.0;
+                    });
+                } else {
+                    const min = parseFloat(filterRating);
+                    if (Number.isFinite(min)) {
+                        filtered = filtered.filter(place => {
+                            const r = Number(place.rating);
+                            return Number.isFinite(r) && r >= min;
+                        });
+                    }
+                }
+            }
+
+            // 3. Pengurutan (Rating tertinggi/terendah, ulasan terbanyak, atau terdekat)
+            filtered.sort((a, b) => {
+                const ar = (a.rating !== null && a.rating !== undefined && Number.isFinite(Number(a.rating))) ? Number(a.rating) : 0;
+                const br = (b.rating !== null && b.rating !== undefined && Number.isFinite(Number(b.rating))) ? Number(b.rating) : 0;
+                const ac = Number(a.user_rating_count) || 0;
+                const bc = Number(b.user_rating_count) || 0;
+                const ad = Number(a.distance) || 0;
+                const bd = Number(b.distance) || 0;
+
+                if (sortMode === 'rating-desc') {
+                    // Rating tertinggi ke terendah (5.0 -> 1.0)
+                    if (br !== ar) return br - ar;
+                    if (bc !== ac) return bc - ac; // Tie-breaker: ulasan terbanyak
+                    return ad - bd; // Tie-breaker: jarak terdekat
+                } else if (sortMode === 'rating-asc') {
+                    // Rating terendah ke tertinggi (1.0 -> 5.0)
+                    if (ar !== br) return ar - br;
+                    if (ac !== bc) return ac - bc;
+                    return ad - bd;
+                } else if (sortMode === 'reviews-desc') {
+                    // Ulasan terbanyak
+                    if (bc !== ac) return bc - ac;
+                    return br - ar;
+                } else {
+                    // Default: Jarak terdekat
+                    if (ad !== bd) return ad - bd;
+                    return br - ar;
+                }
+            });
+
+            if (placeResultCount) {
+                placeResultCount.textContent = `${filtered.length} tempat`;
+            }
+
+            renderPlaceSearchResults(filtered, currentPlaceCategory);
         }
 
         if (placeRatingSort) {
-            placeRatingSort.addEventListener('change', function () {
-                const keyword = placeSearchInput.value.trim().toLowerCase();
-                const filtered = loadedPlaces.filter(place =>
-                    (place.name || '').toLowerCase().includes(keyword) ||
-                    (place.type || '').toLowerCase().includes(keyword)
-                );
-                renderPlaceSearchResults(sortPlacesByRating(filtered), currentPlaceCategory);
-            });
+            placeRatingSort.addEventListener('change', applyFiltersAndSort);
         }
 
-        placeSearchInput.addEventListener(
-            'input',
-            function () {
+        if (placeRatingFilter) {
+            placeRatingFilter.addEventListener('change', applyFiltersAndSort);
+        }
 
-                const keyword =
-                    this.value.trim().toLowerCase();
+        if (placeSearchInput) {
+            placeSearchInput.addEventListener('input', applyFiltersAndSort);
+        }
 
-                if (keyword === '') {
 
-                    renderPlaceSearchResults(
-                        sortPlacesByRating(loadedPlaces),
-                        currentPlaceCategory
-                    );
+        /* =====================================================
+           KUNCI FAVORIT  (PERBAIKAN 1: fungsi yang sebelumnya hilang)
+        ====================================================== */
 
-                    return;
-                }
+        function makeFavoriteKey(place, latitude, longitude) {
+            const raw = [
+                place.place_id || place.id || place.name || 'tempat',
+                Number(latitude).toFixed(5),
+                Number(longitude).toFixed(5)
+            ].join('|');
 
-                const filtered =
-                    loadedPlaces.filter(place => {
-
-                        const name =
-                            (place.name || '').toLowerCase();
-
-                        const type =
-                            (place.type || '').toLowerCase();
-
-                        return (
-                            name.includes(keyword) ||
-                            type.includes(keyword)
-                        );
-                    });
-
-                renderPlaceSearchResults(
-                    sortPlacesByRating(filtered),
-                    currentPlaceCategory
-                );
-            }
-        );
+            return encodeURIComponent(raw);
+        }
 
 
         /* =====================================================
@@ -2562,11 +1985,15 @@
                 icon = createFoodIcon();
             }
 
-            const latitude =
-                parseFloat(place.latitude);
+            const latitude = parseFloat(place.latitude);
 
-            const longitude =
-                parseFloat(place.longitude);
+            const longitude = parseFloat(place.longitude);
+
+            // PERBAIKAN 2: pengaman koordinat
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                alert('Koordinat tempat ini tidak valid.');
+                return;
+            }
 
             const marker =
                 L.marker(
@@ -2579,30 +2006,131 @@
                     ? '🏞️ Wisata'
                     : '🍜 Kuliner';
 
+            const rating = Number(place.rating || 0);
+            const reviewCount = Number(place.user_rating_count || 0);
+            const fullStars = Math.min(5, Math.max(0, Math.round(rating)));
+            const starsHtml = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
+            const googleMapsUrl = place.google_maps_url ||
+                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.address || ''))}`;
+            const directionUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+            const favoriteKey = makeFavoriteKey(place, latitude, longitude);
+
+            const favoriteButton = `
+                <button
+                    type="button"
+                    class="favorite-toggle-btn"
+                    data-place-key="${favoriteKey}"
+                    style="
+                        display:inline-flex;
+                        align-items:center;
+                        gap:6px;
+                        padding:7px 10px;
+                        background:#fff1f2;
+                        color:#dc2626;
+                        border:1px solid #fecdd3;
+                        border-radius:7px;
+                        font-size:12px;
+                        font-weight:700;
+                        cursor:pointer;
+                    "
+                >
+                    <span class="favorite-heart">♡</span>
+                    <span class="favorite-label">Memeriksa...</span>
+                </button>
+            `;
+
+
             marker.bindPopup(`
-                <div class="place-popup-title">
+                <div class="place-popup-title" style="font-size:14px;font-weight:700;margin-bottom:2px;">
                     ${escapeHtml(place.name)}
                 </div>
 
-                <div class="place-popup-type">
-                    ${categoryName}
-                    •
-                    ${escapeHtml(place.type || '')}
+                <div class="place-popup-type" style="font-size:11.5px;color:#64748b;">
+                    ${categoryName} • ${escapeHtml(place.type || '')}
+                    ${place.distance !== undefined ? ` • ${place.distance} km` : ''}
                 </div>
-                <div style="margin-top:6px;font-size:13px;color:#b77900;font-weight:600;">
-                    ${(place.rating !== null && place.rating !== undefined && place.rating !== '' && Number.isFinite(Number(place.rating))) ? `⭐ ${Number(place.rating).toFixed(1)}/5${place.user_rating_count ? ` (${Number(place.user_rating_count).toLocaleString('id-ID')} ulasan)` : ''}` : '⭐ Rating belum tersedia'}
+
+                <div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span style="display:inline-flex;align-items:center;gap:2px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:700;font-size:12px;">
+                        ⭐ ${rating.toFixed(1)}/5
+                    </span>
+                    <span style="color:#d97706;font-size:11px;letter-spacing:0.5px;">
+                        ${starsHtml}
+                    </span>
+                    <span style="font-size:11.5px;color:#64748b;">
+                        (${reviewCount.toLocaleString('id-ID')} ulasan Google)
+                    </span>
                 </div>
 
                 ${
                     place.address
                         ? `
-                            <div class="place-popup-address">
-                                ${escapeHtml(place.address)}
+                            <div class="place-popup-address" style="margin-top:6px;font-size:11.5px;color:#475569;">
+                                📍 ${escapeHtml(place.address)}
                             </div>
                         `
                         : ''
                 }
+
+                <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                    <a
+                        href="${googleMapsUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1a73e8;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;"
+                    >
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        Google Maps ↗
+                    </a>
+                    <a
+                        href="${directionUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#fff;color:#1a73e8;border:1px solid #1a73e8;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;"
+                    >
+                        🚗 Rute
+                    </a>
+                    ${favoriteButton}
+                </div>
             `);
+
+            // PERBAIKAN 3: aktifkan tombol favorit di popup
+            marker.on('popupopen', function (e) {
+                const popupEl = e.popup.getElement();
+                if (!popupEl) return;
+
+                const btn = popupEl.querySelector('.favorite-toggle-btn');
+                if (!btn) return;
+
+                const heart = btn.querySelector('.favorite-heart');
+                const label = btn.querySelector('.favorite-label');
+                const storageKey = 'jelajah_favorite_' + btn.dataset.placeKey;
+
+                function isFavorite() {
+                    try { return localStorage.getItem(storageKey) === '1'; }
+                    catch (err) { return false; }
+                }
+
+                function render() {
+                    const fav = isFavorite();
+                    heart.textContent = fav ? '♥' : '♡';
+                    label.textContent = fav ? 'Tersimpan' : 'Simpan Favorit';
+                }
+
+                btn.onclick = function (ev) {
+                    ev.stopPropagation();
+                    try {
+                        if (isFavorite()) localStorage.removeItem(storageKey);
+                        else localStorage.setItem(storageKey, '1');
+                    } catch (err) {
+                        console.warn('Favorit tidak dapat disimpan:', err);
+                    }
+                    render();
+                };
+
+                render();
+            });
 
             marker.addTo(map);
 
@@ -2631,7 +2159,6 @@
         function clearPlaceMarkers() {
 
             placeMarkers.forEach(marker => {
-
                 map.removeLayer(marker);
             });
 
@@ -2642,66 +2169,30 @@
         }
 
 
-        /* =====================================================
-           BUTTON HAPUS MARKER
-        ====================================================== */
-
-        clearPlaces.addEventListener(
-            'click',
-            function () {
-                clearPlaceMarkers();
-            }
-        );
+        /* BUTTON HAPUS MARKER */
+        clearPlaces.addEventListener('click', function () {
+            clearPlaceMarkers();
+        });
 
 
         /* =====================================================
            ESCAPE HTML
         ====================================================== */
 
-        function escapeHtml(
-            value
-        ) {
+        function escapeHtml(value) {
 
-            if (
-                value === null ||
-                value === undefined
-            ) {
-
+            if (value === null || value === undefined) {
                 return '';
-
             }
 
-
             return String(value)
-
-                .replace(
-                    /&/g,
-                    '&amp;'
-                )
-
-                .replace(
-                    /</g,
-                    '&lt;'
-                )
-
-                .replace(
-                    />/g,
-                    '&gt;'
-                )
-
-                .replace(
-                    /"/g,
-                    '&quot;'
-                )
-
-                .replace(
-                    /'/g,
-                    '&#039;'
-                );
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
 
         }
-
-
 
 
         /* =====================================================

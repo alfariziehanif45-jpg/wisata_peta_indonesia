@@ -1,21 +1,193 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TravelController;
+use App\Http\Controllers\FavoritePlaceController;
 
-Route::get('/', [MapController::class, 'index'])->name('map.index');
+/*
+|--------------------------------------------------------------------------
+| Autentikasi
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/provinsi/{slug}', [MapController::class, 'province'])->name('map.province');
+// Login
+Route::get('/login', [AuthController::class, 'showLogin'])
+    ->name('login');
 
-Route::get('/kota/{slug}', [MapController::class, 'city'])->name('map.city');
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.store');
 
-Route::get('/api/geocode', [MapController::class, 'geocode'])->name('map.geocode');
+// Register
+Route::get('/register', [AuthController::class, 'showRegister'])
+    ->name('register');
 
-Route::get('/api/places', [MapController::class, 'places'])->name('map.places');
+Route::post('/register', [AuthController::class, 'register'])
+    ->name('register.store');
 
-Route::get('/api/countries', [MapController::class, 'countries'])->name('map.countries');
+// Logout
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
-Route::get('/api/countries/{country}/provinces', [MapController::class, 'provinces'])->name('map.provinces');
 
-Route::get('/api/provinces/{province}/cities', [MapController::class, 'cities'])->name('map.cities');
+/*
+|--------------------------------------------------------------------------
+| Peta Wisata
+|--------------------------------------------------------------------------
+*/
 
+Route::get('/', [MapController::class, 'index'])
+    ->name('map.index');
+
+Route::get('/provinsi/{slug}', [MapController::class, 'province'])
+    ->name('map.province');
+
+Route::get('/kota/{slug}', [MapController::class, 'city'])
+    ->name('map.city');
+
+
+/*
+|--------------------------------------------------------------------------
+| API Peta
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/api/geocode', [MapController::class, 'geocode'])
+    ->name('map.geocode');
+
+Route::get('/api/places', [MapController::class, 'places'])
+    ->name('map.places');
+
+Route::get('/api/countries', [MapController::class, 'countries'])
+    ->name('map.countries');
+
+Route::get('/api/countries/{country}/provinces', [
+    MapController::class,
+    'provinces'
+])->name('map.provinces');
+
+Route::get('/api/provinces/{province}/cities', [
+    MapController::class,
+    'cities'
+])->name('map.cities');
+
+
+/*
+|--------------------------------------------------------------------------
+| Fitur Pengguna yang Sudah Login
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profil Pengguna
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/profile', [ProfileController::class, 'show'])
+        ->name('profile.show');
+
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::put('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Favorit Manual
+    |--------------------------------------------------------------------------
+    |
+    | Pengguna dapat menambah, melihat, mengedit, dan menghapus
+    | destinasi favorit miliknya sendiri.
+    |
+    */
+
+    Route::get('/favorites', [FavoritePlaceController::class, 'index'])
+        ->name('favorites.index');
+
+    Route::get('/favorites/create', [FavoritePlaceController::class, 'create'])
+        ->name('favorites.create');
+
+    Route::post('/favorites', [FavoritePlaceController::class, 'store'])
+        ->name('favorites.store');
+
+    Route::get('/favorites/{id}/edit', [FavoritePlaceController::class, 'edit'])
+        ->name('favorites.edit');
+
+    Route::put('/favorites/{id}', [FavoritePlaceController::class, 'update'])
+        ->name('favorites.update');
+
+    Route::delete('/favorites/{id}', [FavoritePlaceController::class, 'destroy'])
+        ->name('favorites.destroy');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Favorit dari Tombol Hati pada Popup Peta
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/favorite-places/status', [
+        FavoritePlaceController::class,
+        'status'
+    ])->name('favorite-places.status');
+
+    Route::post('/favorite-places/toggle', [
+        FavoritePlaceController::class,
+        'toggle'
+    ])->name('favorite-places.toggle');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rencana Perjalanan
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/trips', [TravelController::class, 'trips'])
+        ->name('trips.index');
+
+    Route::post('/trips', [TravelController::class, 'storeTrip'])
+        ->name('trips.store');
+
+    Route::post('/trips/{trip}/places', [
+        TravelController::class,
+        'addTripPlace'
+    ])->name('trips.places.store');
+
+    Route::patch('/trips/{trip}/places/{place}/visited', [
+        TravelController::class,
+        'toggleVisited'
+    ])->name('trips.places.toggle');
+
+    Route::post('/trips/{trip}/complete', [
+        TravelController::class,
+        'completeTrip'
+    ])->name('trips.complete');
+
+    Route::delete('/trips/{trip}', [
+        TravelController::class,
+        'destroyTrip'
+    ])->name('trips.destroy');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pencapaian
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/achievements', [
+        TravelController::class,
+        'achievements'
+    ])->name('achievements.index');
+
+});

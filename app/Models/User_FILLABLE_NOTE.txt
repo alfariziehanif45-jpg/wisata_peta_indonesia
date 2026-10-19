@@ -1,0 +1,10 @@
+Pastikan app/Models/User.php memiliki kolom berikut di dalam array $fillable yang sudah ada:
+'name',
+'email',
+'password',
+'username',
+'location',
+'bio',
+'avatar_path',
+
+Jangan mengganti seluruh User.php. Pertahankan relasi, casts, dan method lain yang sudah ada.

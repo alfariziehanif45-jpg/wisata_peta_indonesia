@@ -8,20 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('provinces', function (Blueprint $table) {
-            $table->foreignId('country_id')
-                ->nullable()
-                ->after('id')
-                ->constrained('countries')
-                ->cascadeOnDelete();
-        });
+        if (!Schema::hasColumn('provinces', 'country_id')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->foreignId('country_id')->nullable()->after('id')
+                    ->constrained('countries')->cascadeOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('provinces', function (Blueprint $table) {
-            $table->dropForeign(['country_id']);
-            $table->dropColumn('country_id');
-        });
+        if (Schema::hasColumn('provinces', 'country_id')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->dropForeign(['country_id']);
+                $table->dropColumn('country_id');
+            });
+        }
     }
 };
