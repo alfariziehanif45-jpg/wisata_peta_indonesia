@@ -22,12 +22,23 @@
 
         * { box-sizing: border-box; }
 
+        html { background: var(--bg); }
+
         body {
             margin: 0;
-            background: var(--bg);
+            min-height: 100vh;
+            background: transparent;
             color: var(--ink);
             font-family: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* Lapisan background halaman profil (diatur dari halaman edit) */
+        .page-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: var(--bg);
         }
 
         .container {
@@ -67,22 +78,40 @@
             overflow: hidden;
         }
 
+        /* ===== COVER (default / gradien / foto / video) ===== */
         .cover {
             height: 150px;
+            position: relative;
+            overflow: hidden;
+            background: #111827;
+        }
+
+        .cover.is-default {
             background:
                 radial-gradient(circle at 15% 20%, rgba(255,255,255,.25), transparent 40%),
                 radial-gradient(circle at 85% 80%, rgba(255,255,255,.18), transparent 45%),
                 linear-gradient(120deg, var(--red-dark), var(--red) 50%, var(--orange));
-            position: relative;
         }
 
-        .cover::after {
+        .cover.is-default::after,
+        .cover.is-gradient::after {
             content: "";
             position: absolute;
             inset: 0;
             background-image: radial-gradient(rgba(255,255,255,.18) 1.5px, transparent 1.5px);
             background-size: 22px 22px;
             opacity: .6;
+            pointer-events: none;
+        }
+
+        .cover img,
+        .cover video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .head {
@@ -124,12 +153,15 @@
             line-height: 1.2;
             margin: 0 0 4px;
             letter-spacing: -.02em;
+            color: var(--ink);
+            overflow-wrap: anywhere;
         }
 
         .username {
             color: var(--red);
             font-weight: 600;
             font-size: 15px;
+            overflow-wrap: anywhere;
         }
 
         .chips {
@@ -431,6 +463,33 @@
 
         .empty-icon { font-size: 40px; margin-bottom: 6px; }
 
+        /* Info tambahan kartu favorit (rating, jenis, lokasi) */
+        .fav-badges {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin: -4px 0 10px;
+        }
+
+        .fav-rating {
+            padding: 3px 9px;
+            border-radius: 7px;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+
+        .fav-type {
+            padding: 3px 9px;
+            border-radius: 7px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
         form { margin: 0; }
 
         /* ===== FOOTER ACTIONS ===== */
@@ -477,7 +536,47 @@
     </style>
 </head>
 
+@php
+    // ===== Destinasi favorit =====
+    // Dibaca langsung dari database, sehingga favorit dari tombol hati di peta
+    // dan favorit manual sama-sama tampil otomatis.
+    $favoritePlaces = $user->favoritePlaces()->latest()->get();
+    $favoriteCount  = $favoritePlaces->count();
+
+    // ===== Sampul profil =====
+    $coverType = $user->cover_type ?? 'default';
+    $coverSrc  = $user->cover_path ? asset('storage/' . $user->cover_path) : null;
+
+    if (in_array($coverType, ['image', 'video']) && !$coverSrc) {
+        $coverType = 'default';
+    }
+
+    $coverColor1 = $user->cover_color ?: '#dc2626';
+    $coverColor2 = $user->cover_color2 ?: '#f97316';
+
+    // ===== Warna tulisan nama & username =====
+    $nameColor = $user->name_color;
+    $userColor = $user->username_color;
+
+    // ===== Background halaman profil =====
+    $bgType = $user->bg_type ?? 'default';
+    $bgSrc  = $user->bg_path ? asset('storage/' . $user->bg_path) : null;
+    $bgC1   = $user->bg_color ?: '#f6f7fb';
+    $bgC2   = $user->bg_color2 ?: '#fde68a';
+
+    $pageBgStyle = '';
+    if ($bgType === 'color') {
+        $pageBgStyle = "background: {$bgC1};";
+    } elseif ($bgType === 'gradient') {
+        $pageBgStyle = "background: linear-gradient(135deg, {$bgC1}, {$bgC2});";
+    } elseif ($bgType === 'image' && $bgSrc) {
+        $pageBgStyle = "background: #111827 url('{$bgSrc}') center / cover no-repeat;";
+    }
+@endphp
+
 <body>
+<div class="page-bg" style="{{ $pageBgStyle }}"></div>
+
 <main class="container">
 
     @if(session('success'))
@@ -497,7 +596,18 @@
 
     <div class="profile-card">
 
-        <div class="cover"></div>
+        {{-- SAMPUL PROFIL --}}
+        <div class="cover {{ $coverType === 'gradient' ? 'is-gradient' : ($coverType === 'default' ? 'is-default' : 'is-media') }}"
+             @if($coverType === 'gradient')
+                 style="background: linear-gradient(120deg, {{ $coverColor1 }}, {{ $coverColor2 }});"
+             @endif>
+
+            @if($coverType === 'image')
+                <img src="{{ $coverSrc }}" alt="Sampul profil">
+            @elseif($coverType === 'video')
+                <video src="{{ $coverSrc }}" autoplay muted loop playsinline></video>
+            @endif
+        </div>
 
         {{-- INFORMASI PROFIL --}}
         <section class="head">
@@ -514,9 +624,9 @@
             </div>
 
             <div class="info">
-                <h1>{{ $user->name }}</h1>
+                <h1 @if($nameColor) style="color: {{ $nameColor }} !important;" @endif>{{ $user->name }}</h1>
 
-                <div class="username">
+                <div class="username" @if($userColor) style="color: {{ $userColor }} !important;" @endif>
                     @ {{ $user->username ?: \Illuminate\Support\Str::slug($user->name, '_') }}
                 </div>
 
@@ -574,7 +684,7 @@
             <span class="item-arrow">›</span>
         </a>
 
-        <a class="item" href="{{ route('favorites.index') }}">
+        <a class="item" href="#destinasi-favorit">
             <span class="item-icon">♡</span>
             Wisata favorit
             <span class="item-arrow">›</span>
@@ -594,7 +704,7 @@
     </nav>
 
     {{-- DAFTAR FAVORIT MANUAL --}}
-    <section class="favorite-section">
+    <section class="favorite-section" id="destinasi-favorit">
         <div class="favorite-heading">
             <h2>♡ Destinasi Favorit Saya</h2>
 
@@ -606,26 +716,71 @@
         @if(isset($favoritePlaces) && $favoritePlaces->isNotEmpty())
             <div class="favorite-list">
                 @foreach($favoritePlaces as $place)
+                    @php
+                        $attrs = $place->getAttributes();
+
+                        // Tautan peta: kolom lama "url" atau "google_maps_url" dari tombol hati
+                        $mapsLink = $attrs['url'] ?? ($attrs['google_maps_url'] ?? null);
+
+                        $hasCoords = isset($attrs['latitude'], $attrs['longitude'])
+                            && $attrs['latitude'] !== null
+                            && $attrs['longitude'] !== null;
+
+                        $routeUrl = $hasCoords
+                            ? 'https://www.google.com/maps/dir/?api=1&destination=' . $attrs['latitude'] . ',' . $attrs['longitude']
+                            : null;
+
+                        $categoryLabel = match (strtolower((string) $place->category)) {
+                            'wisata'  => '🏞️ Wisata',
+                            'kuliner' => '🍜 Kuliner',
+                            ''        => 'Lainnya',
+                            default   => ucfirst((string) $place->category),
+                        };
+
+                        $lokasi = collect([$attrs['city'] ?? null, $attrs['province'] ?? null])
+                            ->filter()
+                            ->implode(', ');
+
+                        $ratingValue = $attrs['rating'] ?? null;
+                        $jenis       = $attrs['type'] ?? null;
+                    @endphp
+
                     <article class="favorite-card">
 
                         <span class="category">
-                            {{ $place->category ?: 'Lainnya' }}
+                            {{ $categoryLabel }}
                         </span>
 
                         <h3>♡ {{ $place->name }}</h3>
+
+                        @if($ratingValue || $jenis)
+                            <div class="fav-badges">
+                                @if($ratingValue)
+                                    <span class="fav-rating">⭐ {{ number_format((float) $ratingValue, 1) }}</span>
+                                @endif
+
+                                @if($jenis)
+                                    <span class="fav-type">{{ $jenis }}</span>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if($lokasi)
+                            <p><strong>{{ $lokasi }}</strong></p>
+                        @endif
 
                         @if($place->address)
                             <p>📍 {{ $place->address }}</p>
                         @endif
 
-                        @if($place->description)
-                            <p>{{ $place->description }}</p>
+                        @if($attrs['description'] ?? null)
+                            <p>{{ $attrs['description'] }}</p>
                         @endif
 
-                        @if($place->url)
+                        @if($mapsLink)
                             <p>
                                 <a class="maps"
-                                   href="{{ $place->url }}"
+                                   href="{{ $mapsLink }}"
                                    target="_blank"
                                    rel="noopener noreferrer">
                                     Lihat di Google Maps ↗
@@ -634,6 +789,15 @@
                         @endif
 
                         <div class="card-actions">
+                            @if($routeUrl)
+                                <a class="small-btn"
+                                   href="{{ $routeUrl }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    🚗 Rute
+                                </a>
+                            @endif
+
                             <a class="small-btn"
                                href="{{ route('favorites.edit', $place->id) }}">
                                 ✎ Edit
@@ -664,7 +828,7 @@
             <div class="empty">
                 <div class="empty-icon">🗺️</div>
                 Kamu belum memiliki destinasi favorit.<br>
-                Tambahkan destinasi secara manual dengan tombol
+                Tekan tombol ♡ pada tempat di peta, atau tambahkan secara manual dengan tombol
                 <strong>Tambah Favorit</strong> di atas.
             </div>
         @endif

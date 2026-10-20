@@ -49,12 +49,10 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        $hex = ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'];
+
         $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+            'name' => ['required', 'string', 'max:255'],
 
             'username' => [
                 'required',
@@ -71,41 +69,38 @@ class ProfileController extends Controller
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
 
-            'domicile' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
+            'domicile' => ['nullable', 'string', 'max:100'],
+            'bio'      => ['nullable', 'string', 'max:500'],
 
-            'bio' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
-            'avatar' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-            ],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
 
-            'password' => [
-                'nullable',
-                'string',
-                'min:8',
-                'confirmed',
-            ],
+            // ===== Sampul profil (foto/video bagian atas) =====
+            'cover_type'   => ['required', Rule::in(['default', 'gradient', 'media'])],
+            'cover_color'  => $hex,
+            'cover_color2' => $hex,
+            'cover_file'   => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,mp4,webm', 'max:20480'],
+
+            // ===== Warna tulisan =====
+            'name_color'     => $hex,
+            'username_color' => $hex,
+
+            // ===== Background halaman profil =====
+            'bg_type'   => ['required', Rule::in(['default', 'color', 'gradient', 'image'])],
+            'bg_color'  => $hex,
+            'bg_color2' => $hex,
+            'bg_file'   => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        // Memperbarui data dasar pengguna.
+        // Data dasar
         $user->name = $validated['name'];
         $user->username = $validated['username'];
         $user->email = $validated['email'];
         $user->domicile = $validated['domicile'] ?? null;
         $user->bio = $validated['bio'] ?? null;
 
-        // Memperbarui foto profil jika pengguna mengunggah foto baru.
+        // Foto profil
         if ($request->hasFile('avatar')) {
             $oldAvatar = $user->avatar_path;
 
@@ -113,21 +108,102 @@ class ProfileController extends Controller
                 ->file('avatar')
                 ->store('profile-photos', 'public');
 
-            // Menghapus foto profil lama setelah foto baru disimpan.
             if ($oldAvatar) {
                 Storage::disk('public')->delete($oldAvatar);
             }
         }
 
-        // Mengubah password hanya jika kolom password diisi.
+        // Password
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
+
+        // Warna tulisan (kosong = kembali ke warna bawaan)
+        $user->name_color = $validated['name_color'] ?? null;
+        $user->username_color = $validated['username_color'] ?? null;
+
+        $this->updateCover($request, $user, $validated);
+        $this->updateBackground($request, $user, $validated);
 
         $user->save();
 
         return redirect()
             ->route('profile.show')
             ->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    /**
+     * Sampul profil: default, gradien, atau foto/video.
+     */
+    private function updateCover(Request $request, $user, array $validated): void
+    {
+        $choice = $validated['cover_type'];
+
+        $user->cover_color  = $validated['cover_color']  ?? $user->cover_color;
+        $user->cover_color2 = $validated['cover_color2'] ?? $user->cover_color2;
+
+        if ($choice === 'media') {
+            if ($request->hasFile('cover_file')) {
+                $oldCover = $user->cover_path;
+                $file = $request->file('cover_file');
+
+                $user->cover_path = $file->store('covers', 'public');
+                $user->cover_type = str_starts_with((string) $file->getMimeType(), 'video/')
+                    ? 'video'
+                    : 'image';
+
+                if ($oldCover) {
+                    Storage::disk('public')->delete($oldCover);
+                }
+            } elseif (!$user->cover_path) {
+                $user->cover_type = 'default';
+            }
+
+            return;
+        }
+
+        if ($user->cover_path) {
+            Storage::disk('public')->delete($user->cover_path);
+            $user->cover_path = null;
+        }
+
+        $user->cover_type = $choice;
+    }
+
+    /**
+     * Background halaman profil: default, warna, gradien, atau foto.
+     */
+    private function updateBackground(Request $request, $user, array $validated): void
+    {
+        $choice = $validated['bg_type'];
+
+        $user->bg_color  = $validated['bg_color']  ?? $user->bg_color;
+        $user->bg_color2 = $validated['bg_color2'] ?? $user->bg_color2;
+
+        if ($choice === 'image') {
+            if ($request->hasFile('bg_file')) {
+                $oldBg = $user->bg_path;
+
+                $user->bg_path = $request->file('bg_file')->store('backgrounds', 'public');
+                $user->bg_type = 'image';
+
+                if ($oldBg) {
+                    Storage::disk('public')->delete($oldBg);
+                }
+            } elseif (!$user->bg_path) {
+                $user->bg_type = 'default';
+            } else {
+                $user->bg_type = 'image';
+            }
+
+            return;
+        }
+
+        if ($user->bg_path) {
+            Storage::disk('public')->delete($user->bg_path);
+            $user->bg_path = null;
+        }
+
+        $user->bg_type = $choice;
     }
 }

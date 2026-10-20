@@ -2,166 +2,155 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FavoritePlace;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class FavoritePlaceController extends Controller
 {
-    private function userFavorites()
+    /* =====================================================
+       FAVORIT DARI TOMBOL HATI PADA POPUP PETA
+    ====================================================== */
+
+    /**
+     * Daftar kunci tempat yang sudah difavoritkan pengguna.
+     * Opsional: ?keys[]=a&keys[]=b untuk memeriksa kunci tertentu saja.
+     */
+    public function status(Request $request): JsonResponse
     {
-        return FavoritePlace::where('user_id', auth()->id());
+        $query = $request->user()->favoritePlaces();
+
+        $keys = $request->query('keys');
+
+        if (is_array($keys) && count($keys) > 0) {
+            $query->whereIn('place_key', array_map('strval', $keys));
+        }
+
+        return response()->json([
+            'success'   => true,
+            'favorites' => $query->pluck('place_key')->values(),
+        ]);
     }
 
-    // Menampilkan daftar favorit
-    public function index()
-    {
-        $favorites = $this->userFavorites()
-            ->latest()
-            ->paginate(9);
-
-        return view('favorites.index', compact('favorites'));
-    }
-
-    // Form tambah destinasi
-    public function create()
-    {
-        return view('favorites.create');
-    }
-
-    // Menyimpan destinasi baru
-    public function store(Request $request)
+    /**
+     * Simpan / hapus favorit (dipanggil dari tombol di peta).
+     * Jika tempat sudah ada di favorit -> dihapus, jika belum -> disimpan.
+     */
+    public function toggle(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category' => [
-                'required',
-                Rule::in([
-                    'Wisata Alam',
-                    'Kuliner',
-                    'Sejarah dan Budaya',
-                    'Penginapan',
-                    'Hiburan',
-                    'Lainnya',
-                ]),
-            ],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'url' => ['nullable', 'url', 'max:2048'],
-            'description' => ['nullable', 'string', 'max:5000'],
+            'place_key'         => ['required', 'string', 'max:191'],
+            'name'              => ['required', 'string', 'max:255'],
+            'category'          => ['required', 'in:wisata,kuliner'],
+            'type'              => ['nullable', 'string', 'max:255'],
+            'address'           => ['nullable', 'string', 'max:500'],
+            'latitude'          => ['required', 'numeric', 'between:-90,90'],
+            'longitude'         => ['required', 'numeric', 'between:-180,180'],
+            'rating'            => ['nullable', 'numeric', 'between:0,5'],
+            'user_rating_count' => ['nullable', 'integer', 'min:0'],
+            // Hanya izinkan tautan http/https
+            'google_maps_url'   => ['nullable', 'string', 'max:1000', 'regex:/^https?:\/\//i'],
+            'province'          => ['nullable', 'string', 'max:100'],
+            'city'              => ['nullable', 'string', 'max:100'],
         ]);
 
-        $data['user_id'] = $request->user()->id;
+        $user = $request->user();
 
-        // place_key dibuat unik untuk destinasi manual
-        $data['place_key'] = 'manual_' . uniqid();
+        $existing = $user->favoritePlaces()
+            ->where('place_key', $data['place_key'])
+            ->first();
 
-        FavoritePlace::create($data);
+        if ($existing) {
+            $existing->delete();
+            $favorited = false;
+        } else {
+            $user->favoritePlaces()->create($data);
+            $favorited = true;
+        }
 
-        return redirect()
-            ->route('favorites.index')
-            ->with('success', 'Destinasi berhasil ditambahkan ke favorit.');
-    }
-
-    // Form edit destinasi milik pengguna
-    public function edit(string $id)
-    {
-        $favorite = $this->userFavorites()->findOrFail($id);
-
-        return view('favorites.edit', compact('favorite'));
-    }
-
-    // Memperbarui destinasi
-    public function update(Request $request, string $id)
-    {
-        $favorite = $this->userFavorites()->findOrFail($id);
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category' => [
-                'required',
-                Rule::in([
-                    'Wisata Alam',
-                    'Kuliner',
-                    'Sejarah dan Budaya',
-                    'Penginapan',
-                    'Hiburan',
-                    'Lainnya',
-                ]),
-            ],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'url' => ['nullable', 'url', 'max:2048'],
-            'description' => ['nullable', 'string', 'max:5000'],
+        return response()->json([
+            'success'   => true,
+            'favorited' => $favorited,
+            'total'     => $user->favoritePlaces()->count(),
         ]);
-
-        $favorite->update($data);
-
-        return redirect()
-            ->route('favorites.index')
-            ->with('success', 'Destinasi favorit berhasil diperbarui.');
     }
 
-    // Menghapus destinasi milik pengguna
-    public function destroy(string $id)
+
+    /* =====================================================
+       FAVORIT MANUAL (tambah, lihat, edit, hapus)
+    ====================================================== */
+
+    /**
+     * Daftar favorit tampil di profil (bagian "Destinasi Favorit Saya").
+     */
+    public function index(): RedirectResponse
     {
-        $favorite = $this->userFavorites()->findOrFail($id);
+        return redirect()->to(route('profile.show') . '#destinasi-favorit');
+    }
+
+    public function create(): View
+    {
+        return view('favorites.form', ['favorite' => null]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $this->validateManual($request);
+
+        // Kunci unik untuk favorit yang diinput manual
+        $data['place_key'] = 'manual:' . Str::uuid();
+
+        $request->user()->favoritePlaces()->create($data);
+
+        return redirect()
+            ->to(route('profile.show') . '#destinasi-favorit')
+            ->with('success', 'Destinasi favorit ditambahkan.');
+    }
+
+    public function edit(Request $request, $id): View
+    {
+        $favorite = $request->user()->favoritePlaces()->findOrFail($id);
+
+        return view('favorites.form', ['favorite' => $favorite]);
+    }
+
+    public function update(Request $request, $id): RedirectResponse
+    {
+        $favorite = $request->user()->favoritePlaces()->findOrFail($id);
+
+        $favorite->update($this->validateManual($request));
+
+        return redirect()
+            ->to(route('profile.show') . '#destinasi-favorit')
+            ->with('success', 'Destinasi favorit diperbarui.');
+    }
+
+    public function destroy(Request $request, $id): RedirectResponse
+    {
+        // Hanya bisa menghapus favorit milik sendiri
+        $favorite = $request->user()->favoritePlaces()->findOrFail($id);
 
         $favorite->delete();
 
         return redirect()
-            ->route('favorites.index')
-            ->with('success', 'Destinasi berhasil dihapus dari favorit.');
+            ->to(route('profile.show') . '#destinasi-favorit')
+            ->with('success', 'Destinasi dihapus dari favorit.');
     }
 
-    // Memeriksa status favorit untuk popup peta
-    public function status(Request $request)
+    private function validateManual(Request $request): array
     {
-        $request->validate([
-            'place_key' => ['required', 'string', 'max:64'],
-        ]);
-
-        $saved = $this->userFavorites()
-            ->where('place_key', $request->place_key)
-            ->exists();
-
-        return response()->json([
-            'success' => true,
-            'saved' => $saved,
-        ]);
-    }
-
-    // Toggle favorit dari popup peta yang lama
-    public function toggle(Request $request)
-    {
-        $data = $request->validate([
-            'place_key' => ['required', 'string', 'max:64'],
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'url' => ['nullable', 'url', 'max:2048'],
-        ]);
-
-        $favorite = $this->userFavorites()
-            ->where('place_key', $data['place_key'])
-            ->first();
-
-        if ($favorite) {
-            $favorite->delete();
-
-            return response()->json([
-                'success' => true,
-                'saved' => false,
-                'message' => 'Favorit berhasil dihapus.',
-            ]);
-        }
-
-        $data['user_id'] = $request->user()->id;
-        $data['category'] = 'Kuliner';
-
-        FavoritePlace::create($data);
-
-        return response()->json([
-            'success' => true,
-            'saved' => true,
-            'message' => 'Favorit berhasil disimpan.',
+        return $request->validate([
+            'name'            => ['required', 'string', 'max:255'],
+            'category'        => ['required', 'in:wisata,kuliner'],
+            'type'            => ['nullable', 'string', 'max:255'],
+            'address'         => ['nullable', 'string', 'max:500'],
+            'city'            => ['nullable', 'string', 'max:100'],
+            'province'        => ['nullable', 'string', 'max:100'],
+            'latitude'        => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude'       => ['nullable', 'numeric', 'between:-180,180'],
+            'google_maps_url' => ['nullable', 'string', 'max:1000', 'regex:/^https?:\/\//i'],
         ]);
     }
 }

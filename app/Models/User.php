@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,12 +17,37 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
+     * Kolom profil (username, bio, sampul, warna, background, dst.)
+     * ditambahkan agar bisa disimpan lewat halaman Edit Profil.
+     *
      * @var list<string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+
+        // Profil
+        'username',
+        'domicile',
+        'bio',
+        'avatar_path',
+
+        // Sampul profil
+        'cover_type',
+        'cover_color',
+        'cover_color2',
+        'cover_path',
+
+        // Warna tulisan
+        'name_color',
+        'username_color',
+
+        // Background halaman profil
+        'bg_type',
+        'bg_color',
+        'bg_color2',
+        'bg_path',
     ];
 
     /**
@@ -45,5 +71,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Destinasi favorit milik pengguna
+     * (dari tombol hati di peta maupun input manual).
+     */
+    public function favoritePlaces(): HasMany
+    {
+        return $this->hasMany(FavoritePlace::class);
     }
 }

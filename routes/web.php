@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -102,11 +101,35 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Favorit dari Tombol Hati pada Popup Peta
+    |--------------------------------------------------------------------------
+    |
+    | toggle : simpan / hapus favorit dari popup peta
+    | status : daftar kunci tempat yang sudah difavoritkan pengguna
+    |
+    | Dua route ini didaftarkan SEBELUM /favorites/{id} agar tidak bentrok.
+    |
+    */
+
+    Route::get('/favorite-places/status', [
+        FavoritePlaceController::class,
+        'status'
+    ])->name('favorite-places.status');
+
+    Route::post('/favorite-places/toggle', [
+        FavoritePlaceController::class,
+        'toggle'
+    ])->name('favorite-places.toggle');
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Favorit Manual
     |--------------------------------------------------------------------------
     |
     | Pengguna dapat menambah, melihat, mengedit, dan menghapus
-    | destinasi favorit miliknya sendiri.
+    | destinasi favorit miliknya sendiri. Daftarnya tampil di profil
+    | pada bagian "Destinasi Favorit Saya".
     |
     */
 
@@ -127,23 +150,6 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/favorites/{id}', [FavoritePlaceController::class, 'destroy'])
         ->name('favorites.destroy');
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Favorit dari Tombol Hati pada Popup Peta
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get('/favorite-places/status', [
-        FavoritePlaceController::class,
-        'status'
-    ])->name('favorite-places.status');
-
-    Route::post('/favorite-places/toggle', [
-        FavoritePlaceController::class,
-        'toggle'
-    ])->name('favorite-places.toggle');
 
 
     /*

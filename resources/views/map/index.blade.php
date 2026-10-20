@@ -5,6 +5,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Jelajah Wisata Indonesia</title>
 
@@ -354,6 +355,53 @@
         color: #777;
     }
 
+    /* TOMBOL FAVORIT */
+    .favorite-toggle-btn:disabled {
+        opacity: .65;
+        cursor: wait !important;
+    }
+
+    .favorite-toggle-btn.is-saved {
+        background: #dc2626 !important;
+        color: #fff !important;
+        border-color: #dc2626 !important;
+    }
+
+    /* TOAST */
+    #toast {
+        display: none;
+        position: fixed;
+        top: 78px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 6000;
+        max-width: 90vw;
+        padding: 11px 16px;
+        border-radius: 10px;
+        background: #111827;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+        align-items: center;
+        gap: 12px;
+    }
+
+    #toast.show {
+        display: flex;
+    }
+
+    #toast.error {
+        background: #b91c1c;
+    }
+
+    #toast a {
+        color: #fde68a;
+        font-weight: 800;
+        text-decoration: underline;
+        white-space: nowrap;
+    }
+
     /* RESPONSIVE */
     @media (max-width: 600px) {
         .header {
@@ -410,6 +458,10 @@
 
     <!-- MAP -->
     <div id="map"></div>
+
+
+    <!-- TOAST NOTIFIKASI -->
+    <div id="toast" role="status" aria-live="polite"></div>
 
 
     <!-- SEARCH BUTTON -->
@@ -599,6 +651,24 @@
         const provinces = @json($provinces);
 
         const cities = @json($cities);
+
+        /* =====================================================
+           FAVORIT (disimpan di database, tampil di profil)
+        ====================================================== */
+
+        @php
+            $favoriteKeys = auth()->check()
+                ? \App\Models\FavoritePlace::where('user_id', auth()->id())->pluck('place_key')->values()
+                : collect();
+        @endphp
+
+        const isLoggedIn = @json(auth()->check());
+        const loginUrl = @json(route('login'));
+        const profileUrl = @json(auth()->check() ? route('profile.show') . '#destinasi-favorit' : null);
+        const favoriteToggleUrl = @json(route('favorite-places.toggle'));
+        const favoriteKeys = new Set(@json($favoriteKeys));
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
         // Daftar resmi provinsi Indonesia yang boleh tampil di mode Indonesia.
         // Filter ini menjadi pengaman tambahan apabila database lama masih
@@ -1959,13 +2029,18 @@
         ====================================================== */
 
         function makeFavoriteKey(place, latitude, longitude) {
-            const raw = [
-                place.place_id || place.id || place.name || 'tempat',
-                Number(latitude).toFixed(5),
-                Number(longitude).toFixed(5)
-            ].join('|');
+            const id = place.place_id || place.id;
+            const geo = Number(latitude).toFixed(5) + ',' + Number(longitude).toFixed(5);
 
-            return encodeURIComponent(raw);
+            // Maksimal 190 karakter agar muat di kolom database
+            if (id) {
+                return ('pid:' + id + '|' + geo).slice(0, 190);
+            }
+
+            return (
+                'geo:' + geo + '|' +
+                String(place.name || 'tempat').toLowerCase().trim().slice(0, 80)
+            ).slice(0, 190);
         }
 
 
@@ -2020,7 +2095,7 @@
                 <button
                     type="button"
                     class="favorite-toggle-btn"
-                    data-place-key="${favoriteKey}"
+                    data-place-key="${escapeHtml(favoriteKey)}"
                     style="
                         display:inline-flex;
                         align-items:center;
@@ -2095,7 +2170,30 @@
                 </div>
             `);
 
-            // PERBAIKAN 3: aktifkan tombol favorit di popup
+            // Data yang dikirim ke server saat tombol favorit ditekan
+            const ratingValue =
+                place.rating !== null &&
+                place.rating !== undefined &&
+                Number.isFinite(Number(place.rating))
+                    ? Number(place.rating)
+                    : null;
+
+            const favoritePayload = {
+                place_key: favoriteKey,
+                name: place.name || 'Tempat tanpa nama',
+                category: category,
+                type: place.type || null,
+                address: place.address || null,
+                latitude: latitude,
+                longitude: longitude,
+                rating: ratingValue,
+                user_rating_count: Number(place.user_rating_count) || 0,
+                google_maps_url: googleMapsUrl,
+                province: currentProvince ? currentProvince.name : null,
+                city: currentCity ? currentCity.name : null
+            };
+
+            // Aktifkan tombol favorit di popup (tersimpan ke database)
             marker.on('popupopen', function (e) {
                 const popupEl = e.popup.getElement();
                 if (!popupEl) return;
@@ -2105,28 +2203,87 @@
 
                 const heart = btn.querySelector('.favorite-heart');
                 const label = btn.querySelector('.favorite-label');
-                const storageKey = 'jelajah_favorite_' + btn.dataset.placeKey;
-
-                function isFavorite() {
-                    try { return localStorage.getItem(storageKey) === '1'; }
-                    catch (err) { return false; }
-                }
+                let busy = false;
 
                 function render() {
-                    const fav = isFavorite();
+                    const fav = isLoggedIn && favoriteKeys.has(favoriteKey);
+
                     heart.textContent = fav ? '♥' : '♡';
-                    label.textContent = fav ? 'Tersimpan' : 'Simpan Favorit';
+
+                    if (!isLoggedIn) {
+                        label.textContent = 'Masuk untuk simpan';
+                    } else if (busy) {
+                        label.textContent = 'Menyimpan...';
+                    } else {
+                        label.textContent = fav ? 'Tersimpan' : 'Simpan Favorit';
+                    }
+
+                    btn.classList.toggle('is-saved', fav);
+                    btn.disabled = busy;
                 }
 
-                btn.onclick = function (ev) {
+                btn.onclick = async function (ev) {
                     ev.stopPropagation();
-                    try {
-                        if (isFavorite()) localStorage.removeItem(storageKey);
-                        else localStorage.setItem(storageKey, '1');
-                    } catch (err) {
-                        console.warn('Favorit tidak dapat disimpan:', err);
+
+                    if (!isLoggedIn) {
+                        showToast(
+                            'Masuk dulu untuk menyimpan destinasi favorit.',
+                            { href: loginUrl, text: 'Masuk' }
+                        );
+                        return;
                     }
+
+                    if (busy) return;
+
+                    busy = true;
                     render();
+
+                    try {
+                        const response = await fetch(favoriteToggleUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(favoritePayload)
+                        });
+
+                        if (response.status === 401 || response.status === 419) {
+                            showToast(
+                                'Sesi berakhir. Silakan masuk kembali.',
+                                { href: loginUrl, text: 'Masuk' },
+                                true
+                            );
+                            return;
+                        }
+
+                        const data = await response.json().catch(function () { return {}; });
+
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Gagal menyimpan favorit.');
+                        }
+
+                        if (data.favorited) {
+                            favoriteKeys.add(favoriteKey);
+                            showToast(
+                                'Tersimpan di Destinasi Favorit Saya.',
+                                profileUrl ? { href: profileUrl, text: 'Lihat' } : null
+                            );
+                        } else {
+                            favoriteKeys.delete(favoriteKey);
+                            showToast('Dihapus dari Destinasi Favorit.');
+                        }
+
+                    } catch (err) {
+                        console.error('Favorit:', err);
+                        showToast(err.message || 'Gagal menyimpan favorit.', null, true);
+                    } finally {
+                        busy = false;
+                        render();
+                    }
                 };
 
                 render();
@@ -2178,6 +2335,36 @@
         /* =====================================================
            ESCAPE HTML
         ====================================================== */
+
+        /* =====================================================
+           TOAST
+        ====================================================== */
+
+        let toastTimer = null;
+
+        function showToast(message, action, isError) {
+
+            const el = document.getElementById('toast');
+
+            if (!el) return;
+
+            el.className = isError ? 'show error' : 'show';
+            el.innerHTML = '<span>' + escapeHtml(message) + '</span>';
+
+            if (action && action.href) {
+                const link = document.createElement('a');
+                link.href = action.href;
+                link.textContent = action.text || 'Buka';
+                el.appendChild(link);
+            }
+
+            clearTimeout(toastTimer);
+
+            toastTimer = setTimeout(function () {
+                el.className = '';
+            }, 4500);
+        }
+
 
         function escapeHtml(value) {
 

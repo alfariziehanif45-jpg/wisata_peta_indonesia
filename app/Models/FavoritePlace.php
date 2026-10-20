@@ -12,9 +12,22 @@ class FavoritePlace extends Model
         'place_key',
         'name',
         'category',
+        'type',
         'address',
-        'url',
-        'description',
+        'latitude',
+        'longitude',
+        'rating',
+        'user_rating_count',
+        'google_maps_url',
+        'province',
+        'city',
+    ];
+
+    protected $casts = [
+        'latitude'          => 'float',
+        'longitude'         => 'float',
+        'rating'            => 'float',
+        'user_rating_count' => 'integer',
     ];
 
     public function user(): BelongsTo
