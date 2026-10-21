@@ -11,6 +11,36 @@ use Illuminate\Support\Str;
 
 class TravelController extends Controller
 {
+    /**
+     * Validasi data tempat wisata, lalu pastikan place_key selalu ada.
+     * Kalau place_key tidak dikirim / kosong, dibuat otomatis dari nama + alamat.
+     */
+    private function validatedPlaceData(Request $request): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'url' => ['nullable', 'url', 'max:2000'],
+            'place_key' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        // Jamin semua key opsional selalu ada di array
+        $data = array_merge([
+            'address' => null,
+            'url' => null,
+            'place_key' => null,
+        ], $data);
+
+        if (empty($data['place_key'])) {
+            $data['place_key'] = hash(
+                'sha256',
+                Str::lower(trim($data['name'] . '|' . ($data['address'] ?? '')))
+            );
+        }
+
+        return $data;
+    }
+
     public function favorites()
     {
         $favorites = FavoritePlace::where('user_id', auth()->id())->latest()->get();
@@ -19,23 +49,19 @@ class TravelController extends Controller
 
     public function storeFavorite(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'url' => ['nullable', 'url', 'max:2000'],
-            'place_key' => ['nullable', 'string', 'max:64'],
-        ]);
-        $data['place_key'] = $data['place_key'] ?: hash('sha256', Str::lower(trim($data['name'].'|'.($data['address'] ?? ''))));
+        $data = $this->validatedPlaceData($request);
+
         FavoritePlace::firstOrCreate(
             ['user_id' => auth()->id(), 'place_key' => $data['place_key']],
-            ['name' => $data['name'], 'address' => $data['address'] ?? null, 'url' => $data['url'] ?? null]
+            ['name' => $data['name'], 'address' => $data['address'], 'url' => $data['url']]
         );
+
         return back()->with('success', 'Wisata ditambahkan ke favorit.');
     }
 
     public function destroyFavorite(FavoritePlace $favorite)
     {
-        abort_unless($favorite->user_id === auth()->id(), 403);
+        abort_unless((int) $favorite->user_id === (int) auth()->id(), 403);
         $favorite->delete();
         return back()->with('success', 'Wisata dihapus dari favorit.');
     }
@@ -63,25 +89,27 @@ class TravelController extends Controller
 
     public function addTripPlace(Request $request, TravelPlan $trip)
     {
-        abort_unless($trip->user_id === auth()->id(), 403);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'url' => ['nullable', 'url', 'max:2000'],
-            'place_key' => ['nullable', 'string', 'max:64'],
-        ]);
-        $data['place_key'] = $data['place_key'] ?: hash('sha256', Str::lower(trim($data['name'].'|'.($data['address'] ?? ''))));
+        abort_unless((int) $trip->user_id === (int) auth()->id(), 403);
+
+        $data = $this->validatedPlaceData($request);
+
         $trip->places()->firstOrCreate(
             ['place_key' => $data['place_key']],
-            ['name' => $data['name'], 'address' => $data['address'] ?? null, 'url' => $data['url'] ?? null]
+            ['name' => $data['name'], 'address' => $data['address'], 'url' => $data['url']]
         );
+
         return back()->with('success', 'Tujuan wisata ditambahkan ke rencana.');
     }
 
     public function toggleVisited(TravelPlan $trip, TravelPlanPlace $place)
     {
-        abort_unless($trip->user_id === auth()->id() && $place->travel_plan_id === $trip->id, 403);
-        if ($trip->completed_at) return back()->withErrors(['trip' => 'Rencana yang sudah selesai tidak dapat diubah.']);
+        abort_unless(
+            (int) $trip->user_id === (int) auth()->id() && (int) $place->travel_plan_id === (int) $trip->id,
+            403
+        );
+        if ($trip->completed_at) {
+            return back()->withErrors(['trip' => 'Rencana yang sudah selesai tidak dapat diubah.']);
+        }
         $place->visited = !$place->visited;
         $place->visited_at = $place->visited ? now() : null;
         $place->save();
@@ -90,7 +118,7 @@ class TravelController extends Controller
 
     public function completeTrip(TravelPlan $trip)
     {
-        abort_unless($trip->user_id === auth()->id(), 403);
+        abort_unless((int) $trip->user_id === (int) auth()->id(), 403);
         $total = $trip->places()->count();
         $visited = $trip->places()->where('visited', true)->count();
         if ($total === 0 || $total !== $visited) {
@@ -103,7 +131,7 @@ class TravelController extends Controller
 
     public function destroyTrip(TravelPlan $trip)
     {
-        abort_unless($trip->user_id === auth()->id(), 403);
+        abort_unless((int) $trip->user_id === (int) auth()->id(), 403);
         $trip->delete();
         return back()->with('success', 'Rencana perjalanan dihapus.');
     }

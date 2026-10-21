@@ -221,6 +221,8 @@
         z-index: 1500;
         display: none;
         max-width: 430px;
+        max-height: 82vh;
+        overflow-y: auto;
         background: rgba(255, 255, 255, .97);
         padding: 15px 18px;
         border-radius: 12px;
@@ -353,6 +355,198 @@
         margin-top: 8px;
         font-size: 12px;
         color: #777;
+    }
+
+    /* =====================================================
+       INFO PROVINSI + CUACA REAL TIME
+    ====================================================== */
+    #provinceInfo {
+        display: none;
+        margin-bottom: 12px;
+    }
+
+    .prov-section-title {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin: 0 0 6px;
+    }
+
+    .prov-summary {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .prov-summary img {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+        background: #e5e7eb;
+    }
+
+    .prov-summary-text {
+        font-size: 12px;
+        line-height: 1.55;
+        color: #334155;
+    }
+
+    .prov-wiki-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 7px;
+        background: #e8f5e9;
+        color: #198754;
+        border: 1px solid #c8e6c9;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .weather-card {
+        border-radius: 12px;
+        padding: 12px 13px;
+        color: #fff;
+        background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    }
+
+    .weather-card.night {
+        background: linear-gradient(135deg, #1e293b, #4338ca);
+    }
+
+    .weather-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .weather-icon {
+        font-size: 40px;
+        line-height: 1;
+    }
+
+    .weather-temp {
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .weather-desc {
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+
+    .weather-minmax {
+        font-size: 11px;
+        opacity: .9;
+        margin-top: 2px;
+    }
+
+    .weather-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .weather-item {
+        background: rgba(255, 255, 255, .18);
+        border-radius: 8px;
+        padding: 6px 7px;
+        text-align: center;
+    }
+
+    .weather-item .w-label {
+        font-size: 10px;
+        opacity: .9;
+    }
+
+    .weather-item .w-value {
+        font-size: 12.5px;
+        font-weight: 800;
+        margin-top: 2px;
+    }
+
+    .weather-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 9px;
+        font-size: 10.5px;
+        opacity: .92;
+    }
+
+    .weather-live-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 4px;
+        border-radius: 50%;
+        background: #4ade80;
+        animation: weatherPulse 1.6s infinite;
+    }
+
+    @keyframes weatherPulse {
+        0% { opacity: 1; }
+        50% { opacity: .3; }
+        100% { opacity: 1; }
+    }
+
+    .weather-refresh-btn {
+        border: none;
+        border-radius: 6px;
+        padding: 3px 8px;
+        background: rgba(255, 255, 255, .25);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .weather-loading,
+    .weather-error {
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .weather-loading {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .weather-error {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    /* Versi kecil di dalam popup marker */
+    .popup-weather {
+        margin-top: 8px;
+    }
+
+    .popup-weather .weather-card {
+        padding: 9px 10px;
+    }
+
+    .popup-weather .weather-icon {
+        font-size: 30px;
+    }
+
+    .popup-weather .weather-temp {
+        font-size: 24px;
     }
 
     /* TOMBOL FAVORIT */
@@ -503,6 +697,17 @@
         <strong id="locationName"></strong>
 
         <span id="locationAddress"></span>
+
+        <!-- INFO PROVINSI + CUACA REAL TIME -->
+        <div id="provinceInfo">
+
+            <div class="prov-section-title">ℹ️ Informasi Provinsi</div>
+            <div id="provinceSummary"></div>
+
+            <div class="prov-section-title">🌦️ Cuaca Saat Ini</div>
+            <div id="provinceWeather"></div>
+
+        </div>
 
         <div id="cityWikiContainer" style="display:none;margin-top:8px;margin-bottom:8px;">
             <a
@@ -766,6 +971,11 @@
         const cityWikiLink = document.getElementById('cityWikiLink');
         const cityWikiLabel = document.getElementById('cityWikiLabel');
 
+        /* INFO PROVINSI + CUACA ELEMENT */
+        const provinceInfo = document.getElementById('provinceInfo');
+        const provinceSummary = document.getElementById('provinceSummary');
+        const provinceWeather = document.getElementById('provinceWeather');
+
         /* CATEGORY ELEMENT */
         const categoryOptions = document.getElementById('categoryOptions');
         const wisataButton = document.getElementById('wisataButton');
@@ -796,6 +1006,12 @@
         let selectedPlaceMarker = null;
         let loadedPlaces = [];
         let currentPlaceCategory = '';
+
+        // State info provinsi + cuaca
+        let provinceDetail = null;      // { name, latitude, longitude, wikiUrl, wikiLabel, summary, weather, weatherError }
+        let weatherTimer = null;
+        let provinceRequestId = 0;
+        const WEATHER_REFRESH_MS = 5 * 60 * 1000; // perbarui otomatis tiap 5 menit
 
         /* =====================================================
            ICON PROVINSI
@@ -1060,6 +1276,7 @@
             currentCity = null;
 
             clearPlaceMarkers();
+            resetProvinceDetail();
 
             if (currentCountryMarker) {
                 map.removeLayer(currentCountryMarker);
@@ -1143,6 +1360,456 @@
 
 
         /* =====================================================
+           CUACA REAL TIME (Open-Meteo, gratis tanpa API key)
+        ====================================================== */
+
+        // Kode cuaca WMO -> deskripsi Indonesia + ikon
+        function weatherCodeInfo(code, isDay) {
+
+            const day = isDay === 1 || isDay === true;
+
+            const map = {
+                0:  [day ? 'Cerah' : 'Cerah (malam)', day ? '☀️' : '🌙'],
+                1:  ['Cerah berawan', day ? '🌤️' : '🌙'],
+                2:  ['Berawan sebagian', '⛅'],
+                3:  ['Berawan tebal', '☁️'],
+                45: ['Berkabut', '🌫️'],
+                48: ['Kabut es', '🌫️'],
+                51: ['Gerimis ringan', '🌦️'],
+                53: ['Gerimis sedang', '🌦️'],
+                55: ['Gerimis lebat', '🌧️'],
+                56: ['Gerimis beku ringan', '🌧️'],
+                57: ['Gerimis beku lebat', '🌧️'],
+                61: ['Hujan ringan', '🌦️'],
+                63: ['Hujan sedang', '🌧️'],
+                65: ['Hujan lebat', '🌧️'],
+                66: ['Hujan beku ringan', '🌧️'],
+                67: ['Hujan beku lebat', '🌧️'],
+                71: ['Salju ringan', '🌨️'],
+                73: ['Salju sedang', '🌨️'],
+                75: ['Salju lebat', '❄️'],
+                77: ['Butiran salju', '❄️'],
+                80: ['Hujan lokal ringan', '🌦️'],
+                81: ['Hujan lokal sedang', '🌧️'],
+                82: ['Hujan lokal deras', '⛈️'],
+                85: ['Hujan salju ringan', '🌨️'],
+                86: ['Hujan salju lebat', '🌨️'],
+                95: ['Badai petir', '⛈️'],
+                96: ['Badai petir + es ringan', '⛈️'],
+                99: ['Badai petir + es lebat', '⛈️']
+            };
+
+            const found = map[Number(code)];
+
+            return found
+                ? { text: found[0], icon: found[1] }
+                : { text: 'Tidak diketahui', icon: '🌡️' };
+        }
+
+        function windDirectionText(degree) {
+
+            const deg = Number(degree);
+
+            if (!Number.isFinite(deg)) return '';
+
+            const names = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
+
+            return names[Math.round(deg / 45) % 8];
+        }
+
+        async function fetchWeather(latitude, longitude) {
+
+            const url =
+                'https://api.open-meteo.com/v1/forecast?' +
+                new URLSearchParams({
+                    latitude: latitude,
+                    longitude: longitude,
+                    current: [
+                        'temperature_2m',
+                        'relative_humidity_2m',
+                        'apparent_temperature',
+                        'is_day',
+                        'precipitation',
+                        'weather_code',
+                        'cloud_cover',
+                        'surface_pressure',
+                        'wind_speed_10m',
+                        'wind_direction_10m'
+                    ].join(','),
+                    daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+                    timezone: 'auto',
+                    forecast_days: 1
+                });
+
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('Layanan cuaca tidak merespons (' + response.status + ').');
+            }
+
+            const data = await response.json();
+
+            if (!data || !data.current) {
+                throw new Error('Data cuaca tidak tersedia.');
+            }
+
+            return data;
+        }
+
+        function renderWeatherHtml(weather) {
+
+            const c = weather.current;
+            const d = weather.daily || {};
+            const info = weatherCodeInfo(c.weather_code, c.is_day);
+
+            const num = function (value, digits) {
+                const n = Number(value);
+                return Number.isFinite(n) ? n.toFixed(digits) : '-';
+            };
+
+            const tMax = d.temperature_2m_max ? num(d.temperature_2m_max[0], 0) : '-';
+            const tMin = d.temperature_2m_min ? num(d.temperature_2m_min[0], 0) : '-';
+            const rainChance = d.precipitation_probability_max
+                ? d.precipitation_probability_max[0]
+                : null;
+
+            const timeText = String(c.time || '').split('T')[1] || '';
+            const zone = weather.timezone_abbreviation || '';
+            const wind = windDirectionText(c.wind_direction_10m);
+
+            return `
+                <div class="weather-card ${c.is_day === 0 ? 'night' : ''}">
+                    <div class="weather-main">
+                        <div>
+                            <div class="weather-temp">${num(c.temperature_2m, 1)}°C</div>
+                            <div class="weather-desc">${escapeHtml(info.text)}</div>
+                            <div class="weather-minmax">
+                                Terasa ${num(c.apparent_temperature, 1)}°C • Maks ${tMax}° / Min ${tMin}°
+                            </div>
+                        </div>
+                        <div class="weather-icon">${info.icon}</div>
+                    </div>
+
+                    <div class="weather-grid">
+                        <div class="weather-item">
+                            <div class="w-label">💧 Kelembapan</div>
+                            <div class="w-value">${num(c.relative_humidity_2m, 0)}%</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="w-label">💨 Angin</div>
+                            <div class="w-value">${num(c.wind_speed_10m, 1)} km/j</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="w-label">🧭 Arah</div>
+                            <div class="w-value">${escapeHtml(wind || '-')}</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="w-label">☁️ Awan</div>
+                            <div class="w-value">${num(c.cloud_cover, 0)}%</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="w-label">🌧️ Curah hujan</div>
+                            <div class="w-value">${num(c.precipitation, 1)} mm</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="w-label">☔ Peluang hujan</div>
+                            <div class="w-value">${rainChance !== null ? num(rainChance, 0) + '%' : '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="weather-footer">
+                        <span>
+                            <span class="weather-live-dot"></span>Real time • ${escapeHtml(timeText)} ${escapeHtml(zone)}
+                            • Tekanan ${num(c.surface_pressure, 0)} hPa
+                        </span>
+                        <button type="button" class="weather-refresh-btn" data-weather-refresh="1">↻ Segarkan</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* =====================================================
+           INFO PROVINSI (Wikipedia bahasa Indonesia)
+        ====================================================== */
+
+        // Pengecualian nama artikel Wikipedia. Provinsi lain memakai
+        // nama provinsi dengan spasi diganti underscore.
+        const provinceWikiTitleOverrides = {
+            'dki jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
+            'daerah khusus jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
+            'daerah khusus ibukota jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
+            'jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
+            'di yogyakarta': 'Daerah_Istimewa_Yogyakarta',
+            'yogyakarta': 'Daerah_Istimewa_Yogyakarta',
+            'daerah istimewa yogyakarta': 'Daerah_Istimewa_Yogyakarta',
+            'bangka belitung': 'Kepulauan_Bangka_Belitung',
+            'kepulauan bangka belitung': 'Kepulauan_Bangka_Belitung',
+            'ntb': 'Nusa_Tenggara_Barat',
+            'ntt': 'Nusa_Tenggara_Timur'
+        };
+
+        function getProvinceWikiTitle(name) {
+
+            const key = normalizeProvinceName(name);
+
+            if (provinceWikiTitleOverrides[key]) {
+                return provinceWikiTitleOverrides[key];
+            }
+
+            return String(name || '').trim().replace(/\s+/g, '_');
+        }
+
+        async function fetchProvinceSummary(name) {
+
+            const title = getProvinceWikiTitle(name);
+            const fallbackUrl = 'https://id.wikipedia.org/wiki/' + encodeURIComponent(title);
+
+            const response = await fetch(
+                'https://id.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title),
+                { headers: { 'Accept': 'application/json' } }
+            );
+
+            if (!response.ok) {
+                const error = new Error('Ringkasan provinsi tidak ditemukan.');
+                error.wikiUrl = fallbackUrl;
+                throw error;
+            }
+
+            const data = await response.json();
+
+            let extract = String(data.extract || '').trim();
+
+            if (extract.length > 420) {
+                extract = extract.slice(0, 420).replace(/\s+\S*$/, '') + '…';
+            }
+
+            return {
+                extract: extract,
+                description: data.description || '',
+                thumbnail: data.thumbnail ? data.thumbnail.source : null,
+                url: (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || fallbackUrl
+            };
+        }
+
+        /* =====================================================
+           RENDER INFO PROVINSI (panel bawah + popup marker)
+        ====================================================== */
+
+        function renderSummaryHtml(detail, compact) {
+
+            if (!detail) return '';
+
+            const wikiLink = detail.wikiUrl
+                ? `<a class="prov-wiki-link" href="${escapeHtml(detail.wikiUrl)}" target="_blank" rel="noopener noreferrer">
+                        🌐 Selengkapnya di Wikipedia &nearr;
+                   </a>`
+                : '';
+
+            if (detail.summaryLoading) {
+                return '<div class="weather-loading">⏳ Memuat informasi provinsi...</div>';
+            }
+
+            if (!detail.summary) {
+                return `
+                    <div class="prov-summary-text" style="margin-bottom:12px;">
+                        Ringkasan provinsi belum bisa dimuat.
+                        <div>${wikiLink}</div>
+                    </div>
+                `;
+            }
+
+            const s = detail.summary;
+
+            return `
+                <div class="prov-summary">
+                    ${!compact && s.thumbnail
+                        ? `<img src="${escapeHtml(s.thumbnail)}" alt="${escapeHtml(detail.name)}" loading="lazy">`
+                        : ''}
+                    <div class="prov-summary-text">
+                        ${s.description ? `<div style="font-weight:700;color:#0f172a;margin-bottom:3px;">${escapeHtml(s.description)}</div>` : ''}
+                        ${escapeHtml(compact && s.extract.length > 200 ? s.extract.slice(0, 200).replace(/\s+\S*$/, '') + '…' : s.extract)}
+                        <div>${wikiLink}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWeatherSectionHtml(detail) {
+
+            if (!detail) return '';
+
+            if (detail.weatherLoading) {
+                return '<div class="weather-loading">⏳ Mengambil cuaca real time...</div>';
+            }
+
+            if (detail.weatherError) {
+                return `
+                    <div class="weather-error">
+                        ❌ ${escapeHtml(detail.weatherError)}
+                        <div style="margin-top:6px;">
+                            <button type="button" class="weather-refresh-btn" style="background:#b91c1c;" data-weather-refresh="1">↻ Coba lagi</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return detail.weather ? renderWeatherHtml(detail.weather) : '';
+        }
+
+        function buildProvincePopupHtml(detail) {
+
+            // Popup di atas marker sengaja dibuat singkat.
+            // Info provinsi & cuaca hanya tampil di panel kiri.
+            return `
+                <div class="place-popup-title">${escapeHtml(detail.name)}</div>
+                <div class="place-popup-type">Provinsi • ${currentCountry ? escapeHtml(currentCountry.name) : 'Indonesia'}</div>
+            `;
+        }
+
+        function refreshProvinceViews() {
+
+            if (!provinceDetail) return;
+
+            provinceInfo.style.display = 'block';
+            provinceSummary.innerHTML = renderSummaryHtml(provinceDetail, false);
+            provinceWeather.innerHTML = renderWeatherSectionHtml(provinceDetail);
+        }
+
+        function hideProvinceInfoPanel() {
+
+            provinceInfo.style.display = 'none';
+            provinceSummary.innerHTML = '';
+            provinceWeather.innerHTML = '';
+        }
+
+        function stopWeatherRefresh() {
+
+            if (weatherTimer) {
+                clearInterval(weatherTimer);
+                weatherTimer = null;
+            }
+        }
+
+        function resetProvinceDetail() {
+
+            provinceRequestId++;
+            stopWeatherRefresh();
+            provinceDetail = null;
+            hideProvinceInfoPanel();
+        }
+
+        async function loadProvinceWeather(requestId) {
+
+            if (!provinceDetail || requestId !== provinceRequestId) return;
+
+            try {
+                const weather = await fetchWeather(provinceDetail.latitude, provinceDetail.longitude);
+
+                if (requestId !== provinceRequestId || !provinceDetail) return;
+
+                provinceDetail.weather = weather;
+                provinceDetail.weatherError = null;
+
+            } catch (error) {
+                console.error('Cuaca provinsi:', error);
+
+                if (requestId !== provinceRequestId || !provinceDetail) return;
+
+                // Jika sudah ada data sebelumnya, tetap tampilkan data lama.
+                if (!provinceDetail.weather) {
+                    provinceDetail.weatherError =
+                        error.message || 'Cuaca tidak dapat dimuat saat ini.';
+                }
+
+            } finally {
+
+                if (requestId === provinceRequestId && provinceDetail) {
+                    provinceDetail.weatherLoading = false;
+                    refreshProvinceViews();
+                }
+            }
+        }
+
+        async function loadProvinceSummary(requestId) {
+
+            if (!provinceDetail || requestId !== provinceRequestId) return;
+
+            try {
+                const summary = await fetchProvinceSummary(provinceDetail.name);
+
+                if (requestId !== provinceRequestId || !provinceDetail) return;
+
+                provinceDetail.summary = summary;
+                provinceDetail.wikiUrl = summary.url;
+
+            } catch (error) {
+                console.error('Ringkasan provinsi:', error);
+
+                if (requestId !== provinceRequestId || !provinceDetail) return;
+
+                provinceDetail.summary = null;
+                provinceDetail.wikiUrl = error.wikiUrl || provinceDetail.wikiUrl;
+
+            } finally {
+
+                if (requestId === provinceRequestId && provinceDetail) {
+                    provinceDetail.summaryLoading = false;
+                    refreshProvinceViews();
+                }
+            }
+        }
+
+        function startProvinceDetail(name, latitude, longitude) {
+
+            provinceRequestId++;
+            stopWeatherRefresh();
+
+            const requestId = provinceRequestId;
+
+            provinceDetail = {
+                name: name,
+                latitude: latitude,
+                longitude: longitude,
+                wikiUrl: 'https://id.wikipedia.org/wiki/' + encodeURIComponent(getProvinceWikiTitle(name)),
+                summary: null,
+                summaryLoading: true,
+                weather: null,
+                weatherLoading: true,
+                weatherError: null
+            };
+
+            refreshProvinceViews();
+
+            loadProvinceSummary(requestId);
+            loadProvinceWeather(requestId);
+
+            // Cuaca diperbarui otomatis selama provinsi masih dipilih.
+            weatherTimer = setInterval(function () {
+                loadProvinceWeather(requestId);
+            }, WEATHER_REFRESH_MS);
+        }
+
+        // Tombol "Segarkan" (di panel maupun di popup)
+        document.addEventListener('click', function (event) {
+
+            const btn = event.target.closest('[data-weather-refresh]');
+
+            if (!btn || !provinceDetail) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            provinceDetail.weatherLoading = !provinceDetail.weather;
+            provinceDetail.weatherError = null;
+            refreshProvinceViews();
+
+            loadProvinceWeather(provinceRequestId);
+        });
+
+
+        /* =====================================================
            TAMPILKAN PROVINSI
         ====================================================== */
 
@@ -1164,221 +1831,12 @@
                     { icon: createProvinceIcon() }
                 ).addTo(map);
 
-
-            currentProvinceMarker
-                .bindPopup(`
-
-                    <div class="place-popup-title">
-                        ${name}
-                    </div>
-
-                    <div class="place-popup-type">
-                        ${currentCountry ? currentCountry.name : 'Indonesia'}
-                    </div>
-
-                `);
-
-            // Tautan informasi khusus untuk provinsi yang memiliki halaman Wikipedia.
-            // Provinsi lainnya tetap memakai perilaku marker dan zoom seperti biasa.
-            const provinceWikipediaLinks = {
-                'sumatera selatan': {
-                    url: 'https://id.wikipedia.org/wiki/Sumatera_Selatan',
-                    label: 'Sumatera Selatan'
-                },
-                'sumatera barat': {
-                    url: 'https://id.wikipedia.org/wiki/Sumatera_Barat',
-                    label: 'Sumatera Barat'
-                },
-                'sumatera utara': {
-                    url: 'https://id.wikipedia.org/wiki/Sumatera_Utara',
-                    label: 'Sumatera Utara'
-                },
-                'aceh': {
-                    url: 'https://id.wikipedia.org/wiki/Aceh',
-                    label: 'Aceh'
-                },
-                'bengkulu': {
-                    url: 'https://id.wikipedia.org/wiki/Bengkulu',
-                    label: 'Bengkulu'
-                },
-                'bali': {
-                    url: 'https://id.wikipedia.org/wiki/Bali',
-                    label: 'Bali'
-                },
-                'banten': {
-                    url: 'https://id.wikipedia.org/wiki/Banten',
-                    label: 'Banten'
-                },
-                'daerah istimewa yogyakarta': {
-                    url: 'https://id.wikipedia.org/wiki/Daerah_Istimewa_Yogyakarta',
-                    label: 'Daerah Istimewa Yogyakarta'
-                },
-                'di yogyakarta': {
-                    url: 'https://id.wikipedia.org/wiki/Daerah_Istimewa_Yogyakarta',
-                    label: 'Daerah Istimewa Yogyakarta'
-                },
-                'daerah khusus ibukota jakarta': {
-                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
-                    label: 'Daerah Khusus Ibukota Jakarta'
-                },
-                'dki jakarta': {
-                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
-                    label: 'Daerah Khusus Ibukota Jakarta'
-                },
-                'jakarta': {
-                    url: 'https://id.wikipedia.org/wiki/Daerah_Khusus_Ibukota_Jakarta',
-                    label: 'Daerah Khusus Ibukota Jakarta'
-                },
-                'gorontalo': {
-                    url: 'https://id.wikipedia.org/wiki/Gorontalo',
-                    label: 'Gorontalo'
-                },
-                'jambi': {
-                    url: 'https://id.wikipedia.org/wiki/Jambi',
-                    label: 'Jambi'
-                },
-                'jawa barat': {
-                    url: 'https://id.wikipedia.org/wiki/Jawa_Barat',
-                    label: 'Jawa Barat'
-                },
-                'jawa tengah': {
-                    url: 'https://id.wikipedia.org/wiki/Jawa_Tengah',
-                    label: 'Jawa Tengah'
-                },
-                'jawa timur': {
-                    url: 'https://id.wikipedia.org/wiki/Jawa_Timur',
-                    label: 'Jawa Timur'
-                },
-                'kalimantan barat': {
-                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Barat',
-                    label: 'Kalimantan Barat'
-                },
-                'kalimantan selatan': {
-                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Selatan',
-                    label: 'Kalimantan Selatan'
-                },
-                'kalimantan tengah': {
-                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Tengah',
-                    label: 'Kalimantan Tengah'
-                },
-                'kalimantan timur': {
-                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Timur',
-                    label: 'Kalimantan Timur'
-                },
-                'kalimantan utara': {
-                    url: 'https://id.wikipedia.org/wiki/Kalimantan_Utara',
-                    label: 'Kalimantan Utara'
-                },
-                'kepulauan bangka belitung': {
-                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Bangka_Belitung',
-                    label: 'Kepulauan Bangka Belitung'
-                },
-                'bangka belitung': {
-                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Bangka_Belitung',
-                    label: 'Kepulauan Bangka Belitung'
-                },
-                'kepulauan riau': {
-                    url: 'https://id.wikipedia.org/wiki/Kepulauan_Riau',
-                    label: 'Kepulauan Riau'
-                },
-                'lampung': {
-                    url: 'https://id.wikipedia.org/wiki/Lampung',
-                    label: 'Lampung'
-                },
-                'maluku': {
-                    url: 'https://id.wikipedia.org/wiki/Maluku',
-                    label: 'Maluku'
-                },
-                'maluku utara': {
-                    url: 'https://id.wikipedia.org/wiki/Maluku_Utara',
-                    label: 'Maluku Utara'
-                },
-                'nusa tenggara barat': {
-                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Barat',
-                    label: 'Nusa Tenggara Barat'
-                },
-                'ntb': {
-                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Barat',
-                    label: 'Nusa Tenggara Barat'
-                },
-                'nusa tenggara timur': {
-                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Timur',
-                    label: 'Nusa Tenggara Timur'
-                },
-                'ntt': {
-                    url: 'https://id.wikipedia.org/wiki/Nusa_Tenggara_Timur',
-                    label: 'Nusa Tenggara Timur'
-                },
-                'papua': {
-                    url: 'https://id.wikipedia.org/wiki/Papua',
-                    label: 'Papua'
-                },
-                'papua barat': {
-                    url: 'https://id.wikipedia.org/wiki/Papua_Barat',
-                    label: 'Papua Barat'
-                },
-                'papua barat daya': {
-                    url: 'https://id.wikipedia.org/wiki/Papua_Barat_Daya',
-                    label: 'Papua Barat Daya'
-                },
-                'papua pegunungan': {
-                    url: 'https://id.wikipedia.org/wiki/Papua_Pegunungan',
-                    label: 'Papua Pegunungan'
-                },
-                'papua selatan': {
-                    url: 'https://id.wikipedia.org/wiki/Papua_Selatan',
-                    label: 'Papua Selatan'
-                },
-                'papua tengah': {
-                    url: 'https://id.wikipedia.org/wiki/Papua_Tengah',
-                    label: 'Papua Tengah'
-                },
-                'riau': {
-                    url: 'https://id.wikipedia.org/wiki/Riau',
-                    label: 'Riau'
-                },
-                'sulawesi barat': {
-                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Barat',
-                    label: 'Sulawesi Barat'
-                },
-                'sulawesi selatan': {
-                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Selatan',
-                    label: 'Sulawesi Selatan'
-                },
-                'sulawesi tengah': {
-                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Tengah',
-                    label: 'Sulawesi Tengah'
-                },
-                'sulawesi tenggara': {
-                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Tenggara',
-                    label: 'Sulawesi Tenggara'
-                },
-                'sulawesi utara': {
-                    url: 'https://id.wikipedia.org/wiki/Sulawesi_Utara',
-                    label: 'Sulawesi Utara'
-                }
-            };
-
-            const provinceWikipedia = provinceWikipediaLinks[normalizeProvinceName(name)];
-
-            if (provinceWikipedia) {
-                currentProvinceMarker.bindTooltip(
-                    `Klik marker untuk membuka informasi ${provinceWikipedia.label}`,
-                    {
-                        direction: 'top',
-                        offset: [0, -28],
-                        opacity: 0.95
-                    }
-                );
-
-                currentProvinceMarker.on('click', function () {
-                    window.open(
-                        provinceWikipedia.url,
-                        '_blank',
-                        'noopener,noreferrer'
-                    );
-                });
-            }
+            // Popup singkat saja. Info provinsi & cuaca tampil di panel kiri.
+            currentProvinceMarker.bindPopup(
+                '<div class="place-popup-title">' + escapeHtml(name) + '</div>' +
+                '<div class="place-popup-type">Provinsi • ' +
+                escapeHtml(currentCountry ? currentCountry.name : 'Indonesia') + '</div>'
+            );
 
             currentProvinceMarker.openPopup();
 
@@ -1399,6 +1857,9 @@
 
             searchInput.value = '';
 
+            // Mulai ambil informasi provinsi + cuaca real time
+            startProvinceDetail(name, latitude, longitude);
+
         }
 
 
@@ -1415,6 +1876,9 @@
             };
 
             clearPlaceMarkers();
+
+            // Panel info provinsi disembunyikan saat masuk mode kota
+            resetProvinceDetail();
 
             if (currentCityMarker) {
                 map.removeLayer(currentCityMarker);
@@ -1575,11 +2039,19 @@
 
         backToProvince.addEventListener('click', function () {
 
+            resetProvinceDetail();
+
             // Dari kota kembali ke daftar seluruh provinsi Indonesia.
             if (currentCity && currentProvince) {
                 if (currentCityMarker) {
                     map.removeLayer(currentCityMarker);
                     currentCityMarker = null;
+                }
+
+                // Marker provinsi ikut dibersihkan agar peta kembali bersih.
+                if (currentProvinceMarker) {
+                    map.removeLayer(currentProvinceMarker);
+                    currentProvinceMarker = null;
                 }
 
                 clearPlaceMarkers();
@@ -2025,7 +2497,7 @@
 
 
         /* =====================================================
-           KUNCI FAVORIT  (PERBAIKAN 1: fungsi yang sebelumnya hilang)
+           KUNCI FAVORIT
         ====================================================== */
 
         function makeFavoriteKey(place, latitude, longitude) {
@@ -2064,7 +2536,7 @@
 
             const longitude = parseFloat(place.longitude);
 
-            // PERBAIKAN 2: pengaman koordinat
+            // Pengaman koordinat
             if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
                 alert('Koordinat tempat ini tidak valid.');
                 return;
@@ -2333,10 +2805,6 @@
 
 
         /* =====================================================
-           ESCAPE HTML
-        ====================================================== */
-
-        /* =====================================================
            TOAST
         ====================================================== */
 
@@ -2365,6 +2833,10 @@
             }, 4500);
         }
 
+
+        /* =====================================================
+           ESCAPE HTML
+        ====================================================== */
 
         function escapeHtml(value) {
 

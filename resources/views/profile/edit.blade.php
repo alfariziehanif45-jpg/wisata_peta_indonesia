@@ -130,18 +130,80 @@
                 linear-gradient(120deg, var(--red-dark), var(--red) 55%, var(--orange));
             box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
         }
-        /* Gambar/video ditampilkan apa adanya (tanpa filter, tanpa blur) */
+        /* Gambar/video ditampilkan apa adanya (tanpa filter, tanpa blur).
+           Posisi & zoom diatur lewat object-position + transform (inline dari JS). */
         .cover-preview img, .cover-preview video {
             position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
             filter: none; image-rendering: auto;
-            transform: translateZ(0);
+            will-change: transform;
             backface-visibility: hidden;
+            -webkit-user-drag: none;
+            user-select: none;
+            pointer-events: none;
         }
         .cover-badge {
             position: absolute; left: 12px; bottom: 12px; z-index: 2;
             padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
             color: #fff; background: rgba(0,0,0,.55);
+            pointer-events: none;
         }
+
+        /* Partikel salju di pratinjau background */
+        .snow-canvas {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none; display: none;
+        }
+
+        /* Hiasan salju di pinggir pratinjau (atas & bawah), tengah tetap polos */
+        .cover-preview .snow-frame,
+        .cover-preview .snow-side { display: none; position: absolute; pointer-events: none; z-index: 1; }
+        .cover-preview.is-salju .snow-frame,
+        .cover-preview.is-salju .snow-side { display: block; }
+
+        .cover-preview .snow-frame {
+            left: 0; right: 0; height: 50%;
+            background-repeat: repeat-x; background-size: 240px auto;
+        }
+        .cover-preview .snow-frame.top {
+            top: 0; background-position: top center;
+            -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent);
+            mask-image: linear-gradient(to bottom, #000 50%, transparent);
+        }
+        .cover-preview .snow-frame.bottom {
+            bottom: 0; background-position: bottom center;
+            -webkit-mask-image: linear-gradient(to top, #000 50%, transparent);
+            mask-image: linear-gradient(to top, #000 50%, transparent);
+        }
+        .cover-preview .snow-side { top: 0; bottom: 0; width: 48px; }
+        .cover-preview .snow-side.left  { left: 0;  background: linear-gradient(to right, rgba(255,255,255,.55), transparent); }
+        .cover-preview .snow-side.right { right: 0; background: linear-gradient(to left,  rgba(255,255,255,.55), transparent); }
+
+        /* Mode atur posisi sampul (foto/video bisa digeser) */
+        .cover-preview.adjustable {
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            outline: 3px solid rgba(220, 38, 38, .0);
+            transition: outline-color .15s;
+        }
+        .cover-preview.adjustable:hover { outline-color: rgba(220, 38, 38, .35); }
+        .cover-preview.adjustable.dragging { cursor: grabbing; outline-color: rgba(220, 38, 38, .6); }
+
+        .cover-hint {
+            display: none;
+            position: absolute; right: 12px; top: 12px; z-index: 2;
+            padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+            color: #fff; background: rgba(0,0,0,.55);
+            pointer-events: none;
+        }
+        .cover-preview.adjustable .cover-hint { display: block; }
+
+        .cover-adjust {
+            display: none;
+            margin-top: 16px; padding-top: 14px; border-top: 1px dashed #e1e4ea;
+        }
+        .cover-adjust.show { display: block; }
 
         .quality { font-size: 12px; margin: 10px 0 0; font-weight: 600; }
         .quality.ok   { color: #166534; }
@@ -340,6 +402,11 @@
     $coverColor2 = old('cover_color2', $user->cover_color2 ?: '#f97316');
     $coverUrl    = $user->cover_path ? asset('storage/'.$user->cover_path) : '';
 
+    // Posisi & zoom sampul foto/video (persen 0-100, zoom 1-3)
+    $coverPosX = max(0, min(100, (float) old('cover_pos_x', $user->cover_pos_x ?? 50)));
+    $coverPosY = max(0, min(100, (float) old('cover_pos_y', $user->cover_pos_y ?? 50)));
+    $coverZoom = max(1, min(3, (float) old('cover_zoom', $user->cover_zoom ?? 1)));
+
     // ----- Warna tulisan -----
     $nameColor = old('name_color', $user->name_color);
     $userColor = old('username_color', $user->username_color);
@@ -350,6 +417,9 @@
     $bgColor1  = old('bg_color', $user->bg_color ?: '#f6f7fb');
     $bgColor2  = old('bg_color2', $user->bg_color2 ?: '#fde68a');
     $bgUrl     = $user->bg_path ? asset('storage/'.$user->bg_path) : '';
+
+    // Gambar latar salju (taruh di public/images/bg/salju-bg.png)
+    $bgSnowUrl = asset('images/bg/salju-bg.png');
 @endphp
 
 <main class="container">
@@ -394,6 +464,7 @@
                 <p class="section-desc">Ubah latar bagian atas profilmu: warna, foto, atau video.</p>
 
                 <div class="cover-preview" id="coverPreview">
+                    <span class="cover-hint" id="coverHint">✋ Seret untuk mengatur posisi</span>
                     <span class="cover-badge" id="coverBadge">Pratinjau sampul</span>
                 </div>
                 <p class="quality" id="coverQuality" hidden></p>
@@ -444,7 +515,28 @@
                     <p class="hint" id="coverFileName">
                         @if($coverUrl) Sampul saat ini dipakai. Pilih file baru untuk menggantinya. @else Belum ada file dipilih. @endif
                     </p>
+
+                    {{-- ATUR POSISI & ZOOM SAMPUL --}}
+                    <div class="cover-adjust" id="coverAdjust">
+                        <div class="tip">☝️ Seret pratinjau sampul di atas ke mana saja untuk menggeser foto/video. Geser slider atau scroll mouse di atas pratinjau untuk zoom. Posisi ini ikut tersimpan dan dipakai di halaman profilmu.</div>
+
+                        <div class="zoom-row">
+                            <span>－</span>
+                            <input type="range" id="coverZoom" min="1" max="3" step="0.01" value="{{ $coverZoom }}" aria-label="Zoom sampul">
+                            <span>＋</span>
+                        </div>
+
+                        <div class="btn-row">
+                            <button type="button" class="btn sm" id="coverCenter">◎ Tengahkan</button>
+                            <button type="button" class="btn sm" id="coverReset">↺ Atur ulang posisi</button>
+                        </div>
+                    </div>
                 </div>
+
+                {{-- Nilai posisi yang dikirim ke server --}}
+                <input type="hidden" name="cover_pos_x" id="cover_pos_x" value="{{ $coverPosX }}">
+                <input type="hidden" name="cover_pos_y" id="cover_pos_y" value="{{ $coverPosY }}">
+                <input type="hidden" name="cover_zoom" id="cover_zoom" value="{{ $coverZoom }}">
 
                 @error('cover_file')<span class="field-error">{{ $message }}</span>@enderror
                 @error('cover_type')<span class="field-error">{{ $message }}</span>@enderror
@@ -493,6 +585,11 @@
                 <p class="section-desc">Ubah latar belakang halaman profilmu (area di belakang kartu putih).</p>
 
                 <div class="cover-preview" id="bgPreview" style="background:#f6f7fb">
+                    <div class="snow-side left"></div>
+                    <div class="snow-side right"></div>
+                    <div class="snow-frame top" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+                    <div class="snow-frame bottom" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+                    <canvas class="snow-canvas" id="bgSnow"></canvas>
                     <span class="cover-badge" id="bgBadge">Pratinjau background</span>
                 </div>
                 <p class="quality" id="bgQuality" hidden></p>
@@ -509,6 +606,9 @@
 
                     <input type="radio" name="bg_type" id="bg_image_r" value="image" {{ $bgType === 'image' ? 'checked' : '' }}>
                     <label for="bg_image_r">🖼️ Foto</label>
+
+                    <input type="radio" name="bg_type" id="bg_salju_r" value="salju" {{ $bgType === 'salju' ? 'checked' : '' }}>
+                    <label for="bg_salju_r">❄️ Salju</label>
                 </div>
 
                 {{-- Warna polos --}}
@@ -562,6 +662,11 @@
                     <p class="hint" id="bgFileName">
                         @if($bgUrl) Background saat ini dipakai. Pilih foto baru untuk menggantinya. @else Belum ada foto dipilih. @endif
                     </p>
+                </div>
+
+                {{-- Salju --}}
+                <div class="cover-panel" id="bgpanel-salju">
+                    <div class="tip" style="margin-bottom:0">❄️ Hiasan salju di pinggir layar (atas, bawah, dan sisi) dengan latar biru es lembut, ditambah butiran salju yang jatuh pelan di halaman profilmu. Bagian tengah tetap polos agar kartu profil nyaman dibaca.</div>
                 </div>
 
                 {{-- Nilai warna yang benar-benar dikirim --}}
@@ -721,6 +826,9 @@
     </section>
 
 </main>
+
+{{-- Mesin partikel salju (public/js/snow-fx.js) --}}
+<script src="{{ asset('js/snow-fx.js') }}"></script>
 
 <script>
 (function () {
@@ -941,11 +1049,13 @@
         el.textContent = msg;
     }
 
-    /* ===== Editor sampul profil ===== */
+    /* ===== Editor sampul profil (termasuk geser & zoom foto/video) ===== */
     (function () {
         var COVER_VIDEO_MAX_MB = 20;
         var COVER_IMG_MAX_MB = 20;
         var RAW_IMG_MAX_MB = 60;
+        var MIN_ZOOM = 1;
+        var MAX_ZOOM = 3;
         var DEFAULT_BG = 'radial-gradient(circle at 12% 20%, rgba(255,255,255,.25), transparent 40%), linear-gradient(120deg, #b91c1c, #dc2626 55%, #f97316)';
 
         var preview = document.getElementById('coverPreview');
@@ -961,17 +1071,64 @@
             media: document.getElementById('panel-media')
         };
 
+        // Kontrol posisi & zoom
+        var adjustBox = document.getElementById('coverAdjust');
+        var zoomEl = document.getElementById('coverZoom');
+        var hidX = document.getElementById('cover_pos_x');
+        var hidY = document.getElementById('cover_pos_y');
+        var hidZ = document.getElementById('cover_zoom');
+
         var saved = @json(['type' => $coverType, 'url' => $coverUrl]);
         var picked = null;
         var objUrl = null;
+
+        // Posisi: x,y = persen (0-100) seperti object-position, z = zoom (1-3)
+        var pos = {
+            x: clamp(parseFloat(hidX.value), 0, 100, 50),
+            y: clamp(parseFloat(hidY.value), 0, 100, 50),
+            z: clamp(parseFloat(hidZ.value), MIN_ZOOM, MAX_ZOOM, 1)
+        };
+
+        function clamp(v, min, max, fallback) {
+            if (!isFinite(v)) return fallback;
+            return Math.max(min, Math.min(max, v));
+        }
 
         function choice() {
             var r = document.querySelector('input[name="cover_type"]:checked');
             return r ? r.value : 'default';
         }
 
+        function currentMedia() {
+            return preview.querySelector('img, video');
+        }
+
         function clearMedia() {
             preview.querySelectorAll('img, video').forEach(function (el) { el.remove(); });
+        }
+
+        /* Terapkan posisi & zoom ke elemen media + kolom tersembunyi.
+         * object-position + transform-origin yang sama + scale(zoom) membuat
+         * tampilan identik di bingkai berukuran berapa pun (aman dipakai di
+         * halaman profil). */
+        function applyPos() {
+            var el = currentMedia();
+
+            if (el) {
+                el.style.objectPosition = pos.x + '% ' + pos.y + '%';
+                el.style.transformOrigin = pos.x + '% ' + pos.y + '%';
+                el.style.transform = 'scale(' + pos.z + ')';
+            }
+
+            hidX.value = pos.x.toFixed(2);
+            hidY.value = pos.y.toFixed(2);
+            hidZ.value = pos.z.toFixed(2);
+            zoomEl.value = pos.z;
+        }
+
+        function resetPos() {
+            pos.x = 50; pos.y = 50; pos.z = 1;
+            applyPos();
         }
 
         function addMedia(url, isVideo) {
@@ -986,10 +1143,12 @@
             } else {
                 el = document.createElement('img');
                 el.decoding = 'async';
+                el.draggable = false;
                 el.src = url;
                 el.alt = 'Pratinjau sampul';
             }
-            preview.insertBefore(el, badge);
+            // Sisipkan di belakang hint & badge
+            preview.insertBefore(el, preview.firstChild);
         }
 
         function refresh() {
@@ -1000,6 +1159,8 @@
             });
 
             clearMedia();
+
+            var hasMedia = false;
 
             if (type === 'default') {
                 preview.style.background = DEFAULT_BG;
@@ -1012,16 +1173,104 @@
                 if (picked) {
                     addMedia(picked.url, picked.isVideo);
                     badge.textContent = picked.isVideo ? 'Video (baru)' : 'Foto (baru)';
+                    hasMedia = true;
                 } else if (saved.url && (saved.type === 'image' || saved.type === 'video')) {
                     addMedia(saved.url, saved.type === 'video');
                     badge.textContent = saved.type === 'video' ? 'Video saat ini' : 'Foto saat ini';
+                    hasMedia = true;
                 } else {
                     preview.style.background = DEFAULT_BG;
                     badge.textContent = 'Pilih foto atau video';
                 }
             }
+
+            preview.classList.toggle('adjustable', hasMedia);
+            adjustBox.classList.toggle('show', hasMedia);
+
+            applyPos();
         }
 
+        /* ----- Seret untuk menggeser ----- */
+        var drag = null;
+
+        // Seberapa jauh media "melebihi" bingkai (px) pada tiap sumbu
+        function overflow() {
+            var el = currentMedia();
+            if (!el) return { x: 0, y: 0 };
+
+            var nw = el.tagName === 'VIDEO' ? el.videoWidth : el.naturalWidth;
+            var nh = el.tagName === 'VIDEO' ? el.videoHeight : el.naturalHeight;
+            var fw = preview.clientWidth;
+            var fh = preview.clientHeight;
+
+            if (!nw || !nh || !fw || !fh) return { x: 0, y: 0 };
+
+            var cover = Math.max(fw / nw, fh / nh);   // skala object-fit: cover
+
+            return {
+                x: nw * cover * pos.z - fw,
+                y: nh * cover * pos.z - fh
+            };
+        }
+
+        preview.addEventListener('pointerdown', function (e) {
+            if (!preview.classList.contains('adjustable')) return;
+            if (e.button !== undefined && e.button !== 0) return;
+
+            drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+            preview.classList.add('dragging');
+
+            try { preview.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
+            e.preventDefault();
+        });
+
+        preview.addEventListener('pointermove', function (e) {
+            if (!drag || drag.id !== e.pointerId) return;
+
+            var dx = e.clientX - drag.x;
+            var dy = e.clientY - drag.y;
+
+            drag.x = e.clientX;
+            drag.y = e.clientY;
+
+            var ov = overflow();
+
+            // Media mengikuti arah jari/kursor: geser ke kanan => bagian kiri foto terlihat
+            if (ov.x > 1) pos.x = clamp(pos.x - (dx / ov.x) * 100, 0, 100, pos.x);
+            if (ov.y > 1) pos.y = clamp(pos.y - (dy / ov.y) * 100, 0, 100, pos.y);
+
+            applyPos();
+        });
+
+        function endDrag(e) {
+            if (!drag || (e && drag.id !== e.pointerId)) return;
+            drag = null;
+            preview.classList.remove('dragging');
+        }
+        preview.addEventListener('pointerup', endDrag);
+        preview.addEventListener('pointercancel', endDrag);
+
+        /* ----- Zoom: scroll mouse & slider ----- */
+        preview.addEventListener('wheel', function (e) {
+            if (!preview.classList.contains('adjustable')) return;
+            e.preventDefault();
+            pos.z = clamp(pos.z * (e.deltaY < 0 ? 1.06 : 0.94), MIN_ZOOM, MAX_ZOOM, pos.z);
+            applyPos();
+        }, { passive: false });
+
+        zoomEl.addEventListener('input', function () {
+            pos.z = clamp(parseFloat(zoomEl.value), MIN_ZOOM, MAX_ZOOM, 1);
+            applyPos();
+        });
+
+        document.getElementById('coverCenter').addEventListener('click', function () {
+            pos.x = 50; pos.y = 50;
+            applyPos();
+        });
+
+        document.getElementById('coverReset').addEventListener('click', resetPos);
+
+        /* ----- Pilihan jenis & warna sampul ----- */
         radios.forEach(function (r) { r.addEventListener('change', refresh); });
         c1.addEventListener('input', refresh);
         c2.addEventListener('input', refresh);
@@ -1034,6 +1283,7 @@
             });
         });
 
+        /* ----- Pilih file foto / video ----- */
         fileEl.addEventListener('change', async function () {
             var f = fileEl.files && fileEl.files[0];
             if (!f) return;
@@ -1095,6 +1345,9 @@
             objUrl = URL.createObjectURL(finalFile);
             picked = { url: objUrl, isVideo: isVid };
             fileName.textContent = finalFile.name;
+
+            // File baru => posisi kembali ke tengah & zoom normal
+            pos.x = 50; pos.y = 50; pos.z = 1;
 
             document.getElementById('ct_media').checked = true;
             refresh();
@@ -1161,12 +1414,17 @@
         var panels = {
             color: document.getElementById('bgpanel-color'),
             gradient: document.getElementById('bgpanel-gradient'),
-            image: document.getElementById('bgpanel-image')
+            image: document.getElementById('bgpanel-image'),
+            salju: document.getElementById('bgpanel-salju')
         };
 
         var saved = @json(['url' => $bgUrl]);
         var picked = null;
         var objUrl = null;
+
+        // Latar & partikel salju
+        var SNOW_URL = @json($bgSnowUrl);
+        var snow = SnowFX(document.getElementById('bgSnow'), { density: 5000, min: 25, max: 70, scale: 0.8 });
 
         function choice() {
             var r = document.querySelector('input[name="bg_type"]:checked');
@@ -1192,6 +1450,10 @@
             preview.style.backgroundSize = '';
             preview.style.backgroundPosition = '';
 
+            // Hentikan salju kecuali bila jenis "salju" yang dipilih
+            if (type !== 'salju') snow.stop();
+            preview.classList.toggle('is-salju', type === 'salju');
+
             if (type === 'default') {
                 preview.style.background = '#f6f7fb';
                 badge.textContent = 'Background default';
@@ -1201,6 +1463,10 @@
             } else if (type === 'gradient') {
                 preview.style.background = 'linear-gradient(135deg,' + g1.value + ',' + g2.value + ')';
                 badge.textContent = 'Gradien';
+            } else if (type === 'salju') {
+                preview.style.background = 'linear-gradient(180deg, #8fbcf0 0%, #a9cdf5 50%, #c3dcf8 100%)';
+                badge.textContent = 'Salju ❄️ (hiasan pinggir)';
+                snow.start();
             } else {
                 var url = picked ? picked.url : saved.url;
                 if (url) {

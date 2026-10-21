@@ -41,6 +41,57 @@
             background: var(--bg);
         }
 
+        /* Lapisan partikel salju (hanya muncul bila background "Salju" dipilih).
+           Berada di atas background, tetapi di bawah kartu agar tulisan tetap terbaca. */
+        .snow-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Hiasan salju di PINGGIR layar (atas, bawah, kiri, kanan).
+           Gambar dipotong & dipudarkan dengan mask, sehingga bagian tengah tetap polos. */
+        .snow-frame,
+        .snow-side {
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .snow-frame {
+            left: 0;
+            right: 0;
+            height: clamp(150px, 28vh, 260px);
+            background-repeat: repeat-x;
+            background-size: 520px auto;
+        }
+
+        .snow-frame.top {
+            top: 0;
+            background-position: top center;
+            -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+            mask-image: linear-gradient(to bottom, #000 55%, transparent);
+        }
+
+        .snow-frame.bottom {
+            bottom: 0;
+            background-position: bottom center;
+            -webkit-mask-image: linear-gradient(to top, #000 55%, transparent);
+            mask-image: linear-gradient(to top, #000 55%, transparent);
+        }
+
+        /* Kabut salju tipis di sisi kiri & kanan */
+        .snow-side {
+            top: 0;
+            bottom: 0;
+            width: clamp(40px, 8vw, 120px);
+        }
+        .snow-side.left  { left: 0;  background: linear-gradient(to right, rgba(255,255,255,.55), transparent); }
+        .snow-side.right { right: 0; background: linear-gradient(to left,  rgba(255,255,255,.55), transparent); }
+
         .container {
             max-width: 1000px;
             margin: auto;
@@ -104,6 +155,8 @@
             pointer-events: none;
         }
 
+        /* Foto/video sampul. Posisi & zoom dari halaman edit diterapkan lewat
+           style inline (object-position + transform scale + transform-origin). */
         .cover img,
         .cover video {
             position: absolute;
@@ -112,6 +165,8 @@
             height: 100%;
             object-fit: cover;
             display: block;
+            will-change: transform;
+            backface-visibility: hidden;
         }
 
         .head {
@@ -492,6 +547,109 @@
 
         form { margin: 0; }
 
+        /* ===== PENCAPAIAN ===== */
+        .achievement-section {
+            margin-top: 34px;
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 26px 30px 30px;
+        }
+
+        .achievement-level {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--red-soft), #fff7ed);
+            border: 1px solid #fecaca;
+        }
+
+        .level-icon {
+            flex: none;
+            width: 60px;
+            height: 60px;
+            display: grid;
+            place-items: center;
+            font-size: 30px;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .level-body { flex: 1; min-width: 0; }
+        .level-name { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+        .level-hint { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+        .progress-bar {
+            height: 8px;
+            margin-top: 10px;
+            border-radius: 999px;
+            background: #fee2e2;
+            overflow: hidden;
+        }
+
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--red), var(--orange));
+        }
+
+        .achievement-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .badge {
+            text-align: center;
+            padding: 16px 10px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: #fff;
+        }
+
+        .badge .b-icon { font-size: 28px; }
+        .badge .b-name { font-size: 13px; font-weight: 700; margin-top: 6px; }
+        .badge .b-req { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        .badge.locked { background: #f9fafb; }
+        .badge.locked .b-icon { filter: grayscale(1); opacity: .35; }
+        .badge.locked .b-name { color: var(--muted); }
+
+        .badge.earned {
+            border-color: #fecaca;
+            background: linear-gradient(180deg, #fff, var(--red-soft));
+        }
+
+        .done-list { margin-top: 22px; }
+        .done-list h3 { font-size: 16px; margin: 0 0 12px; }
+
+        .done-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .done-item strong { overflow-wrap: anywhere; }
+        .done-item span { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
         /* ===== FOOTER ACTIONS ===== */
         .actions {
             display: flex;
@@ -532,6 +690,9 @@
             .favorite-section { padding: 20px 16px 24px; border-radius: 20px; }
             .favorite-heading h2 { font-size: 19px; }
             .favorite-list { grid-template-columns: 1fr; }
+
+            .achievement-section { padding: 20px 16px 24px; border-radius: 20px; }
+            .done-item { flex-direction: column; align-items: flex-start; gap: 2px; }
         }
     </style>
 </head>
@@ -542,6 +703,33 @@
     // dan favorit manual sama-sama tampil otomatis.
     $favoritePlaces = $user->favoritePlaces()->latest()->get();
     $favoriteCount  = $favoritePlaces->count();
+
+    // ===== Pencapaian penjelajah =====
+    // Dihitung dari rencana perjalanan yang sudah ditandai selesai.
+    $completedTrips = \App\Models\TravelPlan::where('user_id', $user->id)
+        ->whereNotNull('completed_at')
+        ->withCount('places')
+        ->latest('completed_at')
+        ->get();
+
+    $completedCount = $completedTrips->count();
+    $visitedTotal   = (int) $completedTrips->sum('places_count');
+
+    // [syarat jumlah perjalanan selesai, ikon, nama level]
+    $levels = [
+        [0,  '🌱', 'Penjelajah Pemula'],
+        [1,  '🧭', 'Penjelajah'],
+        [3,  '🥾', 'Petualang'],
+        [5,  '🏔️', 'Penjelajah Handal'],
+        [10, '🏆', 'Legenda Nusantara'],
+    ];
+
+    $currentLevel = collect($levels)->last(fn ($l) => $completedCount >= $l[0]);
+    $nextLevel    = collect($levels)->first(fn ($l) => $completedCount < $l[0]);
+
+    $levelProgress = $nextLevel
+        ? (int) round(($completedCount - $currentLevel[0]) / ($nextLevel[0] - $currentLevel[0]) * 100)
+        : 100;
 
     // ===== Sampul profil =====
     $coverType = $user->cover_type ?? 'default';
@@ -554,6 +742,21 @@
     $coverColor1 = $user->cover_color ?: '#dc2626';
     $coverColor2 = $user->cover_color2 ?: '#f97316';
 
+    // Posisi & zoom foto/video sampul (diatur di halaman edit profil).
+    // x,y dalam persen (0-100), zoom 1-3. Nilai dibersihkan agar aman dipakai di CSS.
+    $coverPosX = max(0, min(100, (float) ($user->cover_pos_x ?? 50)));
+    $coverPosY = max(0, min(100, (float) ($user->cover_pos_y ?? 50)));
+    $coverZoom = max(1, min(3, (float) ($user->cover_zoom ?? 1)));
+
+    $coverMediaStyle = sprintf(
+        'object-position: %s%% %s%%; transform-origin: %s%% %s%%; transform: scale(%s);',
+        rtrim(rtrim(number_format($coverPosX, 2, '.', ''), '0'), '.'),
+        rtrim(rtrim(number_format($coverPosY, 2, '.', ''), '0'), '.'),
+        rtrim(rtrim(number_format($coverPosX, 2, '.', ''), '0'), '.'),
+        rtrim(rtrim(number_format($coverPosY, 2, '.', ''), '0'), '.'),
+        rtrim(rtrim(number_format($coverZoom, 2, '.', ''), '0'), '.')
+    );
+
     // ===== Warna tulisan nama & username =====
     $nameColor = $user->name_color;
     $userColor = $user->username_color;
@@ -564,6 +767,9 @@
     $bgC1   = $user->bg_color ?: '#f6f7fb';
     $bgC2   = $user->bg_color2 ?: '#fde68a';
 
+    // Gambar latar salju (taruh di public/images/bg/salju-bg.png)
+    $bgSnowUrl = asset('images/bg/salju-bg.png');
+
     $pageBgStyle = '';
     if ($bgType === 'color') {
         $pageBgStyle = "background: {$bgC1};";
@@ -571,11 +777,25 @@
         $pageBgStyle = "background: linear-gradient(135deg, {$bgC1}, {$bgC2});";
     } elseif ($bgType === 'image' && $bgSrc) {
         $pageBgStyle = "background: #111827 url('{$bgSrc}') center / cover no-repeat;";
+    } elseif ($bgType === 'salju') {
+        // Dasar polos biru es lembut; hiasan salju ditaruh di pinggir (lihat .snow-frame)
+        $pageBgStyle = "background: linear-gradient(180deg, #8fbcf0 0%, #a9cdf5 50%, #c3dcf8 100%);";
     }
 @endphp
 
 <body>
 <div class="page-bg" style="{{ $pageBgStyle }}"></div>
+
+@if($bgType === 'salju')
+    {{-- Hiasan salju di pinggir layar --}}
+    <div class="snow-side left"></div>
+    <div class="snow-side right"></div>
+    <div class="snow-frame top" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+    <div class="snow-frame bottom" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+
+    {{-- Salju jatuh --}}
+    <canvas class="snow-canvas" id="snowCanvas"></canvas>
+@endif
 
 <main class="container">
 
@@ -603,9 +823,9 @@
              @endif>
 
             @if($coverType === 'image')
-                <img src="{{ $coverSrc }}" alt="Sampul profil">
+                <img src="{{ $coverSrc }}" alt="Sampul profil" style="{{ $coverMediaStyle }}">
             @elseif($coverType === 'video')
-                <video src="{{ $coverSrc }}" autoplay muted loop playsinline></video>
+                <video src="{{ $coverSrc }}" autoplay muted loop playsinline style="{{ $coverMediaStyle }}"></video>
             @endif
         </div>
 
@@ -696,7 +916,7 @@
             <span class="item-arrow">›</span>
         </a>
 
-        <a class="item" href="{{ route('achievements.index') }}">
+        <a class="item" href="#pencapaian">
             <span class="item-icon">🏆</span>
             Pencapaian penjelajah
             <span class="item-arrow">›</span>
@@ -834,6 +1054,82 @@
         @endif
     </section>
 
+    {{-- PENCAPAIAN PENJELAJAH --}}
+    <section class="achievement-section" id="pencapaian">
+        <div class="favorite-heading">
+            <h2>🏆 Pencapaian Penjelajah</h2>
+
+            <a class="btn" href="{{ route('achievements.index') }}">Lihat semua ›</a>
+        </div>
+
+        {{-- Level --}}
+        <div class="achievement-level">
+            <div class="level-icon">{{ $currentLevel[1] }}</div>
+
+            <div class="level-body">
+                <div class="level-name">{{ $currentLevel[2] }}</div>
+                <div class="level-hint">
+                    @if($nextLevel)
+                        {{ $nextLevel[0] - $completedCount }} perjalanan lagi menuju {{ $nextLevel[2] }}
+                    @else
+                        Level tertinggi tercapai. Luar biasa!
+                    @endif
+                </div>
+                <div class="progress-bar"><span style="width: {{ $levelProgress }}%"></span></div>
+            </div>
+        </div>
+
+        {{-- Statistik --}}
+        <div class="achievement-stats">
+            <div class="stat">
+                <div class="stat-icon">✅</div>
+                <div class="num">{{ $completedCount }}</div>
+                <div class="stat-label">Perjalanan selesai</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-icon">📍</div>
+                <div class="num">{{ $visitedTotal }}</div>
+                <div class="stat-label">Tempat dikunjungi</div>
+            </div>
+        </div>
+
+        {{-- Lencana --}}
+        <div class="badge-grid">
+            @foreach($levels as $lv)
+                @continue($lv[0] === 0)
+                <div class="badge {{ $completedCount >= $lv[0] ? 'earned' : 'locked' }}">
+                    <div class="b-icon">{{ $lv[1] }}</div>
+                    <div class="b-name">{{ $lv[2] }}</div>
+                    <div class="b-req">{{ $lv[0] }} perjalanan</div>
+                </div>
+            @endforeach
+        </div>
+
+        {{-- Perjalanan terakhir yang selesai --}}
+        @if($completedTrips->isNotEmpty())
+            <div class="done-list">
+                <h3>Perjalanan selesai terbaru</h3>
+
+                @foreach($completedTrips->take(3) as $trip)
+                    <div class="done-item">
+                        <strong>🧭 {{ $trip->title }}</strong>
+                        <span>
+                            {{ $trip->places_count }} tempat ·
+                            {{ \Illuminate\Support\Carbon::parse($trip->completed_at)->translatedFormat('d F Y') }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="empty" style="margin-top:20px">
+                <div class="empty-icon">🎒</div>
+                Belum ada perjalanan yang selesai.<br>
+                Tandai semua tujuan di rencana perjalananmu sebagai dikunjungi untuk membuka pencapaian pertamamu.
+            </div>
+        @endif
+    </section>
+
     {{-- TOMBOL AKSI --}}
     <div class="actions">
         <a class="btn" href="{{ route('map.index') }}">
@@ -847,5 +1143,12 @@
     </div>
 
 </main>
+
+@if($bgType === 'salju')
+    <script src="{{ asset('js/snow-fx.js') }}"></script>
+    <script>
+        SnowFX(document.getElementById('snowCanvas'), { density: 9000, min: 40, max: 140, scale: 1 }).start();
+    </script>
+@endif
 </body>
 </html>

@@ -87,7 +87,8 @@ class ProfileController extends Controller
             'username_color' => $hex,
 
             // ===== Background halaman profil =====
-            'bg_type'   => ['required', Rule::in(['default', 'color', 'gradient', 'image'])],
+            // 'salju' = latar musim dingin bawaan + efek salju jatuh
+            'bg_type'   => ['required', Rule::in(['default', 'color', 'gradient', 'image', 'salju'])],
             'bg_color'  => $hex,
             'bg_color2' => $hex,
             'bg_file'   => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -171,7 +172,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Background halaman profil: default, warna, gradien, atau foto.
+     * Background halaman profil: default, warna, gradien, foto, atau salju.
      */
     private function updateBackground(Request $request, $user, array $validated): void
     {
@@ -199,6 +200,8 @@ class ProfileController extends Controller
             return;
         }
 
+        // default / color / gradient / salju: tidak memakai file unggahan,
+        // jadi hapus foto background lama (jika ada).
         if ($user->bg_path) {
             Storage::disk('public')->delete($user->bg_path);
             $user->bg_path = null;
