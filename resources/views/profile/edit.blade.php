@@ -5,18 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Edit Profil - Jelajah Wisata Indonesia</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --red: #dc2626;
-            --red-dark: #b91c1c;
-            --red-soft: #fef2f2;
-            --orange: #f97316;
-            --ink: #1f2937;
-            --muted: #6b7280;
-            --line: #e5e7eb;
-            --bg: #f6f7fb;
-            --card: #fff;
-            --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 8px 24px rgba(16, 24, 40, .06);
+            --red: #e11d48;
+            --red-dark: #be123c;
+            --red-soft: #fff1f2;
+            --orange: #fb923c;
+            --ink: #0f172a;
+            --ink-2: #334155;
+            --muted: #64748b;
+            --line: rgba(15, 23, 42, .09);
+            --bg: #f4f5fa;
+            --card: rgba(255, 255, 255, .88);
+            --grad: linear-gradient(135deg, #e11d48 0%, #f43f5e 45%, #fb923c 100%);
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 14px rgba(15, 23, 42, .05);
+            --shadow: 0 2px 4px rgba(15, 23, 42, .04), 0 18px 40px rgba(15, 23, 42, .08);
+            --ring: 0 0 0 4px rgba(225, 29, 72, .14);
         }
 
         * { box-sizing: border-box; }
@@ -24,111 +32,157 @@
         /* Penting: atribut hidden harus selalu menyembunyikan elemen */
         [hidden] { display: none !important; }
 
+        html { scroll-behavior: smooth; background: var(--bg); }
+
         body {
             margin: 0;
-            background: var(--bg);
+            min-height: 100vh;
             color: var(--ink);
-            font-family: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+            font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+            background:
+                radial-gradient(900px 500px at 5% -5%, rgba(244, 63, 94, .15), transparent 60%),
+                radial-gradient(800px 500px at 100% 0%, rgba(251, 146, 60, .15), transparent 55%),
+                radial-gradient(700px 500px at 50% 110%, rgba(99, 102, 241, .09), transparent 60%),
+                var(--bg);
+            background-attachment: fixed;
         }
 
-        .container { max-width: 780px; margin: auto; padding: 24px 20px 60px; }
+        .container { max-width: 820px; margin: auto; padding: 26px 18px 40px; }
 
         a { color: inherit; text-decoration: none; }
 
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .anim { animation: fadeUp .55s cubic-bezier(.2, .7, .2, 1) both; }
+        .d1 { animation-delay: .06s; }
+        .d2 { animation-delay: .12s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .anim { animation: none; }
+            * { transition: none !important; }
+        }
+
         .back {
             display: inline-flex; align-items: center; gap: 6px;
-            margin-bottom: 18px; padding: 8px 14px;
-            background: #fff; border: 1px solid var(--line); border-radius: 999px;
-            font-size: 14px; font-weight: 600; color: #4b5563;
-            transition: background .15s, transform .15s;
+            margin-bottom: 18px; padding: 9px 16px;
+            background: rgba(255, 255, 255, .85);
+            -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, .8); border-radius: 999px;
+            font-size: 14px; font-weight: 700; color: var(--ink-2);
+            box-shadow: var(--shadow-sm);
+            transition: transform .15s, box-shadow .15s;
         }
-        .back:hover { background: #f9fafb; transform: translateX(-2px); }
+        .back:hover { transform: translateX(-3px); box-shadow: var(--shadow); }
 
         /* ===== HERO ===== */
         .hero {
-            display: flex; align-items: center; gap: 20px;
-            padding: 26px 28px; margin-bottom: 20px; border-radius: 24px; color: #fff;
+            position: relative; overflow: hidden;
+            display: flex; align-items: center; gap: 22px;
+            padding: 30px 32px; margin-bottom: 22px; border-radius: 28px; color: #fff;
             background:
-                radial-gradient(circle at 12% 20%, rgba(255,255,255,.25), transparent 40%),
-                linear-gradient(120deg, var(--red-dark), var(--red) 55%, var(--orange));
-            box-shadow: 0 12px 30px rgba(220, 38, 38, .25);
+                radial-gradient(circle at 12% 20%, rgba(255,255,255,.28), transparent 42%),
+                linear-gradient(120deg, #9f1239, #e11d48 50%, #fb923c);
+            box-shadow: 0 18px 40px rgba(225, 29, 72, .28);
         }
+        .hero::before {
+            content: ""; position: absolute; width: 300px; height: 300px;
+            right: -70px; top: -120px; border-radius: 50%; background: rgba(255, 255, 255, .14);
+        }
+        .hero::after {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background-image: radial-gradient(rgba(255,255,255,.2) 1.5px, transparent 1.5px);
+            background-size: 22px 22px; opacity: .5;
+        }
+        .hero > * { position: relative; z-index: 1; }
+
         .hero .avatar {
-            flex: none; width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
-            border: 4px solid rgba(255,255,255,.9); background: #fff7ed;
-            display: grid; place-items: center; font-size: 38px;
+            flex: none; width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+            border: 4px solid rgba(255,255,255,.95); background: #fff7ed;
+            display: grid; place-items: center; font-size: 40px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
         }
-        .hero h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -.02em; }
-        .hero p { margin: 0; opacity: .9; font-size: 15px; }
+        .hero h1 { margin: 0 0 4px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+        .hero p { margin: 0; opacity: .92; font-size: 15px; font-weight: 500; }
 
         /* ===== ALERT ===== */
-        .success {
-            padding: 14px 18px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
-            border-radius: 12px; margin-bottom: 18px; font-size: 14px;
+        .success, .error {
+            padding: 14px 18px; border-radius: 16px; margin-bottom: 18px;
+            font-size: 14px; font-weight: 500;
         }
-        .error {
-            padding: 14px 18px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
-            border-radius: 12px; margin-bottom: 18px; font-size: 14px;
-        }
+        .success { background: rgba(240, 253, 244, .95); border: 1px solid #bbf7d0; color: #166534; }
+        .error   { background: rgba(254, 242, 242, .95); border: 1px solid #fecaca; color: #991b1b; }
         .error ul { margin: 0; padding-left: 20px; }
 
-        /* ===== CARD ===== */
-        .card { background: var(--card); border-radius: 24px; box-shadow: var(--shadow); padding: 10px 28px 30px; }
-        .section { padding-top: 24px; }
-
-        .title { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 0 0 4px; letter-spacing: -.01em; }
-        .title .ico {
-            width: 34px; height: 34px; display: grid; place-items: center;
-            border-radius: 10px; background: var(--red-soft); font-size: 17px;
+        /* ===== FORM & SECTION CARD ===== */
+        .section {
+            background: var(--card);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, .75);
+            border-radius: 26px;
+            box-shadow: var(--shadow);
+            padding: 26px 28px 30px;
+            margin-bottom: 20px;
         }
-        .section-desc { margin: 0 0 6px 44px; color: var(--muted); font-size: 13px; }
+
+        .title {
+            display: flex; align-items: center; gap: 12px;
+            font-size: 19px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.02em;
+        }
+        .title .ico {
+            width: 40px; height: 40px; display: grid; place-items: center; flex: none;
+            border-radius: 13px; background: var(--grad); color: #fff; font-size: 18px;
+            box-shadow: 0 8px 18px rgba(225, 29, 72, .28);
+        }
+        .section-desc { margin: 0 0 6px 52px; color: var(--muted); font-size: 13.5px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
         .full { grid-column: 1 / -1; }
 
-        label { display: block; font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+        label { display: block; font-size: 13.5px; font-weight: 700; margin: 18px 0 8px; color: var(--ink-2); }
 
         input[type=text], input[type=email], input[type=password], input:not([type]), textarea {
-            width: 100%; padding: 13px 15px; border: 1.5px solid #dfe2e8; border-radius: 12px;
-            font: 15px inherit; font-family: inherit; color: var(--ink); background: #fcfcfd;
+            width: 100%; padding: 13px 15px; border: 1.5px solid #e2e8f0; border-radius: 14px;
+            font-size: 15px; font-family: inherit; color: var(--ink); background: #f8fafc;
             transition: border-color .15s, box-shadow .15s, background .15s;
         }
         input:focus, textarea:focus {
-            outline: none; border-color: var(--red); background: #fff;
-            box-shadow: 0 0 0 4px rgba(220, 38, 38, .12);
+            outline: none; border-color: var(--red); background: #fff; box-shadow: var(--ring);
         }
         input.is-invalid, textarea.is-invalid { border-color: #f87171; }
-        textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+        textarea { min-height: 130px; resize: vertical; line-height: 1.65; }
 
-        .field-error { display: block; margin-top: 6px; color: var(--red-dark); font-size: 12px; }
-        .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
-        .counter { text-align: right; font-size: 12px; color: var(--muted); margin-top: 6px; }
+        .field-error { display: block; margin-top: 6px; color: var(--red-dark); font-size: 12.5px; font-weight: 600; }
+        .hint { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+        .counter { text-align: right; font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 600; }
 
         .input-prefix { position: relative; }
         .input-prefix span {
             position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-            color: var(--muted); font-weight: 600;
+            color: var(--red); font-weight: 800;
         }
         .input-prefix input { padding-left: 34px; }
 
         .pw { position: relative; }
-        .pw input { padding-right: 70px; }
+        .pw input { padding-right: 96px; }
         .pw button {
             position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
             border: 0; background: transparent; color: var(--red);
-            font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px; font-family: inherit;
+            font-size: 13px; font-weight: 800; cursor: pointer; padding: 8px; font-family: inherit;
         }
-
-        .line { border: 0; border-top: 1px solid var(--line); margin: 30px 0 0; }
 
         /* ===== PREVIEW KOTAK (sampul & background) ===== */
         .cover-preview {
-            position: relative; margin-top: 18px; height: 170px; border-radius: 18px; overflow: hidden;
+            position: relative; margin-top: 18px; height: 180px; border-radius: 20px; overflow: hidden;
             background:
                 radial-gradient(circle at 12% 20%, rgba(255,255,255,.25), transparent 40%),
                 linear-gradient(120deg, var(--red-dark), var(--red) 55%, var(--orange));
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,.06), var(--shadow-sm);
         }
         /* Gambar/video ditampilkan apa adanya (tanpa filter, tanpa blur).
            Posisi & zoom diatur lewat object-position + transform (inline dari JS). */
@@ -143,8 +197,9 @@
         }
         .cover-badge {
             position: absolute; left: 12px; bottom: 12px; z-index: 2;
-            padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
-            color: #fff; background: rgba(0,0,0,.55);
+            padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+            color: #fff; background: rgba(15, 23, 42, .6);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
             pointer-events: none;
         }
 
@@ -184,90 +239,96 @@
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            outline: 3px solid rgba(220, 38, 38, .0);
+            outline: 3px solid rgba(225, 29, 72, .0);
             transition: outline-color .15s;
         }
-        .cover-preview.adjustable:hover { outline-color: rgba(220, 38, 38, .35); }
-        .cover-preview.adjustable.dragging { cursor: grabbing; outline-color: rgba(220, 38, 38, .6); }
+        .cover-preview.adjustable:hover { outline-color: rgba(225, 29, 72, .35); }
+        .cover-preview.adjustable.dragging { cursor: grabbing; outline-color: rgba(225, 29, 72, .6); }
 
         .cover-hint {
             display: none;
             position: absolute; right: 12px; top: 12px; z-index: 2;
-            padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
-            color: #fff; background: rgba(0,0,0,.55);
+            padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+            color: #fff; background: rgba(15, 23, 42, .6);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
             pointer-events: none;
         }
         .cover-preview.adjustable .cover-hint { display: block; }
 
         .cover-adjust {
             display: none;
-            margin-top: 16px; padding-top: 14px; border-top: 1px dashed #e1e4ea;
+            margin-top: 16px; padding-top: 14px; border-top: 1px dashed #dbe0e8;
         }
         .cover-adjust.show { display: block; }
 
-        .quality { font-size: 12px; margin: 10px 0 0; font-weight: 600; }
+        .quality { font-size: 12.5px; margin: 10px 0 0; font-weight: 700; }
         .quality.ok   { color: #166534; }
         .quality.warn { color: #92400e; }
         .quality.busy { color: var(--muted); }
 
+        /* ===== PILIHAN (segmented) ===== */
         .seg { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
         .seg input { position: absolute; opacity: 0; pointer-events: none; }
         .seg label {
-            margin: 0; padding: 10px 16px; border: 1.5px solid #dfe2e8; border-radius: 999px;
-            font-size: 13px; font-weight: 700; color: #4b5563; background: #fff; cursor: pointer;
+            margin: 0; padding: 10px 16px; border: 1.5px solid #e2e8f0; border-radius: 999px;
+            font-size: 13px; font-weight: 700; color: var(--ink-2); background: #fff; cursor: pointer;
             transition: all .15s;
         }
+        .seg label:hover { border-color: #fda4af; transform: translateY(-1px); }
         .seg input:checked + label {
-            background: var(--red-soft); border-color: var(--red); color: var(--red-dark);
-            box-shadow: 0 0 0 3px rgba(220,38,38,.1);
+            background: var(--grad); border-color: transparent; color: #fff;
+            box-shadow: 0 8px 18px rgba(225, 29, 72, .3);
         }
-        .seg input:focus-visible + label { box-shadow: 0 0 0 4px rgba(220,38,38,.2); }
+        .seg input:focus-visible + label { box-shadow: 0 0 0 4px rgba(225,29,72,.25); }
 
-        .cover-panel { display: none; margin-top: 16px; padding: 18px; border: 2px dashed #e1e4ea; border-radius: 16px; background: #fafbfc; }
+        .cover-panel {
+            display: none; margin-top: 16px; padding: 20px; border: 2px dashed #e2e8f0;
+            border-radius: 20px; background: rgba(248, 250, 252, .85);
+        }
         .cover-panel.show { display: block; }
 
         .color-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
-        .color-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+        .color-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; }
         .color-field input[type=color] {
-            width: 64px; height: 44px; padding: 3px; border: 1.5px solid #dfe2e8;
-            border-radius: 10px; background: #fff; cursor: pointer;
+            width: 68px; height: 46px; padding: 3px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; background: #fff; cursor: pointer;
         }
 
-        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .presets { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
         .preset {
-            width: 38px; height: 38px; border-radius: 50%; border: 3px solid #fff;
-            box-shadow: 0 0 0 1.5px #d1d5db; cursor: pointer; padding: 0;
-            transition: transform .15s;
+            width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fff;
+            box-shadow: 0 0 0 1.5px #cbd5e1, var(--shadow-sm); cursor: pointer; padding: 0;
+            transition: transform .15s, box-shadow .15s;
         }
-        .preset:hover { transform: scale(1.12); }
+        .preset:hover { transform: scale(1.14); box-shadow: 0 0 0 2px var(--red), var(--shadow-sm); }
 
         .tip {
-            font-size: 12px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a;
-            padding: 8px 12px; border-radius: 10px; margin-bottom: 12px;
+            font-size: 12.5px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a;
+            padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; line-height: 1.6;
         }
 
         /* ===== WARNA TULISAN ===== */
         .text-preview {
-            margin-top: 18px; padding: 20px 22px; border-radius: 16px;
-            border: 1px solid var(--line); background: #fff;
+            margin-top: 18px; padding: 22px 24px; border-radius: 20px;
+            border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-sm);
         }
-        .text-preview .pv-name { font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
-        .text-preview .pv-user { font-size: 15px; font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
+        .text-preview .pv-name { font-size: 27px; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; overflow-wrap: anywhere; }
+        .text-preview .pv-user { font-size: 15px; font-weight: 700; margin-top: 2px; overflow-wrap: anywhere; }
 
         .text-colors { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-        .text-colors .box { padding: 16px; border: 2px dashed #e1e4ea; border-radius: 16px; background: #fafbfc; }
-        .text-colors .box strong { display: block; font-size: 14px; margin-bottom: 10px; }
+        .text-colors .box { padding: 18px; border: 2px dashed #e2e8f0; border-radius: 20px; background: rgba(248, 250, 252, .85); }
+        .text-colors .box strong { display: block; font-size: 14px; margin-bottom: 12px; }
         .text-colors .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .text-colors input[type=color] {
-            width: 64px; height: 44px; padding: 3px; border: 1.5px solid #dfe2e8;
-            border-radius: 10px; background: #fff; cursor: pointer;
+            width: 68px; height: 46px; padding: 3px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; background: #fff; cursor: pointer;
         }
 
         /* ===== EDITOR FOTO PROFIL ===== */
         .avatar-box {
-            display: flex; gap: 26px; align-items: center; flex-wrap: wrap;
-            margin-top: 18px; padding: 22px; border: 2px dashed #e1e4ea;
-            border-radius: 20px; background: #fafbfc;
+            display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+            margin-top: 18px; padding: 24px; border: 2px dashed #e2e8f0;
+            border-radius: 24px; background: rgba(248, 250, 252, .85);
         }
 
         /* Area kerja persegi. Lingkaran di tengah = bagian yang akan dipakai sebagai foto profil */
@@ -276,10 +337,10 @@
             flex: none;
             width: min(300px, 100%);
             aspect-ratio: 1 / 1;
-            border-radius: 20px;
+            border-radius: 24px;
             overflow: hidden;
-            background: #f3f4f6;
-            box-shadow: 0 0 0 1px #e5e7eb, 0 12px 28px rgba(0,0,0,.12);
+            background: #f1f5f9;
+            box-shadow: 0 0 0 1px #e2e8f0, 0 16px 34px rgba(15, 23, 42, .14);
         }
 
         /* Foto profil saat ini (sebelum memilih foto baru) */
@@ -292,7 +353,7 @@
             background: #fff7ed;
             display: grid; place-items: center;
             font-size: 80px;
-            box-shadow: 0 0 0 4px #fff, 0 0 0 6px #fecaca;
+            box-shadow: 0 0 0 4px #fff, 0 0 0 7px #fda4af;
         }
 
         .stage canvas {
@@ -314,7 +375,7 @@
             border-radius: 50%;
             pointer-events: none;
             border: 2px solid rgba(255,255,255,.95);
-            box-shadow: 0 0 0 999px rgba(17, 24, 39, .55);
+            box-shadow: 0 0 0 999px rgba(15, 23, 42, .58);
             background:
                 linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) center/1px 100% no-repeat,
                 linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) center/100% 1px no-repeat;
@@ -322,8 +383,8 @@
         .stage.editing .mask { display: block; }
 
         .avatar-tools { flex: 1; min-width: 220px; }
-        .avatar-tools strong { display: block; font-size: 15px; margin-bottom: 4px; }
-        .avatar-tools .sub { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 14px; overflow-wrap: anywhere; }
+        .avatar-tools strong { display: block; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+        .avatar-tools .sub { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 0 0 14px; overflow-wrap: anywhere; }
 
         .sr-only {
             position: absolute; width: 1px; height: 1px; overflow: hidden;
@@ -337,57 +398,68 @@
         .zoom-row span { font-size: 18px; color: var(--muted); user-select: none; }
 
         input[type=range] {
-            flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px;
-            background: #e5e7eb; padding: 0; border: 0; box-shadow: none;
+            flex: 1; -webkit-appearance: none; appearance: none; height: 7px; border-radius: 999px;
+            background: #e2e8f0; padding: 0; border: 0; box-shadow: none;
         }
-        input[type=range]:focus { box-shadow: none; background: #e5e7eb; }
+        input[type=range]:focus { box-shadow: none; background: #e2e8f0; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
-            background: var(--red); border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer;
+            -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%;
+            background: var(--grad); border: 3px solid #fff; box-shadow: 0 3px 10px rgba(225,29,72,.4); cursor: pointer;
         }
         input[type=range]::-moz-range-thumb {
             width: 18px; height: 18px; border-radius: 50%;
-            background: var(--red); border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer;
+            background: var(--red); border: 3px solid #fff; box-shadow: 0 3px 10px rgba(225,29,72,.4); cursor: pointer;
         }
 
         /* ===== BUTTONS ===== */
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 12px 20px; border: 1px solid #dfe2e8; border-radius: 12px;
+            padding: 12px 20px; border: 1px solid rgba(15, 23, 42, .1); border-radius: 14px;
             background: #fff; color: var(--ink); font-size: 14px; font-weight: 700;
             font-family: inherit; cursor: pointer;
             transition: transform .15s, box-shadow .15s, background .15s;
         }
-        .btn:hover { background: #f9fafb; transform: translateY(-1px); }
-        .btn.sm { padding: 9px 14px; font-size: 13px; }
+        .btn:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+        .btn.sm { padding: 9px 14px; font-size: 13px; border-radius: 12px; }
+
+        .btn:focus-visible { outline: 3px solid rgba(225, 29, 72, .5); outline-offset: 2px; }
 
         .primary {
-            background: linear-gradient(135deg, var(--red), var(--red-dark));
-            border-color: transparent; color: #fff; box-shadow: 0 6px 16px rgba(220, 38, 38, .3);
+            background: var(--grad);
+            border-color: transparent; color: #fff; box-shadow: 0 10px 22px rgba(225, 29, 72, .32);
         }
-        .primary:hover { background: linear-gradient(135deg, #ef4444, var(--red)); box-shadow: 0 8px 20px rgba(220, 38, 38, .38); }
+        .primary:hover { background: var(--grad); filter: brightness(1.06); box-shadow: 0 14px 28px rgba(225, 29, 72, .4); }
         .primary:disabled { opacity: .7; cursor: wait; transform: none; }
 
         .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
+        /* Bar aksi melayang di bawah layar */
         .actions {
-            display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px;
-            padding-top: 24px; border-top: 1px solid var(--line);
+            position: sticky; bottom: 14px; z-index: 20;
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+            margin-top: 6px; padding: 12px 14px;
+            background: rgba(255, 255, 255, .88);
+            -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, .8); border-radius: 20px;
+            box-shadow: 0 12px 34px rgba(15, 23, 42, .16);
         }
+        .actions .note { margin-right: auto; font-size: 13px; color: var(--muted); font-weight: 600; padding-left: 6px; }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
-            .container { padding: 14px 12px 40px; }
-            .hero { padding: 20px; gap: 14px; border-radius: 20px; }
-            .hero .avatar { width: 66px; height: 66px; font-size: 30px; }
-            .hero h1 { font-size: 21px; }
-            .card { padding: 6px 18px 24px; border-radius: 20px; }
+            .container { padding: 14px 12px 30px; }
+            .hero { padding: 22px 20px; gap: 14px; border-radius: 22px; }
+            .hero .avatar { width: 68px; height: 68px; font-size: 30px; }
+            .hero h1 { font-size: 22px; }
+            .section { padding: 20px 16px 24px; border-radius: 22px; }
             .grid { grid-template-columns: 1fr; }
             .text-colors { grid-template-columns: 1fr; }
             .avatar-box { justify-content: center; padding: 18px; }
-            .section-desc { margin-left: 0; }
+            .section-desc { margin-left: 0; margin-top: 8px; }
+            .actions { padding: 10px; }
+            .actions .note { display: none; }
             .actions .btn { flex: 1; }
-            .cover-preview { height: 130px; }
+            .cover-preview { height: 140px; }
         }
     </style>
 </head>
@@ -424,9 +496,9 @@
 
 <main class="container">
 
-    <a class="back" href="{{ route('profile.show') }}">← Kembali ke Profil</a>
+    <a class="back anim" href="{{ route('profile.show') }}">← Kembali ke Profil</a>
 
-    <header class="hero">
+    <header class="hero anim d1">
         @if($user->avatar_path)
             <img class="avatar" src="{{ asset('storage/'.$user->avatar_path) }}" alt="Foto profil">
         @else
@@ -440,11 +512,11 @@
     </header>
 
     @if(session('success'))
-        <div class="success">{{ session('success') }}</div>
+        <div class="success anim">{{ session('success') }}</div>
     @endif
 
     @if($errors->any())
-        <div class="error">
+        <div class="error anim">
             <ul>
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -453,377 +525,366 @@
         </div>
     @endif
 
-    <section class="card">
-        <form id="profileForm" action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
+    <form id="profileForm" class="anim d2" action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
 
-            {{-- SAMPUL PROFIL --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">🎨</span> Sampul profil</h2>
-                <p class="section-desc">Ubah latar bagian atas profilmu: warna, foto, atau video.</p>
+        {{-- SAMPUL PROFIL --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">🎨</span> Sampul profil</h2>
+            <p class="section-desc">Ubah latar bagian atas profilmu: warna, foto, atau video.</p>
 
-                <div class="cover-preview" id="coverPreview">
-                    <span class="cover-hint" id="coverHint">✋ Seret untuk mengatur posisi</span>
-                    <span class="cover-badge" id="coverBadge">Pratinjau sampul</span>
-                </div>
-                <p class="quality" id="coverQuality" hidden></p>
+            <div class="cover-preview" id="coverPreview">
+                <span class="cover-hint" id="coverHint">✋ Seret untuk mengatur posisi</span>
+                <span class="cover-badge" id="coverBadge">Pratinjau sampul</span>
+            </div>
+            <p class="quality" id="coverQuality" hidden></p>
 
-                <div class="seg">
-                    <input type="radio" name="cover_type" id="ct_default" value="default" {{ $coverChoice === 'default' ? 'checked' : '' }}>
-                    <label for="ct_default">🔴 Default</label>
+            <div class="seg">
+                <input type="radio" name="cover_type" id="ct_default" value="default" {{ $coverChoice === 'default' ? 'checked' : '' }}>
+                <label for="ct_default">🔴 Default</label>
 
-                    <input type="radio" name="cover_type" id="ct_gradient" value="gradient" {{ $coverChoice === 'gradient' ? 'checked' : '' }}>
-                    <label for="ct_gradient">🌈 Warna / Gradien</label>
+                <input type="radio" name="cover_type" id="ct_gradient" value="gradient" {{ $coverChoice === 'gradient' ? 'checked' : '' }}>
+                <label for="ct_gradient">🌈 Warna / Gradien</label>
 
-                    <input type="radio" name="cover_type" id="ct_media" value="media" {{ $coverChoice === 'media' ? 'checked' : '' }}>
-                    <label for="ct_media">🖼️ Foto / Video</label>
-                </div>
+                <input type="radio" name="cover_type" id="ct_media" value="media" {{ $coverChoice === 'media' ? 'checked' : '' }}>
+                <label for="ct_media">🖼️ Foto / Video</label>
+            </div>
 
-                <div class="cover-panel" id="panel-gradient">
-                    <div class="color-row">
-                        <div class="color-field">
-                            Warna awal
-                            <input type="color" id="cover_color" name="cover_color" value="{{ $coverColor1 }}">
-                        </div>
-                        <div class="color-field">
-                            Warna akhir
-                            <input type="color" id="cover_color2" name="cover_color2" value="{{ $coverColor2 }}">
-                        </div>
+            <div class="cover-panel" id="panel-gradient">
+                <div class="color-row">
+                    <div class="color-field">
+                        Warna awal
+                        <input type="color" id="cover_color" name="cover_color" value="{{ $coverColor1 }}">
                     </div>
-
-                    <div class="presets" id="presets">
-                        <button type="button" class="preset" data-c1="#dc2626" data-c2="#f97316" style="background:linear-gradient(135deg,#dc2626,#f97316)" title="Merah-Oranye"></button>
-                        <button type="button" class="preset" data-c1="#0ea5e9" data-c2="#6366f1" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)" title="Laut"></button>
-                        <button type="button" class="preset" data-c1="#10b981" data-c2="#065f46" style="background:linear-gradient(135deg,#10b981,#065f46)" title="Hutan"></button>
-                        <button type="button" class="preset" data-c1="#f59e0b" data-c2="#ef4444" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" title="Senja"></button>
-                        <button type="button" class="preset" data-c1="#ec4899" data-c2="#8b5cf6" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)" title="Magenta"></button>
-                        <button type="button" class="preset" data-c1="#111827" data-c2="#4b5563" style="background:linear-gradient(135deg,#111827,#4b5563)" title="Malam"></button>
+                    <div class="color-field">
+                        Warna akhir
+                        <input type="color" id="cover_color2" name="cover_color2" value="{{ $coverColor2 }}">
                     </div>
-                    <p class="hint">Pilih dua warna sendiri, atau klik salah satu preset di atas.</p>
                 </div>
 
-                <div class="cover-panel" id="panel-media">
-                    <input class="sr-only" id="cover_file" type="file" name="cover_file"
-                           accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,image/jpeg,image/png,image/webp,video/mp4,video/webm">
+                <div class="presets" id="presets">
+                    <button type="button" class="preset" data-c1="#dc2626" data-c2="#f97316" style="background:linear-gradient(135deg,#dc2626,#f97316)" title="Merah-Oranye"></button>
+                    <button type="button" class="preset" data-c1="#0ea5e9" data-c2="#6366f1" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)" title="Laut"></button>
+                    <button type="button" class="preset" data-c1="#10b981" data-c2="#065f46" style="background:linear-gradient(135deg,#10b981,#065f46)" title="Hutan"></button>
+                    <button type="button" class="preset" data-c1="#f59e0b" data-c2="#ef4444" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" title="Senja"></button>
+                    <button type="button" class="preset" data-c1="#ec4899" data-c2="#8b5cf6" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)" title="Magenta"></button>
+                    <button type="button" class="preset" data-c1="#111827" data-c2="#4b5563" style="background:linear-gradient(135deg,#111827,#4b5563)" title="Malam"></button>
+                </div>
+                <p class="hint">Pilih dua warna sendiri, atau klik salah satu preset di atas.</p>
+            </div>
 
-                    <div class="tip">💡 Foto: JPG/PNG/WEBP (ukuran berapa pun, otomatis dioptimalkan agar tetap tajam). Video: MP4/WEBM, maksimal 20 MB, diputar otomatis tanpa suara (loop). Untuk hasil paling tajam gunakan foto/video minimal 1920 px lebarnya.</div>
+            <div class="cover-panel" id="panel-media">
+                <input class="sr-only" id="cover_file" type="file" name="cover_file"
+                       accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,image/jpeg,image/png,image/webp,video/mp4,video/webm">
+
+                <div class="tip">💡 Foto: JPG/PNG/WEBP (ukuran berapa pun, otomatis dioptimalkan agar tetap tajam). Video: MP4/WEBM, maksimal 20 MB, diputar otomatis tanpa suara (loop). Untuk hasil paling tajam gunakan foto/video minimal 1920 px lebarnya.</div>
+
+                <div class="btn-row">
+                    <label class="btn sm" for="cover_file" style="margin:0">📁 Pilih foto / video</label>
+                </div>
+                <p class="hint" id="coverFileName">
+                    @if($coverUrl) Sampul saat ini dipakai. Pilih file baru untuk menggantinya. @else Belum ada file dipilih. @endif
+                </p>
+
+                {{-- ATUR POSISI & ZOOM SAMPUL --}}
+                <div class="cover-adjust" id="coverAdjust">
+                    <div class="tip">☝️ Seret pratinjau sampul di atas ke mana saja untuk menggeser foto/video. Geser slider atau scroll mouse di atas pratinjau untuk zoom. Posisi ini ikut tersimpan dan dipakai di halaman profilmu.</div>
+
+                    <div class="zoom-row">
+                        <span>－</span>
+                        <input type="range" id="coverZoom" min="1" max="3" step="0.01" value="{{ $coverZoom }}" aria-label="Zoom sampul">
+                        <span>＋</span>
+                    </div>
 
                     <div class="btn-row">
-                        <label class="btn sm" for="cover_file" style="margin:0">📁 Pilih foto / video</label>
+                        <button type="button" class="btn sm" id="coverCenter">◎ Tengahkan</button>
+                        <button type="button" class="btn sm" id="coverReset">↺ Atur ulang posisi</button>
                     </div>
-                    <p class="hint" id="coverFileName">
-                        @if($coverUrl) Sampul saat ini dipakai. Pilih file baru untuk menggantinya. @else Belum ada file dipilih. @endif
-                    </p>
+                </div>
+            </div>
 
-                    {{-- ATUR POSISI & ZOOM SAMPUL --}}
-                    <div class="cover-adjust" id="coverAdjust">
-                        <div class="tip">☝️ Seret pratinjau sampul di atas ke mana saja untuk menggeser foto/video. Geser slider atau scroll mouse di atas pratinjau untuk zoom. Posisi ini ikut tersimpan dan dipakai di halaman profilmu.</div>
+            {{-- Nilai posisi yang dikirim ke server --}}
+            <input type="hidden" name="cover_pos_x" id="cover_pos_x" value="{{ $coverPosX }}">
+            <input type="hidden" name="cover_pos_y" id="cover_pos_y" value="{{ $coverPosY }}">
+            <input type="hidden" name="cover_zoom" id="cover_zoom" value="{{ $coverZoom }}">
+
+            @error('cover_file')<span class="field-error">{{ $message }}</span>@enderror
+            @error('cover_type')<span class="field-error">{{ $message }}</span>@enderror
+        </div>
+
+        {{-- FOTO PROFIL --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">📷</span> Foto profil</h2>
+            <p class="section-desc">Pilih foto, lalu geser, zoom, atau putar sampai pas di dalam lingkaran.</p>
+
+            <div class="avatar-box">
+                <div class="stage" id="stage">
+                    @if($user->avatar_path)
+                        <img class="current" id="currentAvatar" src="{{ asset('storage/'.$user->avatar_path) }}" alt="Foto profil saat ini">
+                    @else
+                        <span class="current" id="currentAvatar">🧳</span>
+                    @endif
+
+                    <canvas id="cropCanvas" tabindex="0" hidden aria-label="Area atur foto profil"></canvas>
+                    <div class="mask" id="cropMask"></div>
+                </div>
+
+                <div class="avatar-tools">
+                    <strong id="avatarTitle">Foto saat ini</strong>
+                    <p class="sub" id="avatarSub">Format JPG, PNG, atau WEBP, maksimal 2 MB. Kamu juga bisa menjatuhkan (drag &amp; drop) foto ke kotak di samping.</p>
+
+                    <input class="sr-only" id="avatar" type="file" name="avatar"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+
+                    <div class="btn-row">
+                        <label class="btn sm" for="avatar" style="margin:0" id="pickLabel">📁 Pilih foto</label>
+                    </div>
+
+                    <div class="crop-controls" id="cropControls">
+                        <div class="tip">☝️ Seret foto ke mana saja untuk memindahkan. Geser slider, scroll mouse, atau cubit layar untuk zoom. Panah keyboard juga bisa dipakai.</div>
 
                         <div class="zoom-row">
                             <span>－</span>
-                            <input type="range" id="coverZoom" min="1" max="3" step="0.01" value="{{ $coverZoom }}" aria-label="Zoom sampul">
+                            <input type="range" id="zoom" min="0.5" max="4" step="0.01" value="1" aria-label="Zoom">
                             <span>＋</span>
                         </div>
 
-                        <div class="btn-row">
-                            <button type="button" class="btn sm" id="coverCenter">◎ Tengahkan</button>
-                            <button type="button" class="btn sm" id="coverReset">↺ Atur ulang posisi</button>
+                        <div class="btn-row" style="margin-bottom:8px">
+                            <button type="button" class="btn sm" id="fitCrop">⤢ Pas ukuran</button>
+                            <button type="button" class="btn sm" id="fillCrop">⬤ Penuhi lingkaran</button>
                         </div>
-                    </div>
-                </div>
 
-                {{-- Nilai posisi yang dikirim ke server --}}
-                <input type="hidden" name="cover_pos_x" id="cover_pos_x" value="{{ $coverPosX }}">
-                <input type="hidden" name="cover_pos_y" id="cover_pos_y" value="{{ $coverPosY }}">
-                <input type="hidden" name="cover_zoom" id="cover_zoom" value="{{ $coverZoom }}">
-
-                @error('cover_file')<span class="field-error">{{ $message }}</span>@enderror
-                @error('cover_type')<span class="field-error">{{ $message }}</span>@enderror
-            </div>
-
-            <hr class="line">
-
-            {{-- WARNA TULISAN --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">🔤</span> Warna tulisan</h2>
-                <p class="section-desc">Ubah warna nama dan username di halaman profilmu.</p>
-
-                <div class="text-preview">
-                    <div class="pv-name" id="pvName">{{ old('name', $user->name) }}</div>
-                    <div class="pv-user" id="pvUser">@ {{ $displayUsername }}</div>
-                </div>
-
-                <div class="text-colors">
-                    <div class="box">
-                        <strong>Warna nama</strong>
-                        <div class="row">
-                            <input type="color" id="nameColorPick" value="{{ $nameColor ?: '#1f2937' }}" aria-label="Warna nama">
-                            <input type="hidden" id="name_color" name="name_color" value="{{ $nameColor }}">
-                            <button type="button" class="btn sm" id="nameColorReset">↺ Default</button>
+                        <div class="btn-row" style="margin-bottom:8px">
+                            <button type="button" class="btn sm" id="rotLeft">⟲ Putar kiri</button>
+                            <button type="button" class="btn sm" id="rotRight">⟳ Putar kanan</button>
                         </div>
-                    </div>
-
-                    <div class="box">
-                        <strong>Warna username</strong>
-                        <div class="row">
-                            <input type="color" id="userColorPick" value="{{ $userColor ?: '#dc2626' }}" aria-label="Warna username">
-                            <input type="hidden" id="username_color" name="username_color" value="{{ $userColor }}">
-                            <button type="button" class="btn sm" id="userColorReset">↺ Default</button>
-                        </div>
-                    </div>
-                </div>
-                @error('name_color')<span class="field-error">{{ $message }}</span>@enderror
-                @error('username_color')<span class="field-error">{{ $message }}</span>@enderror
-            </div>
-
-            <hr class="line">
-
-            {{-- BACKGROUND HALAMAN PROFIL --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">🖌️</span> Background profil</h2>
-                <p class="section-desc">Ubah latar belakang halaman profilmu (area di belakang kartu putih).</p>
-
-                <div class="cover-preview" id="bgPreview" style="background:#f6f7fb">
-                    <div class="snow-side left"></div>
-                    <div class="snow-side right"></div>
-                    <div class="snow-frame top" style="background-image: url('{{ $bgSnowUrl }}')"></div>
-                    <div class="snow-frame bottom" style="background-image: url('{{ $bgSnowUrl }}')"></div>
-                    <canvas class="snow-canvas" id="bgSnow"></canvas>
-                    <span class="cover-badge" id="bgBadge">Pratinjau background</span>
-                </div>
-                <p class="quality" id="bgQuality" hidden></p>
-
-                <div class="seg">
-                    <input type="radio" name="bg_type" id="bg_default" value="default" {{ $bgType === 'default' ? 'checked' : '' }}>
-                    <label for="bg_default">⚪ Default</label>
-
-                    <input type="radio" name="bg_type" id="bg_color_r" value="color" {{ $bgType === 'color' ? 'checked' : '' }}>
-                    <label for="bg_color_r">🎨 Warna polos</label>
-
-                    <input type="radio" name="bg_type" id="bg_gradient_r" value="gradient" {{ $bgType === 'gradient' ? 'checked' : '' }}>
-                    <label for="bg_gradient_r">🌈 Gradien</label>
-
-                    <input type="radio" name="bg_type" id="bg_image_r" value="image" {{ $bgType === 'image' ? 'checked' : '' }}>
-                    <label for="bg_image_r">🖼️ Foto</label>
-
-                    <input type="radio" name="bg_type" id="bg_salju_r" value="salju" {{ $bgType === 'salju' ? 'checked' : '' }}>
-                    <label for="bg_salju_r">❄️ Salju</label>
-                </div>
-
-                {{-- Warna polos --}}
-                <div class="cover-panel" id="bgpanel-color">
-                    <div class="color-row">
-                        <div class="color-field">
-                            Warna background
-                            <input type="color" id="bg_color_a" value="{{ $bgColor1 }}">
-                        </div>
-                    </div>
-                    <div class="presets" id="bgPresetsColor">
-                        <button type="button" class="preset" data-c1="#f6f7fb" style="background:#f6f7fb" title="Abu terang"></button>
-                        <button type="button" class="preset" data-c1="#fef2f2" style="background:#fef2f2" title="Merah muda"></button>
-                        <button type="button" class="preset" data-c1="#ecfdf5" style="background:#ecfdf5" title="Hijau muda"></button>
-                        <button type="button" class="preset" data-c1="#eff6ff" style="background:#eff6ff" title="Biru muda"></button>
-                        <button type="button" class="preset" data-c1="#fffbeb" style="background:#fffbeb" title="Krem"></button>
-                        <button type="button" class="preset" data-c1="#111827" style="background:#111827" title="Gelap"></button>
-                    </div>
-                </div>
-
-                {{-- Gradien --}}
-                <div class="cover-panel" id="bgpanel-gradient">
-                    <div class="color-row">
-                        <div class="color-field">
-                            Warna awal
-                            <input type="color" id="bg_color_b" value="{{ $bgColor1 }}">
-                        </div>
-                        <div class="color-field">
-                            Warna akhir
-                            <input type="color" id="bg_color2_b" value="{{ $bgColor2 }}">
-                        </div>
-                    </div>
-                    <div class="presets" id="bgPresetsGrad">
-                        <button type="button" class="preset" data-c1="#fecaca" data-c2="#fed7aa" style="background:linear-gradient(135deg,#fecaca,#fed7aa)" title="Senja lembut"></button>
-                        <button type="button" class="preset" data-c1="#bae6fd" data-c2="#c7d2fe" style="background:linear-gradient(135deg,#bae6fd,#c7d2fe)" title="Langit"></button>
-                        <button type="button" class="preset" data-c1="#bbf7d0" data-c2="#a7f3d0" style="background:linear-gradient(135deg,#bbf7d0,#a7f3d0)" title="Daun"></button>
-                        <button type="button" class="preset" data-c1="#fbcfe8" data-c2="#ddd6fe" style="background:linear-gradient(135deg,#fbcfe8,#ddd6fe)" title="Permen"></button>
-                        <button type="button" class="preset" data-c1="#0f172a" data-c2="#334155" style="background:linear-gradient(135deg,#0f172a,#334155)" title="Malam"></button>
-                        <button type="button" class="preset" data-c1="#dc2626" data-c2="#f97316" style="background:linear-gradient(135deg,#dc2626,#f97316)" title="Merah-Oranye"></button>
-                    </div>
-                </div>
-
-                {{-- Foto --}}
-                <div class="cover-panel" id="bgpanel-image">
-                    <input class="sr-only" id="bg_file" type="file" name="bg_file"
-                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-                    <div class="tip">💡 Foto JPG/PNG/WEBP (ukuran berapa pun, otomatis dioptimalkan hingga maksimal 5 MB tanpa mengurangi ketajaman yang terlihat). Pilih foto yang tidak terlalu ramai agar kartu profil tetap nyaman dibaca.</div>
-                    <div class="btn-row">
-                        <label class="btn sm" for="bg_file" style="margin:0">📁 Pilih foto background</label>
-                    </div>
-                    <p class="hint" id="bgFileName">
-                        @if($bgUrl) Background saat ini dipakai. Pilih foto baru untuk menggantinya. @else Belum ada foto dipilih. @endif
-                    </p>
-                </div>
-
-                {{-- Salju --}}
-                <div class="cover-panel" id="bgpanel-salju">
-                    <div class="tip" style="margin-bottom:0">❄️ Hiasan salju di pinggir layar (atas, bawah, dan sisi) dengan latar biru es lembut, ditambah butiran salju yang jatuh pelan di halaman profilmu. Bagian tengah tetap polos agar kartu profil nyaman dibaca.</div>
-                </div>
-
-                {{-- Nilai warna yang benar-benar dikirim --}}
-                <input type="hidden" name="bg_color" id="bg_color" value="{{ $bgColor1 }}">
-                <input type="hidden" name="bg_color2" id="bg_color2" value="{{ $bgColor2 }}">
-
-                @error('bg_file')<span class="field-error">{{ $message }}</span>@enderror
-                @error('bg_type')<span class="field-error">{{ $message }}</span>@enderror
-            </div>
-
-            <hr class="line">
-
-            {{-- FOTO PROFIL --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">📷</span> Foto profil</h2>
-                <p class="section-desc">Pilih foto, lalu geser, zoom, atau putar sampai pas di dalam lingkaran.</p>
-
-                <div class="avatar-box">
-                    <div class="stage" id="stage">
-                        @if($user->avatar_path)
-                            <img class="current" id="currentAvatar" src="{{ asset('storage/'.$user->avatar_path) }}" alt="Foto profil saat ini">
-                        @else
-                            <span class="current" id="currentAvatar">🧳</span>
-                        @endif
-
-                        <canvas id="cropCanvas" tabindex="0" hidden aria-label="Area atur foto profil"></canvas>
-                        <div class="mask" id="cropMask"></div>
-                    </div>
-
-                    <div class="avatar-tools">
-                        <strong id="avatarTitle">Foto saat ini</strong>
-                        <p class="sub" id="avatarSub">Format JPG, PNG, atau WEBP, maksimal 2 MB. Kamu juga bisa menjatuhkan (drag &amp; drop) foto ke kotak di samping.</p>
-
-                        <input class="sr-only" id="avatar" type="file" name="avatar"
-                               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
 
                         <div class="btn-row">
-                            <label class="btn sm" for="avatar" style="margin:0" id="pickLabel">📁 Pilih foto</label>
-                        </div>
-
-                        <div class="crop-controls" id="cropControls">
-                            <div class="tip">☝️ Seret foto ke mana saja untuk memindahkan. Geser slider, scroll mouse, atau cubit layar untuk zoom. Panah keyboard juga bisa dipakai.</div>
-
-                            <div class="zoom-row">
-                                <span>－</span>
-                                <input type="range" id="zoom" min="0.5" max="4" step="0.01" value="1" aria-label="Zoom">
-                                <span>＋</span>
-                            </div>
-
-                            <div class="btn-row" style="margin-bottom:8px">
-                                <button type="button" class="btn sm" id="fitCrop">⤢ Pas ukuran</button>
-                                <button type="button" class="btn sm" id="fillCrop">⬤ Penuhi lingkaran</button>
-                            </div>
-
-                            <div class="btn-row" style="margin-bottom:8px">
-                                <button type="button" class="btn sm" id="rotLeft">⟲ Putar kiri</button>
-                                <button type="button" class="btn sm" id="rotRight">⟳ Putar kanan</button>
-                            </div>
-
-                            <div class="btn-row">
-                                <button type="button" class="btn sm" id="resetCrop">↺ Atur ulang</button>
-                                <button type="button" class="btn sm" id="cancelCrop">✕ Batalkan foto</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @error('avatar')<span class="field-error">{{ $message }}</span>@enderror
-            </div>
-
-            <hr class="line">
-
-            {{-- INFORMASI PRIBADI --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">♙</span> Informasi pribadi</h2>
-                <p class="section-desc">Data ini tampil di halaman profilmu.</p>
-
-                <div class="grid">
-                    <div>
-                        <label for="name">Nama penjelajah</label>
-                        <input id="name" name="name" class="@error('name') is-invalid @enderror"
-                               value="{{ old('name',$user->name) }}" required maxlength="255">
-                        @error('name')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div>
-                        <label for="username">Username</label>
-                        <div class="input-prefix">
-                            <span>@</span>
-                            <input id="username" name="username" class="@error('username') is-invalid @enderror"
-                                   value="{{ old('username',$user->username ?: \Illuminate\Support\Str::slug($user->name,'_')) }}"
-                                   required maxlength="30">
-                        </div>
-                        @error('username')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div>
-                        <label for="email">Alamat email</label>
-                        <input id="email" type="email" name="email" class="@error('email') is-invalid @enderror"
-                               value="{{ old('email',$user->email) }}" required>
-                        @error('email')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div>
-                        <label for="domicile">Domisili</label>
-                        <input id="domicile" name="domicile" class="@error('domicile') is-invalid @enderror"
-                               value="{{ old('domicile',$user->domicile) }}"
-                               placeholder="Contoh: Palembang, Sumatera Selatan" maxlength="100">
-                        @error('domicile')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div class="full">
-                        <label for="bio">Bio</label>
-                        <textarea id="bio" name="bio" maxlength="500"
-                                  class="@error('bio') is-invalid @enderror"
-                                  placeholder="Ceritakan sedikit tentang dirimu">{{ old('bio',$user->bio) }}</textarea>
-                        <div class="counter"><span id="bioCount">0</span>/500</div>
-                        @error('bio')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-                </div>
-            </div>
-
-            <hr class="line">
-
-            {{-- KEAMANAN --}}
-            <div class="section">
-                <h2 class="title"><span class="ico">🔒</span> Keamanan akun</h2>
-                <p class="section-desc">Kosongkan jika tidak ingin mengganti password.</p>
-
-                <div class="grid">
-                    <div>
-                        <label for="password">Password baru</label>
-                        <div class="pw">
-                            <input id="password" type="password" name="password" minlength="8"
-                                   class="@error('password') is-invalid @enderror"
-                                   autocomplete="new-password" placeholder="Minimal 8 karakter">
-                            <button type="button" data-toggle="password">Lihat</button>
-                        </div>
-                        @error('password')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div>
-                        <label for="password_confirmation">Konfirmasi password baru</label>
-                        <div class="pw">
-                            <input id="password_confirmation" type="password" name="password_confirmation"
-                                   minlength="8" autocomplete="new-password" placeholder="Ulangi password baru">
-                            <button type="button" data-toggle="password_confirmation">Lihat</button>
+                            <button type="button" class="btn sm" id="resetCrop">↺ Atur ulang</button>
+                            <button type="button" class="btn sm" id="cancelCrop">✕ Batalkan foto</button>
                         </div>
                     </div>
                 </div>
             </div>
+            @error('avatar')<span class="field-error">{{ $message }}</span>@enderror
+        </div>
 
-            <div class="actions">
-                <button class="btn primary" id="saveBtn" type="submit">💾 Simpan Perubahan</button>
-                <a class="btn" href="{{ route('profile.show') }}">Batal</a>
+        {{-- INFORMASI PRIBADI --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">♙</span> Informasi pribadi</h2>
+            <p class="section-desc">Data ini tampil di halaman profilmu.</p>
+
+            <div class="grid">
+                <div>
+                    <label for="name">Nama penjelajah</label>
+                    <input id="name" name="name" class="@error('name') is-invalid @enderror"
+                           value="{{ old('name',$user->name) }}" required maxlength="255">
+                    @error('name')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
+
+                <div>
+                    <label for="username">Username</label>
+                    <div class="input-prefix">
+                        <span>@</span>
+                        <input id="username" name="username" class="@error('username') is-invalid @enderror"
+                               value="{{ old('username',$user->username ?: \Illuminate\Support\Str::slug($user->name,'_')) }}"
+                               required maxlength="30">
+                    </div>
+                    @error('username')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
+
+                <div>
+                    <label for="email">Alamat email</label>
+                    <input id="email" type="email" name="email" class="@error('email') is-invalid @enderror"
+                           value="{{ old('email',$user->email) }}" required>
+                    @error('email')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
+
+                <div>
+                    <label for="domicile">Domisili</label>
+                    <input id="domicile" name="domicile" class="@error('domicile') is-invalid @enderror"
+                           value="{{ old('domicile',$user->domicile) }}"
+                           placeholder="Contoh: Palembang, Sumatera Selatan" maxlength="100">
+                    @error('domicile')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
+
+                <div class="full">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" maxlength="500"
+                              class="@error('bio') is-invalid @enderror"
+                              placeholder="Ceritakan sedikit tentang dirimu">{{ old('bio',$user->bio) }}</textarea>
+                    <div class="counter"><span id="bioCount">0</span>/500</div>
+                    @error('bio')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
             </div>
-        </form>
-    </section>
+        </div>
+
+        {{-- WARNA TULISAN --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">🔤</span> Warna tulisan</h2>
+            <p class="section-desc">Ubah warna nama dan username di halaman profilmu.</p>
+
+            <div class="text-preview">
+                <div class="pv-name" id="pvName">{{ old('name', $user->name) }}</div>
+                <div class="pv-user" id="pvUser">@ {{ $displayUsername }}</div>
+            </div>
+
+            <div class="text-colors">
+                <div class="box">
+                    <strong>Warna nama</strong>
+                    <div class="row">
+                        <input type="color" id="nameColorPick" value="{{ $nameColor ?: '#1f2937' }}" aria-label="Warna nama">
+                        <input type="hidden" id="name_color" name="name_color" value="{{ $nameColor }}">
+                        <button type="button" class="btn sm" id="nameColorReset">↺ Default</button>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <strong>Warna username</strong>
+                    <div class="row">
+                        <input type="color" id="userColorPick" value="{{ $userColor ?: '#dc2626' }}" aria-label="Warna username">
+                        <input type="hidden" id="username_color" name="username_color" value="{{ $userColor }}">
+                        <button type="button" class="btn sm" id="userColorReset">↺ Default</button>
+                    </div>
+                </div>
+            </div>
+            @error('name_color')<span class="field-error">{{ $message }}</span>@enderror
+            @error('username_color')<span class="field-error">{{ $message }}</span>@enderror
+        </div>
+
+        {{-- BACKGROUND HALAMAN PROFIL --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">🖌️</span> Background profil</h2>
+            <p class="section-desc">Ubah latar belakang halaman profilmu (area di belakang kartu putih).</p>
+
+            <div class="cover-preview" id="bgPreview" style="background:#f6f7fb">
+                <div class="snow-side left"></div>
+                <div class="snow-side right"></div>
+                <div class="snow-frame top" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+                <div class="snow-frame bottom" style="background-image: url('{{ $bgSnowUrl }}')"></div>
+                <canvas class="snow-canvas" id="bgSnow"></canvas>
+                <span class="cover-badge" id="bgBadge">Pratinjau background</span>
+            </div>
+            <p class="quality" id="bgQuality" hidden></p>
+
+            <div class="seg">
+                <input type="radio" name="bg_type" id="bg_default" value="default" {{ $bgType === 'default' ? 'checked' : '' }}>
+                <label for="bg_default">⚪ Default</label>
+
+                <input type="radio" name="bg_type" id="bg_color_r" value="color" {{ $bgType === 'color' ? 'checked' : '' }}>
+                <label for="bg_color_r">🎨 Warna polos</label>
+
+                <input type="radio" name="bg_type" id="bg_gradient_r" value="gradient" {{ $bgType === 'gradient' ? 'checked' : '' }}>
+                <label for="bg_gradient_r">🌈 Gradien</label>
+
+                <input type="radio" name="bg_type" id="bg_image_r" value="image" {{ $bgType === 'image' ? 'checked' : '' }}>
+                <label for="bg_image_r">🖼️ Foto</label>
+
+                <input type="radio" name="bg_type" id="bg_salju_r" value="salju" {{ $bgType === 'salju' ? 'checked' : '' }}>
+                <label for="bg_salju_r">❄️ Salju</label>
+            </div>
+
+            {{-- Warna polos --}}
+            <div class="cover-panel" id="bgpanel-color">
+                <div class="color-row">
+                    <div class="color-field">
+                        Warna background
+                        <input type="color" id="bg_color_a" value="{{ $bgColor1 }}">
+                    </div>
+                </div>
+                <div class="presets" id="bgPresetsColor">
+                    <button type="button" class="preset" data-c1="#f6f7fb" style="background:#f6f7fb" title="Abu terang"></button>
+                    <button type="button" class="preset" data-c1="#fef2f2" style="background:#fef2f2" title="Merah muda"></button>
+                    <button type="button" class="preset" data-c1="#ecfdf5" style="background:#ecfdf5" title="Hijau muda"></button>
+                    <button type="button" class="preset" data-c1="#eff6ff" style="background:#eff6ff" title="Biru muda"></button>
+                    <button type="button" class="preset" data-c1="#fffbeb" style="background:#fffbeb" title="Krem"></button>
+                    <button type="button" class="preset" data-c1="#111827" style="background:#111827" title="Gelap"></button>
+                </div>
+            </div>
+
+            {{-- Gradien --}}
+            <div class="cover-panel" id="bgpanel-gradient">
+                <div class="color-row">
+                    <div class="color-field">
+                        Warna awal
+                        <input type="color" id="bg_color_b" value="{{ $bgColor1 }}">
+                    </div>
+                    <div class="color-field">
+                        Warna akhir
+                        <input type="color" id="bg_color2_b" value="{{ $bgColor2 }}">
+                    </div>
+                </div>
+                <div class="presets" id="bgPresetsGrad">
+                    <button type="button" class="preset" data-c1="#fecaca" data-c2="#fed7aa" style="background:linear-gradient(135deg,#fecaca,#fed7aa)" title="Senja lembut"></button>
+                    <button type="button" class="preset" data-c1="#bae6fd" data-c2="#c7d2fe" style="background:linear-gradient(135deg,#bae6fd,#c7d2fe)" title="Langit"></button>
+                    <button type="button" class="preset" data-c1="#bbf7d0" data-c2="#a7f3d0" style="background:linear-gradient(135deg,#bbf7d0,#a7f3d0)" title="Daun"></button>
+                    <button type="button" class="preset" data-c1="#fbcfe8" data-c2="#ddd6fe" style="background:linear-gradient(135deg,#fbcfe8,#ddd6fe)" title="Permen"></button>
+                    <button type="button" class="preset" data-c1="#0f172a" data-c2="#334155" style="background:linear-gradient(135deg,#0f172a,#334155)" title="Malam"></button>
+                    <button type="button" class="preset" data-c1="#dc2626" data-c2="#f97316" style="background:linear-gradient(135deg,#dc2626,#f97316)" title="Merah-Oranye"></button>
+                </div>
+            </div>
+
+            {{-- Foto --}}
+            <div class="cover-panel" id="bgpanel-image">
+                <input class="sr-only" id="bg_file" type="file" name="bg_file"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                <div class="tip">💡 Foto JPG/PNG/WEBP (ukuran berapa pun, otomatis dioptimalkan hingga maksimal 5 MB tanpa mengurangi ketajaman yang terlihat). Pilih foto yang tidak terlalu ramai agar kartu profil tetap nyaman dibaca.</div>
+                <div class="btn-row">
+                    <label class="btn sm" for="bg_file" style="margin:0">📁 Pilih foto background</label>
+                </div>
+                <p class="hint" id="bgFileName">
+                    @if($bgUrl) Background saat ini dipakai. Pilih foto baru untuk menggantinya. @else Belum ada foto dipilih. @endif
+                </p>
+            </div>
+
+            {{-- Salju --}}
+            <div class="cover-panel" id="bgpanel-salju">
+                <div class="tip" style="margin-bottom:0">❄️ Hiasan salju di pinggir layar (atas, bawah, dan sisi) dengan latar biru es lembut, ditambah butiran salju yang jatuh pelan di halaman profilmu. Bagian tengah tetap polos agar kartu profil nyaman dibaca.</div>
+            </div>
+
+            {{-- Nilai warna yang benar-benar dikirim --}}
+            <input type="hidden" name="bg_color" id="bg_color" value="{{ $bgColor1 }}">
+            <input type="hidden" name="bg_color2" id="bg_color2" value="{{ $bgColor2 }}">
+
+            @error('bg_file')<span class="field-error">{{ $message }}</span>@enderror
+            @error('bg_type')<span class="field-error">{{ $message }}</span>@enderror
+        </div>
+
+        {{-- KEAMANAN --}}
+        <div class="section">
+            <h2 class="title"><span class="ico">🔒</span> Keamanan akun</h2>
+            <p class="section-desc">Kosongkan jika tidak ingin mengganti password.</p>
+
+            <div class="grid">
+                <div>
+                    <label for="password">Password baru</label>
+                    <div class="pw">
+                        <input id="password" type="password" name="password" minlength="8"
+                               class="@error('password') is-invalid @enderror"
+                               autocomplete="new-password" placeholder="Minimal 8 karakter">
+                        <button type="button" data-toggle="password">Lihat</button>
+                    </div>
+                    @error('password')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
+
+                <div>
+                    <label for="password_confirmation">Konfirmasi password baru</label>
+                    <div class="pw">
+                        <input id="password_confirmation" type="password" name="password_confirmation"
+                               minlength="8" autocomplete="new-password" placeholder="Ulangi password baru">
+                        <button type="button" data-toggle="password_confirmation">Lihat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <span class="note">Jangan lupa simpan perubahanmu ✨</span>
+            <a class="btn" href="{{ route('profile.show') }}">Batal</a>
+            <button class="btn primary" id="saveBtn" type="submit">💾 Simpan Perubahan</button>
+        </div>
+    </form>
 
 </main>
 

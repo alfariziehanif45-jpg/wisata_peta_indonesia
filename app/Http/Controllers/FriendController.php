@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Friendship;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class FriendController extends Controller
 {
@@ -45,6 +47,39 @@ class FriendController extends Controller
             'incoming'  => $me->receivedRequests()->where('status', 'pending')->with('requester')->latest()->get(),
             'outgoing'  => $me->sentRequests()->where('status', 'pending')->with('addressee')->latest()->get(),
         ]);
+    }
+
+    /** Lihat profil teman (hanya baca, hanya untuk teman yang sudah diterima). */
+    public function show(Request $request, User $user)
+    {
+        $me = $request->user();
+
+        // Profil sendiri -> ke halaman profil yang bisa diedit.
+        if ($user->id === $me->id) {
+            return redirect()->route('profile.show');
+        }
+
+        $friendship = $this->acceptedFriendshipOrFail($me, $user);
+
+        return view('friends.show', [
+            'user'       => $user,
+            'friendship' => $friendship,
+            'profile'    => $this->profilePayload($user),
+        ]);
+    }
+
+    /**
+     * Data profil terbaru teman (JSON).
+     * Dipanggil otomatis oleh halaman profil teman untuk sinkronisasi perubahan.
+     * Jika sudah tidak berteman -> 403 (halaman akan kembali ke daftar teman).
+     */
+    public function data(Request $request, User $user): JsonResponse
+    {
+        $this->acceptedFriendshipOrFail($request->user(), $user);
+
+        return response()
+            ->json($this->profilePayload($user))
+            ->header('Cache-Control', 'no-store, max-age=0');
     }
 
     /** Kirim permintaan pertemanan. */
@@ -108,5 +143,92 @@ class FriendController extends Controller
         $friendship->delete();
 
         return back()->with('success', $message);
+    }
+
+    /* ------------------------------------------------------------------
+     |  Helper privat
+     | ------------------------------------------------------------------ */
+
+    /** Pastikan $me dan $user berteman (status accepted), jika tidak -> 403. */
+    private function acceptedFriendshipOrFail(User $me, User $user): Friendship
+    {
+        $friendship = $me->friendshipWith($user);
+
+        abort_unless(
+            $friendship && $friendship->isAccepted(),
+            403,
+            'Kamu hanya bisa melihat profil teman yang sudah berteman denganmu.'
+        );
+
+        return $friendship;
+    }
+
+    /**
+     * Semua data profil yang tampil di halaman teman.
+     * Dipakai untuk render awal (Blade) DAN untuk polling (JSON),
+     * jadi tampilannya selalu konsisten.
+     *
+     * 'version' = hash isi data; berubah hanya jika ada yang benar-benar berubah.
+     */
+    private function profilePayload(User $user): array
+    {
+        $v = $user->updated_at?->timestamp ?? 0; // hanya untuk cache-busting gambar
+
+        $payload = [
+            'name'           => $user->name,
+            'username'       => $user->username ?: Str::slug($user->name, '_'),
+            'domicile'       => $user->domicile,
+            'bio'            => $user->bio,
+            'tone'           => 't' . (((int) $user->id) % 6),
+            'avatar'         => $user->avatar_path
+                                    ? asset('storage/' . $user->avatar_path) . '?v=' . $v
+                                    : null,
+
+            // Sampul profil & background halaman -> nilai CSS siap pakai
+            'cover'          => $this->paint($user->cover_type, $user->cover_color, $user->cover_color2, $user->cover_path, $v),
+            'bg'             => $this->paint($user->bg_type, $user->bg_color, $user->bg_color2, $user->bg_path, $v),
+
+            // Warna tulisan (null = pakai warna bawaan)
+            'name_color'     => $this->color($user->name_color),
+            'username_color' => $this->color($user->username_color),
+        ];
+
+        $payload['version'] = md5(json_encode($payload));
+
+        return $payload;
+    }
+
+    /**
+     * Ubah pengaturan tampilan jadi nilai CSS `background`.
+     *
+     * ASUMSI nilai tipe: 'image' | 'gradient' | 'color' (atau 'solid').
+     * Jika di proyek Anda namanya berbeda (misal 'gambar', 'warna'),
+     * ubah di bagian match() di bawah.
+     */
+    private function paint(?string $type, ?string $c1, ?string $c2, ?string $path, int $v): ?string
+    {
+        $c1 = $this->color($c1);
+        $c2 = $this->color($c2);
+
+        return match ($type) {
+            'image'          => $path
+                                    ? 'url("' . asset('storage/' . $path) . '?v=' . $v . '")'
+                                    : null,
+            'gradient'       => $c1 && $c2
+                                    ? "linear-gradient(135deg, {$c1}, {$c2})"
+                                    : $c1,
+            'color', 'solid' => $c1,
+            default          => null,
+        };
+    }
+
+    /** Hanya izinkan warna hex / rgb() / hsl() agar aman dipakai di atribut style. */
+    private function color(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return preg_match('/^(#[0-9a-fA-F]{3,8}|(rgba?|hsla?)\([0-9\s.,%]+\))$/', $value)
+            ? $value
+            : null;
     }
 }

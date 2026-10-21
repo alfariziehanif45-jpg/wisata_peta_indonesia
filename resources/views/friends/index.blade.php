@@ -76,7 +76,7 @@ h1{font-size:clamp(30px,6vw,40px);line-height:1.1;margin:0 0 8px;letter-spacing:
 .ghost-red:hover{background:var(--red-soft);border-color:var(--red-line)}
 .green{background:var(--green);border-color:var(--green);color:#fff}
 .green:hover{background:var(--green-dark);border-color:var(--green-dark)}
-.btn:focus-visible,.small-btn:focus-visible,.back:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn:focus-visible,.small-btn:focus-visible,.back:focus-visible,.ident:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 form{margin:0}
 
 /* ===== PERSON ===== */
@@ -97,6 +97,11 @@ form{margin:0}
 .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .state{font-size:13px;font-weight:700;color:#166534;background:var(--green-soft);padding:8px 13px;border-radius:11px}
 .state.wait{color:#92400e;background:#fef3c7}
+
+/* ===== TAUTAN PROFIL TEMAN (avatar + nama bisa diklik) ===== */
+.ident{display:flex;align-items:center;gap:14px;flex:1;min-width:190px;color:inherit;text-decoration:none;border-radius:14px}
+.ident .who{min-width:0}
+.ident:hover .who strong{color:var(--red-dark);text-decoration:underline;text-underline-offset:3px}
 
 /* ===== EMPTY ===== */
 .empty{text-align:center;color:var(--muted);padding:30px 18px;background:#fcfbfa;border:2px dashed #e7e2dd;border-radius:18px;line-height:1.7;font-size:14px}
@@ -171,17 +176,27 @@ form{margin:0}
             @forelse($results as $u)
                 @php $f = $relations[$u->id] ?? null; @endphp
                 <div class="person">
-                    @if($u->avatar_path)
-                        <img class="avatar" src="{{ asset('storage/' . $u->avatar_path) }}" alt="Foto {{ $u->name }}">
+                    {{-- Hanya teman yang sudah diterima yang profilnya bisa dibuka --}}
+                    @if($f && $f->isAccepted())
+                        <a class="ident" href="{{ route('friends.show', $u) }}" aria-label="Lihat profil {{ $u->name }}">
                     @else
-                        <div class="avatar {{ $tone($u) }}">{{ $initial($u) }}</div>
+                        <div class="ident" style="cursor:default">
                     @endif
-
-                    <div class="who">
-                        <strong>{{ $u->name }}</strong>
-                        <span class="un">@ {{ $handle($u) }}</span>
-                        @if($u->domicile)<div class="dom">📍 {{ $u->domicile }}</div>@endif
-                    </div>
+                        @if($u->avatar_path)
+                            <img class="avatar" src="{{ asset('storage/' . $u->avatar_path) }}" alt="Foto {{ $u->name }}">
+                        @else
+                            <div class="avatar {{ $tone($u) }}">{{ $initial($u) }}</div>
+                        @endif
+                        <div class="who">
+                            <strong>{{ $u->name }}</strong>
+                            <span class="un">@ {{ $handle($u) }}</span>
+                            @if($u->domicile)<div class="dom">📍 {{ $u->domicile }}</div>@endif
+                        </div>
+                    @if($f && $f->isAccepted())
+                        </a>
+                    @else
+                        </div>
+                    @endif
 
                     <div class="acts">
                         @if(!$f)
@@ -190,6 +205,7 @@ form{margin:0}
                             </form>
                         @elseif($f->isAccepted())
                             <span class="state">✓ Berteman</span>
+                            <a class="small-btn" href="{{ route('friends.show', $u) }}">Lihat profil</a>
                         @elseif($f->requester_id === auth()->id())
                             <span class="state wait">Menunggu respons</span>
                             <form method="POST" action="{{ route('friends.destroy', $f) }}">@csrf @method('DELETE')
@@ -260,13 +276,17 @@ form{margin:0}
                 @foreach($friends as $f)
                     @php $u = $f->requester_id === auth()->id() ? $f->addressee : $f->requester; @endphp
                     <div class="person">
-                        @if($u->avatar_path)<img class="avatar" src="{{ asset('storage/' . $u->avatar_path) }}" alt="Foto {{ $u->name }}">@else<div class="avatar {{ $tone($u) }}">{{ $initial($u) }}</div>@endif
-                        <div class="who">
-                            <strong>{{ $u->name }}</strong>
-                            <span class="un">@ {{ $handle($u) }}</span>
-                            @if($u->domicile)<div class="dom">📍 {{ $u->domicile }}</div>@endif
-                        </div>
+                        {{-- Klik avatar/nama untuk melihat profil teman --}}
+                        <a class="ident" href="{{ route('friends.show', $u) }}" aria-label="Lihat profil {{ $u->name }}">
+                            @if($u->avatar_path)<img class="avatar" src="{{ asset('storage/' . $u->avatar_path) }}" alt="Foto {{ $u->name }}">@else<div class="avatar {{ $tone($u) }}">{{ $initial($u) }}</div>@endif
+                            <div class="who">
+                                <strong>{{ $u->name }}</strong>
+                                <span class="un">@ {{ $handle($u) }}</span>
+                                @if($u->domicile)<div class="dom">📍 {{ $u->domicile }}</div>@endif
+                            </div>
+                        </a>
                         <div class="acts">
+                            <a class="small-btn" href="{{ route('friends.show', $u) }}">Lihat profil</a>
                             <form method="POST" action="{{ route('friends.destroy', $f) }}" onsubmit="return confirm('Hapus {{ e($u->name) }} dari daftar teman?')">@csrf @method('DELETE')
                                 <button class="small-btn ghost-red">Hapus teman</button>
                             </form>

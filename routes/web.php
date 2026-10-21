@@ -150,9 +150,18 @@ Route::middleware('auth')->group(function () {
         ->name('achievements.index');
 
 
-    // Teman: cari username/nama, kirim, terima, tolak/batalkan, hapus teman
+    // Teman: cari username/nama, lihat profil, kirim, terima, tolak/batalkan, hapus teman
     Route::get('/friends', [FriendController::class, 'index'])
         ->name('friends.index');
+
+    // Lihat profil teman (hanya baca). Memakai {user} sehingga tidak bentrok
+    // dengan route PATCH/DELETE {friendship} di bawah (beda method).
+    Route::get('/friends/{user}', [FriendController::class, 'show'])
+        ->name('friends.show');
+
+    // Data profil teman terbaru (JSON) untuk sinkronisasi otomatis di halaman profil teman.
+    Route::get('/friends/{user}/data', [FriendController::class, 'data'])
+        ->name('friends.data');
 
     Route::post('/friends/request/{user}', [FriendController::class, 'store'])
         ->name('friends.store');
