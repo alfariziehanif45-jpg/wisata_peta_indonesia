@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\FavoritePlaceController;
+use App\Http\Controllers\FriendController;
 
 /*
 |--------------------------------------------------------------------------
@@ -147,4 +148,18 @@ Route::middleware('auth')->group(function () {
     // Pencapaian
     Route::get('/achievements', [TravelController::class, 'achievements'])
         ->name('achievements.index');
+
+
+    // Teman: cari username/nama, kirim, terima, tolak/batalkan, hapus teman
+    Route::get('/friends', [FriendController::class, 'index'])
+        ->name('friends.index');
+
+    Route::post('/friends/request/{user}', [FriendController::class, 'store'])
+        ->name('friends.store');
+
+    Route::patch('/friends/{friendship}/accept', [FriendController::class, 'accept'])
+        ->name('friends.accept');
+
+    Route::delete('/friends/{friendship}', [FriendController::class, 'destroy'])
+        ->name('friends.destroy');
 });

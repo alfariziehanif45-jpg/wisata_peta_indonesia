@@ -41,8 +41,7 @@
             background: var(--bg);
         }
 
-        /* Lapisan partikel salju (hanya muncul bila background "Salju" dipilih).
-           Berada di atas background, tetapi di bawah kartu agar tulisan tetap terbaca. */
+        /* Lapisan partikel salju (hanya muncul bila background "Salju" dipilih). */
         .snow-canvas {
             position: fixed;
             inset: 0;
@@ -52,8 +51,7 @@
             pointer-events: none;
         }
 
-        /* Hiasan salju di PINGGIR layar (atas, bawah, kiri, kanan).
-           Gambar dipotong & dipudarkan dengan mask, sehingga bagian tengah tetap polos. */
+        /* Hiasan salju di PINGGIR layar (atas, bawah, kiri, kanan). */
         .snow-frame,
         .snow-side {
             position: fixed;
@@ -155,8 +153,6 @@
             pointer-events: none;
         }
 
-        /* Foto/video sampul. Posisi & zoom dari halaman edit diterapkan lewat
-           style inline (object-position + transform scale + transform-origin). */
         .cover img,
         .cover video {
             position: absolute;
@@ -237,7 +233,12 @@
             font-size: 13px;
         }
 
-        .head-action { padding-bottom: 10px; }
+        .head-action {
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         .bio {
             margin: 24px 30px 0;
@@ -254,17 +255,20 @@
         /* ===== STATS ===== */
         .stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 14px;
             padding: 24px 30px 30px;
         }
 
         .stat {
+            display: block;
             text-align: center;
             padding: 18px 10px;
             border-radius: 16px;
             border: 1px solid var(--line);
             background: linear-gradient(180deg, #fff, #fafbfc);
+            color: inherit;
+            text-decoration: none;
             transition: transform .2s, box-shadow .2s;
         }
 
@@ -282,6 +286,7 @@
             border-radius: 14px;
             background: var(--red-soft);
             font-size: 20px;
+            color: var(--red);
         }
 
         .num {
@@ -334,6 +339,7 @@
             border-radius: 12px;
             background: var(--red-soft);
             font-size: 19px;
+            color: var(--red);
         }
 
         .item-arrow {
@@ -346,6 +352,41 @@
             transform: translateX(3px);
             color: var(--red);
         }
+
+        /* ===== ICON TAMBAH TEMAN ===== */
+        .ico { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .btn.icon-only {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            justify-content: center;
+            color: var(--red);
+            font-size: 20px;
+        }
+
+        .btn.icon-only:hover { background: var(--red-soft); border-color: #fecaca; }
+
+        .notif {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            display: grid;
+            place-items: center;
+            border-radius: 99px;
+            background: var(--red);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            border: 2px solid #fff;
+        }
+
+        .item .notif { position: static; margin-left: auto; border: 0; }
+        .item .notif + .item-arrow { margin-left: 8px; }
 
         /* ===== BUTTONS ===== */
         .btn {
@@ -370,6 +411,8 @@
             background: #f9fafb;
         }
 
+        .btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+
         .btn.red {
             background: linear-gradient(135deg, var(--red), var(--red-dark));
             border-color: transparent;
@@ -381,6 +424,63 @@
             background: linear-gradient(135deg, #ef4444, var(--red));
             box-shadow: 0 8px 20px rgba(220, 38, 38, .38);
         }
+
+        /* ===== TEMAN ===== */
+        .friend-section {
+            margin-top: 34px;
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 26px 30px 30px;
+        }
+
+        .friend-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+            gap: 14px;
+        }
+
+        .friend-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .friend-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #fff1f2, #ffedd5);
+            color: var(--red-dark);
+            font-weight: 800;
+            font-size: 22px;
+            border: 3px solid #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .friend-chip small { display: block; color: var(--red); font-weight: 600; font-size: 12px; }
+
+        .friend-add {
+            text-decoration: none;
+            color: var(--red);
+        }
+
+        .friend-add .friend-avatar {
+            background: var(--red-soft);
+            border: 2px dashed #fca5a5;
+            box-shadow: none;
+            font-size: 24px;
+        }
+
+        .friend-add:hover .friend-avatar { background: #fee2e2; }
 
         /* ===== FAVORITES ===== */
         .favorite-section {
@@ -681,11 +781,13 @@
 
             .bio { margin: 20px 20px 0; font-size: 15px; }
 
-            .stats { padding: 20px; gap: 8px; }
+            .stats { padding: 20px; gap: 8px; grid-template-columns: repeat(2, 1fr); }
             .stat { padding: 14px 6px; }
             .stat-icon { width: 38px; height: 38px; font-size: 17px; }
             .num { font-size: 24px; }
             .stat-label { font-size: 12px; }
+
+            .friend-section { padding: 20px 16px 24px; border-radius: 20px; }
 
             .favorite-section { padding: 20px 16px 24px; border-radius: 20px; }
             .favorite-heading h2 { font-size: 19px; }
@@ -698,6 +800,12 @@
 </head>
 
 @php
+    // ===== Teman =====
+    // Butuh: trait HasFriends di model User + tabel friendships.
+    $friendCount        = $user->friends()->count();
+    $friendPreview      = $user->friends()->latest()->limit(7)->get();
+    $pendingFriendCount = $user->receivedRequests()->where('status', 'pending')->count();
+
     // ===== Destinasi favorit =====
     // Dibaca langsung dari database, sehingga favorit dari tombol hati di peta
     // dan favorit manual sama-sama tampil otomatis.
@@ -743,7 +851,6 @@
     $coverColor2 = $user->cover_color2 ?: '#f97316';
 
     // Posisi & zoom foto/video sampul (diatur di halaman edit profil).
-    // x,y dalam persen (0-100), zoom 1-3. Nilai dibersihkan agar aman dipakai di CSS.
     $coverPosX = max(0, min(100, (float) ($user->cover_pos_x ?? 50)));
     $coverPosY = max(0, min(100, (float) ($user->cover_pos_y ?? 50)));
     $coverZoom = max(1, min(3, (float) ($user->cover_zoom ?? 1)));
@@ -778,7 +885,6 @@
     } elseif ($bgType === 'image' && $bgSrc) {
         $pageBgStyle = "background: #111827 url('{$bgSrc}') center / cover no-repeat;";
     } elseif ($bgType === 'salju') {
-        // Dasar polos biru es lembut; hiasan salju ditaruh di pinggir (lihat .snow-frame)
         $pageBgStyle = "background: linear-gradient(180deg, #8fbcf0 0%, #a9cdf5 50%, #c3dcf8 100%);";
     }
 @endphp
@@ -859,10 +965,29 @@
                         📅 Bergabung sejak
                         {{ $user->created_at?->translatedFormat('F Y') ?? '-' }}
                     </span>
+
+                    <span class="chip">
+                        👥 {{ $friendCount }} teman
+                    </span>
                 </div>
             </div>
 
             <div class="head-action">
+                {{-- Icon tambah teman --}}
+                <a class="btn icon-only"
+                   href="{{ route('friends.index') }}"
+                   title="Tambah teman"
+                   aria-label="Tambah teman{{ $pendingFriendCount ? ' (' . $pendingFriendCount . ' permintaan baru)' : '' }}">
+                    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <path d="M20 8v6M23 11h-6"/>
+                    </svg>
+                    @if($pendingFriendCount)
+                        <span class="notif">{{ $pendingFriendCount }}</span>
+                    @endif
+                </a>
+
                 <a class="btn red" href="{{ route('profile.edit') }}">
                     ✎ Edit Profil
                 </a>
@@ -892,6 +1017,12 @@
                 <div class="num">{{ $tripCount }}</div>
                 <div class="stat-label">Rencana perjalanan</div>
             </div>
+
+            <a class="stat" href="{{ route('friends.index') }}">
+                <div class="stat-icon">👥</div>
+                <div class="num">{{ $friendCount }}</div>
+                <div class="stat-label">Teman</div>
+            </a>
         </section>
 
     </div>
@@ -901,6 +1032,21 @@
         <a class="item" href="{{ route('profile.edit') }}">
             <span class="item-icon">♙</span>
             Informasi pribadi
+            <span class="item-arrow">›</span>
+        </a>
+
+        <a class="item" href="{{ route('friends.index') }}">
+            <span class="item-icon">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <path d="M20 8v6M23 11h-6"/>
+                </svg>
+            </span>
+            Teman
+            @if($pendingFriendCount)
+                <span class="notif">{{ $pendingFriendCount }}</span>
+            @endif
             <span class="item-arrow">›</span>
         </a>
 
@@ -922,6 +1068,50 @@
             <span class="item-arrow">›</span>
         </a>
     </nav>
+
+    {{-- TEMAN --}}
+    <section class="friend-section" id="teman">
+        <div class="favorite-heading">
+            <h2>👥 Teman Saya</h2>
+
+            <a class="btn red" href="{{ route('friends.index') }}">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <path d="M20 8v6M23 11h-6"/>
+                </svg>
+                Cari &amp; Tambah Teman
+            </a>
+        </div>
+
+        @if($friendPreview->isNotEmpty())
+            <div class="friend-strip">
+                @foreach($friendPreview as $friend)
+                    <div class="friend-chip">
+                        @if($friend->avatar_path)
+                            <img class="friend-avatar" src="{{ asset('storage/' . $friend->avatar_path) }}" alt="Foto {{ $friend->name }}">
+                        @else
+                            <div class="friend-avatar">{{ mb_strtoupper(mb_substr($friend->name ?: '?', 0, 1)) }}</div>
+                        @endif
+                        <span>{{ \Illuminate\Support\Str::limit($friend->name, 14) }}
+                            <small>@ {{ $friend->username ?: \Illuminate\Support\Str::slug($friend->name, '_') }}</small>
+                        </span>
+                    </div>
+                @endforeach
+
+                <a class="friend-chip friend-add" href="{{ route('friends.index') }}">
+                    <div class="friend-avatar">{{ $friendCount > 7 ? '+' . ($friendCount - 7) : '＋' }}</div>
+                    <span>{{ $friendCount > 7 ? 'Lihat semua' : 'Tambah' }}</span>
+                </a>
+            </div>
+        @else
+            <div class="empty">
+                <div class="empty-icon">🤝</div>
+                Kamu belum punya teman.<br>
+                Tekan tombol <strong>Cari &amp; Tambah Teman</strong>, lalu cari lewat username atau nama profilnya.
+            </div>
+        @endif
+    </section>
 
     {{-- DAFTAR FAVORIT MANUAL --}}
     <section class="favorite-section" id="destinasi-favorit">
