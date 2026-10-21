@@ -13,19 +13,24 @@ use App\Http\Controllers\FavoritePlaceController;
 |--------------------------------------------------------------------------
 */
 
-// Login
-Route::get('/login', [AuthController::class, 'showLogin'])
-    ->name('login');
+Route::middleware('guest')->group(function () {
 
-Route::post('/login', [AuthController::class, 'login'])
-    ->name('login.store');
+    // Login
+    Route::get('/login', [AuthController::class, 'showLogin'])
+        ->name('login');
 
-// Register
-Route::get('/register', [AuthController::class, 'showRegister'])
-    ->name('register');
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:10,1')
+        ->name('login.store');
 
-Route::post('/register', [AuthController::class, 'register'])
-    ->name('register.store');
+    // Register
+    Route::get('/register', [AuthController::class, 'showRegister'])
+        ->name('register');
+
+    Route::post('/register', [AuthController::class, 'register'])
+        ->middleware('throttle:10,1')
+        ->name('register.store');
+});
 
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])
@@ -64,15 +69,11 @@ Route::get('/api/places', [MapController::class, 'places'])
 Route::get('/api/countries', [MapController::class, 'countries'])
     ->name('map.countries');
 
-Route::get('/api/countries/{country}/provinces', [
-    MapController::class,
-    'provinces'
-])->name('map.provinces');
+Route::get('/api/countries/{country}/provinces', [MapController::class, 'provinces'])
+    ->name('map.provinces');
 
-Route::get('/api/provinces/{province}/cities', [
-    MapController::class,
-    'cities'
-])->name('map.cities');
+Route::get('/api/provinces/{province}/cities', [MapController::class, 'cities'])
+    ->name('map.cities');
 
 
 /*
@@ -83,12 +84,7 @@ Route::get('/api/provinces/{province}/cities', [
 
 Route::middleware('auth')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Profil Pengguna
-    |--------------------------------------------------------------------------
-    */
-
+    // Profil Pengguna
     Route::get('/profile', [ProfileController::class, 'show'])
         ->name('profile.show');
 
@@ -99,40 +95,16 @@ Route::middleware('auth')->group(function () {
         ->name('profile.update');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Favorit dari Tombol Hati pada Popup Peta
-    |--------------------------------------------------------------------------
-    |
-    | toggle : simpan / hapus favorit dari popup peta
-    | status : daftar kunci tempat yang sudah difavoritkan pengguna
-    |
-    | Dua route ini didaftarkan SEBELUM /favorites/{id} agar tidak bentrok.
-    |
-    */
+    // Favorit dari tombol hati di popup peta
+    // (didaftarkan SEBELUM /favorites/{id} agar tidak bentrok)
+    Route::get('/favorite-places/status', [FavoritePlaceController::class, 'status'])
+        ->name('favorite-places.status');
 
-    Route::get('/favorite-places/status', [
-        FavoritePlaceController::class,
-        'status'
-    ])->name('favorite-places.status');
-
-    Route::post('/favorite-places/toggle', [
-        FavoritePlaceController::class,
-        'toggle'
-    ])->name('favorite-places.toggle');
+    Route::post('/favorite-places/toggle', [FavoritePlaceController::class, 'toggle'])
+        ->name('favorite-places.toggle');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Favorit Manual
-    |--------------------------------------------------------------------------
-    |
-    | Pengguna dapat menambah, melihat, mengedit, dan menghapus
-    | destinasi favorit miliknya sendiri. Daftarnya tampil di profil
-    | pada bagian "Destinasi Favorit Saya".
-    |
-    */
-
+    // Favorit manual
     Route::get('/favorites', [FavoritePlaceController::class, 'index'])
         ->name('favorites.index');
 
@@ -152,48 +124,27 @@ Route::middleware('auth')->group(function () {
         ->name('favorites.destroy');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Rencana Perjalanan
-    |--------------------------------------------------------------------------
-    */
-
+    // Rencana perjalanan
     Route::get('/trips', [TravelController::class, 'trips'])
         ->name('trips.index');
 
     Route::post('/trips', [TravelController::class, 'storeTrip'])
         ->name('trips.store');
 
-    Route::post('/trips/{trip}/places', [
-        TravelController::class,
-        'addTripPlace'
-    ])->name('trips.places.store');
+    Route::post('/trips/{trip}/places', [TravelController::class, 'addTripPlace'])
+        ->name('trips.places.store');
 
-    Route::patch('/trips/{trip}/places/{place}/visited', [
-        TravelController::class,
-        'toggleVisited'
-    ])->name('trips.places.toggle');
+    Route::patch('/trips/{trip}/places/{place}/visited', [TravelController::class, 'toggleVisited'])
+        ->name('trips.places.toggle');
 
-    Route::post('/trips/{trip}/complete', [
-        TravelController::class,
-        'completeTrip'
-    ])->name('trips.complete');
+    Route::post('/trips/{trip}/complete', [TravelController::class, 'completeTrip'])
+        ->name('trips.complete');
 
-    Route::delete('/trips/{trip}', [
-        TravelController::class,
-        'destroyTrip'
-    ])->name('trips.destroy');
+    Route::delete('/trips/{trip}', [TravelController::class, 'destroyTrip'])
+        ->name('trips.destroy');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Pencapaian
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get('/achievements', [
-        TravelController::class,
-        'achievements'
-    ])->name('achievements.index');
-
+    // Pencapaian
+    Route::get('/achievements', [TravelController::class, 'achievements'])
+        ->name('achievements.index');
 });
