@@ -163,6 +163,8 @@
         background: #222;
         color: white;
         cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
     }
 
     /* SEARCH INPUT */
@@ -270,6 +272,16 @@
         color: white;
     }
 
+    .category-btn.hotel {
+        background: #6a1b9a;
+        color: white;
+    }
+
+    .category-btn.ibadah {
+        background: #00838f;
+        color: white;
+    }
+
     .category-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
@@ -324,6 +336,48 @@
 
     .food-marker::after {
         content: "🍜";
+        position: absolute;
+        font-size: 14px;
+        top: 5px;
+        left: 5px;
+        transform: rotate(45deg);
+    }
+
+    /* MARKER HOTEL */
+    .hotel-marker {
+        width: 34px;
+        height: 34px;
+        border-radius: 50% 50% 50% 0;
+        background: #6a1b9a;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .4);
+        position: relative;
+    }
+
+    .hotel-marker::after {
+        content: "🏨";
+        position: absolute;
+        font-size: 14px;
+        top: 5px;
+        left: 5px;
+        transform: rotate(45deg);
+    }
+
+    /* MARKER TEMPAT IBADAH */
+    .ibadah-marker {
+        width: 34px;
+        height: 34px;
+        border-radius: 50% 50% 50% 0;
+        background: #00838f;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .4);
+        position: relative;
+    }
+
+    .ibadah-marker::after {
+        content: "🕌";
         position: absolute;
         font-size: 14px;
         top: 5px;
@@ -532,23 +586,6 @@
         color: #b91c1c;
     }
 
-    /* Versi kecil di dalam popup marker */
-    .popup-weather {
-        margin-top: 8px;
-    }
-
-    .popup-weather .weather-card {
-        padding: 9px 10px;
-    }
-
-    .popup-weather .weather-icon {
-        font-size: 30px;
-    }
-
-    .popup-weather .weather-temp {
-        font-size: 24px;
-    }
-
     /* TOMBOL FAVORIT */
     .favorite-toggle-btn:disabled {
         opacity: .65;
@@ -746,10 +783,18 @@
                 🍜 Kuliner
             </button>
 
+            <button type="button" class="category-btn hotel" id="hotelButton">
+                🏨 Hotel
+            </button>
+
+            <button type="button" class="category-btn ibadah" id="ibadahButton">
+                🕌 Tempat Ibadah
+            </button>
+
         </div>
 
 
-        <!-- SEARCH TEMPAT WISATA / KULINER -->
+        <!-- SEARCH TEMPAT -->
         <div
             id="placeSearchPanel"
             style="
@@ -762,7 +807,7 @@
             <input
                 type="text"
                 id="placeSearchInput"
-                placeholder="🔎 Cari nama tempat wisata atau kuliner..."
+                placeholder="🔎 Cari nama tempat (wisata, kuliner, hotel, ibadah)..."
                 autocomplete="off"
                 style="
                     width:100%;
@@ -876,8 +921,6 @@
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
         // Daftar resmi provinsi Indonesia yang boleh tampil di mode Indonesia.
-        // Filter ini menjadi pengaman tambahan apabila database lama masih
-        // memiliki baris provinsi dari negara lain.
         const indonesiaProvinceNames = new Set([
             'aceh', 'sumatera utara', 'sumatera barat', 'riau',
             'kepulauan riau', 'jambi', 'sumatera selatan',
@@ -903,8 +946,6 @@
                 .trim();
         }
 
-        // Sistem hanya fokus pada Indonesia. Negara lain tidak dipakai
-        // pada hirarki pencarian maupun navigasi peta.
         const indonesiaCountry = countries.find(item =>
             String(item.code || '').toLowerCase() === 'id'
         ) || {
@@ -930,7 +971,6 @@
             wheelPxPerZoomLevel: 80
         });
 
-        /* OSM */
         const osm = L.tileLayer(
             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
@@ -962,6 +1002,7 @@
         const searchTitle = document.getElementById('searchTitle');
         const searchMode = document.getElementById('searchMode');
         const backToProvince = document.getElementById('backToProvince');
+        const searchInputWrapper = document.querySelector('.search-input-wrapper');
 
         /* LOCATION ELEMENT */
         const locationInfo = document.getElementById('locationInfo');
@@ -980,6 +1021,8 @@
         const categoryOptions = document.getElementById('categoryOptions');
         const wisataButton = document.getElementById('wisataButton');
         const kulinerButton = document.getElementById('kulinerButton');
+        const hotelButton = document.getElementById('hotelButton');
+        const ibadahButton = document.getElementById('ibadahButton');
         const placesLoading = document.getElementById('placesLoading');
         const clearPlaces = document.getElementById('clearPlaces');
         const placeSearchPanel = document.getElementById('placeSearchPanel');
@@ -1007,22 +1050,36 @@
         let loadedPlaces = [];
         let currentPlaceCategory = '';
 
+        // Marker kota-kota provinsi (ditampilkan otomatis setelah provinsi dipilih)
+        let provinceCityMarkers = [];
+
+        // Versi untuk abort geocoding kalau user ganti provinsi
+        let provinceVersion = 0;
+
         // State info provinsi + cuaca
-        let provinceDetail = null;      // { name, latitude, longitude, wikiUrl, wikiLabel, summary, weather, weatherError }
+        let provinceDetail = null;
         let weatherTimer = null;
         let provinceRequestId = 0;
-        const WEATHER_REFRESH_MS = 5 * 60 * 1000; // perbarui otomatis tiap 5 menit
+        const WEATHER_REFRESH_MS = 5 * 60 * 1000;
+
+        /* =====================================================
+           WARNA UNIK UNTUK SETIAP KOTA
+           Golden-angle (137.5°) menghasilkan distribusi hue
+           yang merata → setiap kota dapat warna berbeda.
+        ====================================================== */
+
+        function getCityColor(index) {
+            const hue = (index * 137.508) % 360;
+            return `hsl(${hue.toFixed(0)}, 72%, 45%)`;
+        }
 
         /* =====================================================
            ICON PROVINSI
         ====================================================== */
 
         function createProvinceIcon() {
-
             return L.divIcon({
-
                 className: '',
-
                 html:
                     '<div style="' +
                     'width:34px;' +
@@ -1033,23 +1090,37 @@
                     'border:3px solid white;' +
                     'box-shadow:0 3px 10px rgba(0,0,0,.4);' +
                     '"></div>',
-
                 iconSize: [34, 34],
                 iconAnchor: [17, 34],
                 popupAnchor: [0, -34]
-
             });
-
         }
 
-
-        /* ICON KOTA */
-        function createCityIcon() {
-
+        /* ICON KOTA BERWARNA */
+        function createColoredCityIcon(color) {
             return L.divIcon({
-
                 className: '',
+                html:
+                    '<div style="' +
+                    'width:30px;' +
+                    'height:30px;' +
+                    'border-radius:50% 50% 50% 0;' +
+                    'background:' + color + ';' +
+                    'transform:rotate(-45deg);' +
+                    'border:3px solid white;' +
+                    'box-shadow:0 3px 10px rgba(0,0,0,.45);' +
+                    'position:relative;' +
+                    '"></div>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
+        }
 
+        /* ICON KOTA (fallback) */
+        function createCityIcon() {
+            return L.divIcon({
+                className: '',
                 html:
                     '<div style="' +
                     'width:30px;' +
@@ -1060,109 +1131,139 @@
                     'border:3px solid white;' +
                     'box-shadow:0 3px 10px rgba(0,0,0,.4);' +
                     '"></div>',
-
                 iconSize: [30, 30],
                 iconAnchor: [15, 30],
                 popupAnchor: [0, -30]
-
             });
-
         }
-
 
         /* ICON WISATA */
         function createTourismIcon() {
-
             return L.divIcon({
-
                 className: '',
-
                 html: '<div class="tourism-marker"></div>',
-
                 iconSize: [34, 34],
                 iconAnchor: [17, 34],
                 popupAnchor: [0, -34]
-
             });
-
         }
-
 
         /* ICON KULINER */
         function createFoodIcon() {
-
             return L.divIcon({
-
                 className: '',
-
                 html: '<div class="food-marker"></div>',
-
                 iconSize: [34, 34],
                 iconAnchor: [17, 34],
                 popupAnchor: [0, -34]
-
             });
+        }
 
+        /* ICON HOTEL */
+        function createHotelIcon() {
+            return L.divIcon({
+                className: '',
+                html: '<div class="hotel-marker"></div>',
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -34]
+            });
+        }
+
+        /* ICON TEMPAT IBADAH */
+        function createWorshipIcon() {
+            return L.divIcon({
+                className: '',
+                html: '<div class="ibadah-marker"></div>',
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -34]
+            });
+        }
+
+        function createPlaceIcon(category) {
+            switch (category) {
+                case 'wisata':  return createTourismIcon();
+                case 'kuliner': return createFoodIcon();
+                case 'hotel':   return createHotelIcon();
+                case 'ibadah':  return createWorshipIcon();
+                default:        return createTourismIcon();
+            }
+        }
+
+        function categoryEmoji(category) {
+            const map = {
+                wisata:  '🏞️',
+                kuliner: '🍜',
+                hotel:   '🏨',
+                ibadah:  '🕌'
+            };
+            return map[category] || '📍';
+        }
+
+        function categoryLabel(category) {
+            const map = {
+                wisata:  '🏞️ Wisata',
+                kuliner: '🍜 Kuliner',
+                hotel:   '🏨 Hotel',
+                ibadah:  '🕌 Tempat Ibadah'
+            };
+            return map[category] || '📍 Tempat';
+        }
+
+        function categorySearchLabel(category) {
+            const map = {
+                wisata:  'tempat wisata',
+                kuliner: 'tempat kuliner',
+                hotel:   'hotel',
+                ibadah:  'tempat ibadah'
+            };
+            return map[category] || 'tempat';
         }
 
 
         /* =====================================================
-           SEARCH OPEN
+           SEARCH OPEN / CLOSE
         ====================================================== */
 
         searchToggle.addEventListener('click', function () {
-
             searchPanel.style.display = 'block';
-
             searchToggle.style.display = 'none';
-
-            searchInput.focus();
-
-            renderProvinceResults();
-
-        });
-
-
-        /* SEARCH CLOSE */
-        closeSearch.addEventListener('click', function () {
-
-            searchPanel.style.display = 'none';
-
-            searchToggle.style.display = 'block';
-
-        });
-
-
-        /* ESC */
-        document.addEventListener('keydown', function (event) {
-
-            if (event.key === 'Escape') {
-
-                searchPanel.style.display = 'none';
-
-                searchToggle.style.display = 'block';
-
+            if (!currentProvince) {
+                searchInput.focus();
+                renderProvinceResults();
+            } else {
+                showProvinceCitiesHint();
             }
+        });
 
+        closeSearch.addEventListener('click', function () {
+            searchPanel.style.display = 'none';
+            searchToggle.style.display = 'block';
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                searchPanel.style.display = 'none';
+                searchToggle.style.display = 'block';
+            }
         });
 
 
         /* =====================================================
-           PROVINSI INDONESIA
+           PROVINSI INDONESIA (LIST MODE)
         ====================================================== */
 
         function renderProvinceResults(keyword = '') {
 
             searchTitle.textContent = '🔍 Cari Provinsi Indonesia';
-
             searchMode.textContent = 'Indonesia';
-
             searchInput.placeholder = 'Cari provinsi Indonesia...';
-
             backToProvince.style.display = 'none';
+            searchInputWrapper.style.display = '';
+            searchInput.value = keyword;
 
-            const search =
-                String(keyword || '').toLowerCase().trim();
+            const search = String(keyword || '').toLowerCase().trim();
 
             const filtered = provinces
                 .filter(province => {
@@ -1208,65 +1309,44 @@
         }
 
 
-        function renderCityResults(keyword = '') {
+        /* =====================================================
+           HINT MODE PROVINSI (kota ditampilkan di peta)
+        ====================================================== */
 
-            if (!currentProvince) {
-                renderProvinceResults('');
-                return;
-            }
+        function showProvinceCitiesHint(extra) {
 
-            searchTitle.textContent = '🔍 Cari Kota / Kabupaten';
+            if (!currentProvince) return;
 
+            const count = cities.filter(c =>
+                String(c.province_id) === String(currentProvince.id)
+            ).length;
+
+            searchTitle.textContent = '🗺️ ' + currentProvince.name;
             searchMode.textContent = currentProvince.name;
-
-            searchInput.placeholder = 'Cari kota atau kabupaten...';
-
             backToProvince.style.display = 'block';
+            backToProvince.textContent = '← Kembali ke Daftar Provinsi';
+            searchInputWrapper.style.display = 'none';
 
-            backToProvince.textContent = '← Kembali ke Provinsi';
-
-            const search =
-                String(keyword || '').toLowerCase().trim();
-
-            const filtered = cities.filter(city => {
-                return String(city.province_id) === String(currentProvince.id) &&
-                    String(city.name || '').toLowerCase().includes(search);
-            });
-
-            searchResults.innerHTML = '';
-
-            if (filtered.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="no-result">
-                        Kota / Kabupaten tidak ditemukan di ${escapeHtml(currentProvince.name)}.
+            searchResults.innerHTML = `
+                <div class="no-result" style="padding: 22px 18px; line-height: 1.7; text-align: left;">
+                    📍 <strong>${count} kota/kabupaten</strong> di <strong>${escapeHtml(currentProvince.name)}</strong> ditampilkan sebagai marker di peta.
+                    <div style="margin-top: 10px; font-size: 12px; color: #475569;">
+                        👉 Klik salah satu <strong>marker berwarna</strong> di peta untuk memilih kota dan melihat tempat wisata, kuliner, hotel, atau tempat ibadah.
                     </div>
-                `;
-                return;
-            }
-
-            filtered.forEach(city => {
-                const item = document.createElement('div');
-                item.className = 'search-result';
-
-                item.innerHTML = `
-                    <div class="result-name">
-                        📍 ${escapeHtml(city.name)}
-                    </div>
-                    <div class="result-info">
-                        ${escapeHtml(city.type || 'Kota/Kabupaten')} • ${escapeHtml(currentProvince.name)}, Indonesia
-                    </div>
-                `;
-
-                item.addEventListener('click', function () {
-                    selectCity(city);
-                });
-
-                searchResults.appendChild(item);
-            });
+                    ${extra ? `<div style="margin-top: 10px; font-size: 12px; color: #64748b; font-style: italic;">${escapeHtml(extra)}</div>` : ''}
+                </div>
+            `;
         }
 
 
+        /* =====================================================
+           PILIH PROVINSI
+        ====================================================== */
+
         async function selectProvince(province) {
+
+            provinceVersion++;
+            const myVersion = provinceVersion;
 
             currentProvince = {
                 ...province,
@@ -1276,6 +1356,7 @@
             currentCity = null;
 
             clearPlaceMarkers();
+            clearProvinceCityMarkers();
             resetProvinceDetail();
 
             if (currentCountryMarker) {
@@ -1298,14 +1379,20 @@
             clearPlaces.style.display = 'none';
             locationInfo.style.display = 'none';
 
-            // Selalu resolusikan ulang koordinat provinsi melalui backend.
-            // Ini mencegah koordinat database lama yang salah dipakai.
+            searchInput.value = '';
+
+            // Resolve koordinat provinsi
             await searchProvinceOpenStreetMap(currentProvince);
 
-            // Daftar kota langsung tersedia setelah provinsi dipilih.
-            searchInput.value = '';
-            renderCityResults('');
+            if (myVersion !== provinceVersion) return;
+
+            // Update panel search ke mode provinsi
+            showProvinceCitiesHint('Memuat marker kota...');
+
+            // Tampilkan semua marker kota
+            await showProvinceCitiesOnMap(myVersion);
         }
+
 
         /* =====================================================
            CARI PROVINSI OSM
@@ -1324,18 +1411,14 @@
                     });
 
                 const response = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 const data = await response.json();
                 console.log('Geocoding provinsi:', data);
 
                 if (!response.ok || !data.success) {
-                    throw new Error(
-                        data.message || 'Provinsi tidak ditemukan.'
-                    );
+                    throw new Error(data.message || 'Provinsi tidak ditemukan.');
                 }
 
                 showProvinceOnMap(
@@ -1347,10 +1430,6 @@
 
             } catch (error) {
                 console.error('Geocoding provinsi:', error);
-
-                // Jangan gunakan koordinat database lama sebagai fallback karena
-                // nilainya bisa tidak sesuai dengan wilayah yang dipilih.
-                // Marker hanya boleh dibuat dari koordinat hasil resolver wilayah.
                 locationInfo.style.display = 'block';
                 locationName.textContent = province.name;
                 locationAddress.textContent =
@@ -1360,14 +1439,11 @@
 
 
         /* =====================================================
-           CUACA REAL TIME (Open-Meteo, gratis tanpa API key)
+           CUACA REAL TIME (Open-Meteo)
         ====================================================== */
 
-        // Kode cuaca WMO -> deskripsi Indonesia + ikon
         function weatherCodeInfo(code, isDay) {
-
             const day = isDay === 1 || isDay === true;
-
             const map = {
                 0:  [day ? 'Cerah' : 'Cerah (malam)', day ? '☀️' : '🌙'],
                 1:  ['Cerah berawan', day ? '🌤️' : '🌙'],
@@ -1398,27 +1474,20 @@
                 96: ['Badai petir + es ringan', '⛈️'],
                 99: ['Badai petir + es lebat', '⛈️']
             };
-
             const found = map[Number(code)];
-
             return found
                 ? { text: found[0], icon: found[1] }
                 : { text: 'Tidak diketahui', icon: '🌡️' };
         }
 
         function windDirectionText(degree) {
-
             const deg = Number(degree);
-
             if (!Number.isFinite(deg)) return '';
-
             const names = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
-
             return names[Math.round(deg / 45) % 8];
         }
 
         async function fetchWeather(latitude, longitude) {
-
             const url =
                 'https://api.open-meteo.com/v1/forecast?' +
                 new URLSearchParams({
@@ -1450,16 +1519,13 @@
             }
 
             const data = await response.json();
-
             if (!data || !data.current) {
                 throw new Error('Data cuaca tidak tersedia.');
             }
-
             return data;
         }
 
         function renderWeatherHtml(weather) {
-
             const c = weather.current;
             const d = weather.daily || {};
             const info = weatherCodeInfo(c.weather_code, c.is_day);
@@ -1530,12 +1596,11 @@
             `;
         }
 
+
         /* =====================================================
            INFO PROVINSI (Wikipedia bahasa Indonesia)
         ====================================================== */
 
-        // Pengecualian nama artikel Wikipedia. Provinsi lain memakai
-        // nama provinsi dengan spasi diganti underscore.
         const provinceWikiTitleOverrides = {
             'dki jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
             'daerah khusus jakarta': 'Daerah_Khusus_Ibukota_Jakarta',
@@ -1551,18 +1616,14 @@
         };
 
         function getProvinceWikiTitle(name) {
-
             const key = normalizeProvinceName(name);
-
             if (provinceWikiTitleOverrides[key]) {
                 return provinceWikiTitleOverrides[key];
             }
-
             return String(name || '').trim().replace(/\s+/g, '_');
         }
 
         async function fetchProvinceSummary(name) {
-
             const title = getProvinceWikiTitle(name);
             const fallbackUrl = 'https://id.wikipedia.org/wiki/' + encodeURIComponent(title);
 
@@ -1580,7 +1641,6 @@
             const data = await response.json();
 
             let extract = String(data.extract || '').trim();
-
             if (extract.length > 420) {
                 extract = extract.slice(0, 420).replace(/\s+\S*$/, '') + '…';
             }
@@ -1593,12 +1653,12 @@
             };
         }
 
+
         /* =====================================================
-           RENDER INFO PROVINSI (panel bawah + popup marker)
+           RENDER INFO PROVINSI
         ====================================================== */
 
         function renderSummaryHtml(detail, compact) {
-
             if (!detail) return '';
 
             const wikiLink = detail.wikiUrl
@@ -1637,7 +1697,6 @@
         }
 
         function renderWeatherSectionHtml(detail) {
-
             if (!detail) return '';
 
             if (detail.weatherLoading) {
@@ -1658,34 +1717,20 @@
             return detail.weather ? renderWeatherHtml(detail.weather) : '';
         }
 
-        function buildProvincePopupHtml(detail) {
-
-            // Popup di atas marker sengaja dibuat singkat.
-            // Info provinsi & cuaca hanya tampil di panel kiri.
-            return `
-                <div class="place-popup-title">${escapeHtml(detail.name)}</div>
-                <div class="place-popup-type">Provinsi • ${currentCountry ? escapeHtml(currentCountry.name) : 'Indonesia'}</div>
-            `;
-        }
-
         function refreshProvinceViews() {
-
             if (!provinceDetail) return;
-
             provinceInfo.style.display = 'block';
             provinceSummary.innerHTML = renderSummaryHtml(provinceDetail, false);
             provinceWeather.innerHTML = renderWeatherSectionHtml(provinceDetail);
         }
 
         function hideProvinceInfoPanel() {
-
             provinceInfo.style.display = 'none';
             provinceSummary.innerHTML = '';
             provinceWeather.innerHTML = '';
         }
 
         function stopWeatherRefresh() {
-
             if (weatherTimer) {
                 clearInterval(weatherTimer);
                 weatherTimer = null;
@@ -1693,7 +1738,6 @@
         }
 
         function resetProvinceDetail() {
-
             provinceRequestId++;
             stopWeatherRefresh();
             provinceDetail = null;
@@ -1701,30 +1745,21 @@
         }
 
         async function loadProvinceWeather(requestId) {
-
             if (!provinceDetail || requestId !== provinceRequestId) return;
 
             try {
                 const weather = await fetchWeather(provinceDetail.latitude, provinceDetail.longitude);
-
                 if (requestId !== provinceRequestId || !provinceDetail) return;
-
                 provinceDetail.weather = weather;
                 provinceDetail.weatherError = null;
-
             } catch (error) {
                 console.error('Cuaca provinsi:', error);
-
                 if (requestId !== provinceRequestId || !provinceDetail) return;
-
-                // Jika sudah ada data sebelumnya, tetap tampilkan data lama.
                 if (!provinceDetail.weather) {
                     provinceDetail.weatherError =
                         error.message || 'Cuaca tidak dapat dimuat saat ini.';
                 }
-
             } finally {
-
                 if (requestId === provinceRequestId && provinceDetail) {
                     provinceDetail.weatherLoading = false;
                     refreshProvinceViews();
@@ -1733,27 +1768,19 @@
         }
 
         async function loadProvinceSummary(requestId) {
-
             if (!provinceDetail || requestId !== provinceRequestId) return;
 
             try {
                 const summary = await fetchProvinceSummary(provinceDetail.name);
-
                 if (requestId !== provinceRequestId || !provinceDetail) return;
-
                 provinceDetail.summary = summary;
                 provinceDetail.wikiUrl = summary.url;
-
             } catch (error) {
                 console.error('Ringkasan provinsi:', error);
-
                 if (requestId !== provinceRequestId || !provinceDetail) return;
-
                 provinceDetail.summary = null;
                 provinceDetail.wikiUrl = error.wikiUrl || provinceDetail.wikiUrl;
-
             } finally {
-
                 if (requestId === provinceRequestId && provinceDetail) {
                     provinceDetail.summaryLoading = false;
                     refreshProvinceViews();
@@ -1761,8 +1788,7 @@
             }
         }
 
-        function startProvinceDetail(name, latitude, longitude) {
-
+        function startProvinceDetail(name, latitude, longitude, address) {
             provinceRequestId++;
             stopWeatherRefresh();
 
@@ -1772,6 +1798,7 @@
                 name: name,
                 latitude: latitude,
                 longitude: longitude,
+                address: address || '',
                 wikiUrl: 'https://id.wikipedia.org/wiki/' + encodeURIComponent(getProvinceWikiTitle(name)),
                 summary: null,
                 summaryLoading: true,
@@ -1785,17 +1812,13 @@
             loadProvinceSummary(requestId);
             loadProvinceWeather(requestId);
 
-            // Cuaca diperbarui otomatis selama provinsi masih dipilih.
             weatherTimer = setInterval(function () {
                 loadProvinceWeather(requestId);
             }, WEATHER_REFRESH_MS);
         }
 
-        // Tombol "Segarkan" (di panel maupun di popup)
         document.addEventListener('click', function (event) {
-
             const btn = event.target.closest('[data-weather-refresh]');
-
             if (!btn || !provinceDetail) return;
 
             event.preventDefault();
@@ -1810,11 +1833,10 @@
 
 
         /* =====================================================
-           TAMPILKAN PROVINSI
+           TAMPILKAN PROVINSI DI PETA
         ====================================================== */
 
         function showProvinceOnMap(latitude, longitude, name, address) {
-
             latitude = Number(latitude);
             longitude = Number(longitude);
 
@@ -1831,54 +1853,191 @@
                     { icon: createProvinceIcon() }
                 ).addTo(map);
 
-            // Popup singkat saja. Info provinsi & cuaca tampil di panel kiri.
             currentProvinceMarker.bindPopup(
                 '<div class="place-popup-title">' + escapeHtml(name) + '</div>' +
                 '<div class="place-popup-type">Provinsi • ' +
                 escapeHtml(currentCountry ? currentCountry.name : 'Indonesia') + '</div>'
             );
 
-            currentProvinceMarker.openPopup();
-
-            map.flyTo(
-                [latitude, longitude],
-                8,
-                {
-                    animate: true,
-                    duration: 1.8
-                }
-            );
+            map.flyTo([latitude, longitude], 8, { animate: true, duration: 1.5 });
 
             locationInfo.style.display = 'block';
-
             locationName.textContent = name;
-
             locationAddress.textContent = address;
 
-            searchInput.value = '';
-
-            // Mulai ambil informasi provinsi + cuaca real time
-            startProvinceDetail(name, latitude, longitude);
-
+            startProvinceDetail(name, latitude, longitude, address);
         }
 
 
         /* =====================================================
-           PILIH KOTA
+           MARKER SEMUA KOTA DARI PROVINSI
         ====================================================== */
 
-        async function selectCity(city) {
+        function clearProvinceCityMarkers() {
+            provinceCityMarkers.forEach(m => map.removeLayer(m));
+            provinceCityMarkers = [];
+        }
+
+        function addCityMarkerForProvince(city, latitude, longitude, color) {
+            const marker = L.marker([latitude, longitude], {
+                icon: createColoredCityIcon(color)
+            });
+
+            marker.bindPopup(`
+                <div class="place-popup-title" style="font-size:14px;font-weight:700;margin-bottom:2px;">
+                    ${escapeHtml(city.name)}
+                </div>
+                <div class="place-popup-type" style="font-size:11.5px;color:#64748b;">
+                    ${escapeHtml(city.type || 'Kota/Kabupaten')} • ${escapeHtml(currentProvince.name)}
+                </div>
+                <div style="margin-top:8px;">
+                    <button
+                        type="button"
+                        class="city-select-btn"
+                        style="
+                            background:#1976d2;
+                            color:white;
+                            border:none;
+                            padding:7px 14px;
+                            border-radius:7px;
+                            font-size:12px;
+                            font-weight:700;
+                            cursor:pointer;
+                            display:inline-flex;
+                            align-items:center;
+                            gap:5px;
+                        "
+                    >
+                        Pilih Kota Ini →
+                    </button>
+                </div>
+            `);
+
+            marker.on('popupopen', function () {
+                const popupEl = marker.getPopup().getElement();
+                if (!popupEl) return;
+                const btn = popupEl.querySelector('.city-select-btn');
+                if (btn) {
+                    btn.onclick = function (ev) {
+                        ev.stopPropagation();
+                        selectCity(city, latitude, longitude);
+                    };
+                }
+            });
+
+            marker.addTo(map);
+            provinceCityMarkers.push(marker);
+            return marker;
+        }
+
+        function fitProvinceCityBounds() {
+            if (provinceCityMarkers.length === 0) return;
+            if (provinceCityMarkers.length === 1) {
+                map.flyTo(provinceCityMarkers[0].getLatLng(), 11, {
+                    animate: true, duration: 1.2
+                });
+                return;
+            }
+            const group = L.featureGroup(provinceCityMarkers);
+            map.fitBounds(group.getBounds().pad(0.15), {
+                animate: true, duration: 1.2, maxZoom: 11
+            });
+        }
+
+        async function showProvinceCitiesOnMap(version) {
+
+            clearProvinceCityMarkers();
+
+            if (!currentProvince) return;
+
+            const provinceCities = cities.filter(c =>
+                String(c.province_id) === String(currentProvince.id)
+            );
+
+            if (provinceCities.length === 0) {
+                showProvinceCitiesHint('Tidak ada data kota untuk provinsi ini.');
+                return;
+            }
+
+            // Geocode setiap kota secara berurutan (backend sudah cache
+            // hasil regencies per provinsi via emsifa, jadi cepat).
+            let done = 0;
+            for (let i = 0; i < provinceCities.length; i++) {
+
+                if (version !== provinceVersion) return;
+
+                const city = provinceCities[i];
+                const color = getCityColor(i);
+
+                try {
+                    const url =
+                        '/api/geocode?' +
+                        new URLSearchParams({
+                            name: city.name,
+                            type: 'city',
+                            province: currentProvince.name,
+                            city_type: city.type || ''
+                        });
+
+                    const resp = await fetch(url, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await resp.json();
+
+                    if (version !== provinceVersion) return;
+
+                    if (data.success) {
+                        const la = parseFloat(data.latitude);
+                        const ln = parseFloat(data.longitude);
+
+                        if (Number.isFinite(la) && Number.isFinite(ln)) {
+                            addCityMarkerForProvince(city, la, ln, color);
+                            done++;
+
+                            // Update hint progress
+                            if (done === 1 || (i + 1) % 5 === 0) {
+                                showProvinceCitiesHint(
+                                    `Memuat ${done}/${provinceCities.length} kota...`
+                                );
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Geocode kota gagal:', city.name, e);
+                }
+            }
+
+            if (version !== provinceVersion) return;
+
+            // Fit bounds ke semua marker
+            fitProvinceCityBounds();
+
+            // Update hint final
+            showProvinceCitiesHint();
+        }
+
+
+        /* =====================================================
+           PILIH KOTA (dari marker)
+        ====================================================== */
+
+        async function selectCity(city, knownLat, knownLng) {
+
+            let latitude = Number(knownLat);
+            let longitude = Number(knownLng);
+            const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
 
             currentCity = {
                 ...city,
-                latitude: null,
-                longitude: null
+                latitude: hasCoords ? latitude : null,
+                longitude: hasCoords ? longitude : null
             };
 
             clearPlaceMarkers();
 
-            // Panel info provinsi disembunyikan saat masuk mode kota
-            resetProvinceDetail();
+            // Sembunyikan info provinsi (tapi JANGAN di-reset — agar
+            // bisa ditampilkan lagi saat user kembali ke mode provinsi)
+            hideProvinceInfoPanel();
 
             if (currentCityMarker) {
                 map.removeLayer(currentCityMarker);
@@ -1895,17 +2054,41 @@
             clearPlaces.style.display = 'none';
             locationInfo.style.display = 'none';
 
-            // Selalu minta koordinat kota yang sudah dibatasi oleh provinsi aktif.
-            await searchCityOpenStreetMap(currentCity);
+            // Tombol back → "kembali ke peta kota"
+            backToProvince.style.display = 'block';
+            backToProvince.textContent = '← Kembali ke Peta Kota';
+
+            if (hasCoords) {
+                // Fly ke kota
+                map.flyTo([latitude, longitude], 13, {
+                    animate: true, duration: 1.6
+                });
+
+                // Info panel
+                locationInfo.style.display = 'block';
+                locationName.textContent = city.name;
+                locationAddress.textContent =
+                    `${city.type || 'Kota/Kabupaten'} • ${currentProvince.name}, Indonesia`;
+
+                // Kategori muncul
+                categoryOptions.style.display = 'flex';
+
+                // Buka popup marker yang sesuai
+                for (const m of provinceCityMarkers) {
+                    const pos = m.getLatLng();
+                    if (Math.abs(pos.lat - latitude) < 0.0005 &&
+                        Math.abs(pos.lng - longitude) < 0.0005) {
+                        m.openPopup();
+                        break;
+                    }
+                }
+            } else {
+                // Fallback: geocode via backend
+                await searchCityOpenStreetMap(currentCity);
+            }
         }
 
-
-        /* =====================================================
-           CARI KOTA OSM / DATA WILAYAH
-        ====================================================== */
-
         async function searchCityOpenStreetMap(city) {
-
             try {
                 const url =
                     '/api/geocode?' +
@@ -1917,19 +2100,14 @@
                     });
 
                 const response = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 const data = await response.json();
                 console.log('Geocoding kota/kabupaten:', data);
 
                 if (!response.ok || !data.success) {
-                    throw new Error(
-                        data.message ||
-                        'Kota/kabupaten tidak ditemukan.'
-                    );
+                    throw new Error(data.message || 'Kota/kabupaten tidak ditemukan.');
                 }
 
                 const latitude = Number(data.latitude);
@@ -1960,11 +2138,10 @@
         }
 
         /* =====================================================
-           TAMPILKAN KOTA
+           TAMPILKAN KOTA (fallback path)
         ====================================================== */
 
         function showCityOnMap(latitude, longitude, name, address) {
-
             latitude = Number(latitude);
             longitude = Number(longitude);
 
@@ -1981,82 +2158,103 @@
                     { icon: createCityIcon() }
                 ).addTo(map);
 
-
-            currentCityMarker
-                .bindPopup(`
-
-                    <div class="place-popup-title">
-                        ${name}
-                    </div>
-
-                    <div class="place-popup-type">
-                        ${address}
-                    </div>
-
-                `);
+            currentCityMarker.bindPopup(`
+                <div class="place-popup-title">${name}</div>
+                <div class="place-popup-type">${address}</div>
+            `);
 
             currentCityMarker.openPopup();
 
-            map.flyTo(
-                [latitude, longitude],
-                13,
-                {
-                    animate: true,
-                    duration: 1.8
-                }
-            );
+            map.flyTo([latitude, longitude], 13, {
+                animate: true, duration: 1.6
+            });
 
             locationInfo.style.display = 'block';
-
             locationName.textContent = name;
-
             locationAddress.textContent = address;
 
-            // Setelah kota berhasil dipilih,
-            // tombol Wisata dan Kuliner muncul.
             categoryOptions.style.display = 'flex';
-
         }
 
 
         /* =====================================================
-           INPUT SEARCH
+           INPUT SEARCH (hanya mode provinsi list)
         ====================================================== */
 
         searchInput.addEventListener('input', function () {
-
-            if (currentProvince) {
-                renderCityResults(this.value);
-            } else {
-                renderProvinceResults(this.value);
-            }
+            // Di mode provinsi (dengan marker kota), input search disembunyikan
+            if (currentProvince) return;
+            renderProvinceResults(this.value);
         });
 
 
         /* =====================================================
-           TOMBOL KEMBALI HIERARKI
+           TOMBOL KEMBALI (berjenjang)
         ====================================================== */
 
         backToProvince.addEventListener('click', function () {
 
-            resetProvinceDetail();
+            // Jika sedang di mode KOTA → kembali ke mode PROVINSI (peta kota)
+            if (currentCity) {
 
-            // Dari kota kembali ke daftar seluruh provinsi Indonesia.
-            if (currentCity && currentProvince) {
+                currentCity = null;
+                clearPlaceMarkers();
+
                 if (currentCityMarker) {
                     map.removeLayer(currentCityMarker);
                     currentCityMarker = null;
                 }
 
-                // Marker provinsi ikut dibersihkan agar peta kembali bersih.
+                categoryOptions.style.display = 'none';
+                placeSearchPanel.style.display = 'none';
+                placeSearchInput.value = '';
+                placeSearchResults.innerHTML = '';
+                loadedPlaces = [];
+                currentPlaceCategory = '';
+                placesLoading.style.display = 'none';
+                clearPlaces.style.display = 'none';
+
+                // Tampilkan lagi info provinsi + cuaca
+                if (provinceDetail && currentProvince) {
+                    locationInfo.style.display = 'block';
+                    locationName.textContent = provinceDetail.name || currentProvince.name;
+                    locationAddress.textContent =
+                        provinceDetail.address ||
+                        `${currentProvince.name}, Indonesia`;
+                    refreshProvinceViews();
+                }
+
+                // Fit ke semua marker kota
+                fitProvinceCityBounds();
+
+                // Update back button
+                backToProvince.textContent = '← Kembali ke Daftar Provinsi';
+
+                // Update hint
+                showProvinceCitiesHint();
+
+                return;
+            }
+
+            // Jika sedang di mode PROVINSI → kembali ke DAFTAR PROVINSI
+            if (currentProvince) {
+
+                provinceVersion++;      // abort geocoding yang masih jalan
+                resetProvinceDetail();
+                clearProvinceCityMarkers();
+
                 if (currentProvinceMarker) {
                     map.removeLayer(currentProvinceMarker);
                     currentProvinceMarker = null;
                 }
 
-                clearPlaceMarkers();
-                currentCity = null;
+                if (currentCityMarker) {
+                    map.removeLayer(currentCityMarker);
+                    currentCityMarker = null;
+                }
+
                 currentProvince = null;
+                currentCity = null;
 
                 categoryOptions.style.display = 'none';
                 placeSearchPanel.style.display = 'none';
@@ -2069,6 +2267,7 @@
                 locationInfo.style.display = 'none';
 
                 searchInput.value = '';
+
                 renderProvinceResults('');
 
                 map.flyTo(
@@ -2078,79 +2277,41 @@
                 );
                 return;
             }
-
-            // Dari provinsi kembali ke seluruh provinsi Indonesia.
-            currentProvince = null;
-            currentCity = null;
-
-            if (currentProvinceMarker) {
-                map.removeLayer(currentProvinceMarker);
-                currentProvinceMarker = null;
-            }
-
-            if (currentCityMarker) {
-                map.removeLayer(currentCityMarker);
-                currentCityMarker = null;
-            }
-
-            clearPlaceMarkers();
-            categoryOptions.style.display = 'none';
-            placeSearchPanel.style.display = 'none';
-            placeSearchInput.value = '';
-            placeSearchResults.innerHTML = '';
-            loadedPlaces = [];
-            currentPlaceCategory = '';
-            placesLoading.style.display = 'none';
-            clearPlaces.style.display = 'none';
-            locationInfo.style.display = 'none';
-            searchInput.value = '';
-
-            renderProvinceResults('');
-
-            map.flyTo(
-                [parseFloat(indonesiaCountry.latitude), parseFloat(indonesiaCountry.longitude)],
-                5,
-                { animate: true, duration: 1.5 }
-            );
         });
 
 
         /* =====================================================
-           WISATA
+           KATEGORI: WISATA / KULINER / HOTEL / IBADAH
         ====================================================== */
 
         wisataButton.addEventListener('click', function () {
-
-            if (!currentCity) {
-                return;
-            }
-
+            if (!currentCity) return;
             loadPlaces('wisata');
         });
 
-
-        /* KULINER */
         kulinerButton.addEventListener('click', function () {
-
-            if (!currentCity) {
-                return;
-            }
-
+            if (!currentCity) return;
             loadPlaces('kuliner');
+        });
+
+        hotelButton.addEventListener('click', function () {
+            if (!currentCity) return;
+            loadPlaces('hotel');
+        });
+
+        ibadahButton.addEventListener('click', function () {
+            if (!currentCity) return;
+            loadPlaces('ibadah');
         });
 
 
         /* =====================================================
            LOAD PLACES
-           Data hanya dimasukkan ke daftar pencarian.
-           Marker BELUM dibuat pada tahap ini.
         ====================================================== */
 
         async function loadPlaces(category) {
 
-            if (!currentCity) {
-                return;
-            }
+            if (!currentCity) return;
 
             currentPlaceCategory = category;
 
@@ -2158,18 +2319,14 @@
             let longitude = currentCity.longitude;
 
             if (!latitude || !longitude) {
-
                 if (currentCityMarker) {
-
                     const position = currentCityMarker.getLatLng();
-
                     latitude = position.lat;
                     longitude = position.lng;
                 }
             }
 
             if (!latitude || !longitude) {
-
                 alert('Koordinat kota belum tersedia.');
                 return;
             }
@@ -2185,7 +2342,6 @@
             clearPlaces.style.display = 'none';
 
             try {
-
                 const url =
                     `/api/places?` +
                     new URLSearchParams({
@@ -2195,19 +2351,13 @@
                     });
 
                 const response = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 const data = await response.json();
 
                 if (!data.success) {
-
-                    throw new Error(
-                        data.message ||
-                        'Gagal mengambil data tempat.'
-                    );
+                    throw new Error(data.message || 'Gagal mengambil data tempat.');
                 }
 
                 loadedPlaces = data.places || [];
@@ -2224,28 +2374,15 @@
                 applyFiltersAndSort();
 
             } catch (error) {
-
                 console.error(error);
 
                 placeSearchResults.innerHTML = `
-                    <div
-                        style="
-                            padding:12px;
-                            color:#c62828;
-                            background:#ffebee;
-                            border-radius:8px;
-                            font-size:13px;
-                        "
-                    >
-                        ❌ ${escapeHtml(
-                            error.message ||
-                            'Gagal mengambil data tempat.'
-                        )}
+                    <div style="padding:12px;color:#c62828;background:#ffebee;border-radius:8px;font-size:13px;">
+                        ❌ ${escapeHtml(error.message || 'Gagal mengambil data tempat.')}
                     </div>
                 `;
 
             } finally {
-
                 placesLoading.style.display = 'none';
             }
         }
@@ -2258,37 +2395,20 @@
         function renderPlaceSearchResults(places, category) {
 
             if (!places || places.length === 0) {
-
                 placeSearchResults.innerHTML = `
-                    <div
-                        style="
-                            padding:14px;
-                            color:#64748b;
-                            background:#f8fafc;
-                            border:1px dashed #cbd5e1;
-                            border-radius:9px;
-                            font-size:12.5px;
-                            text-align:center;
-                        "
-                    >
-                        ${
-                            category === 'wisata'
-                                ? 'Tidak ada tempat wisata yang sesuai dengan filter atau pencarian.'
-                                : 'Tidak ada tempat kuliner yang sesuai dengan filter atau pencarian.'
-                        }
+                    <div style="padding:14px;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:9px;font-size:12.5px;text-align:center;">
+                        Tidak ada ${categorySearchLabel(category)} yang sesuai dengan filter atau pencarian.
                     </div>
                 `;
-
                 return;
             }
+
+            const emoji = categoryEmoji(category);
 
             placeSearchResults.innerHTML =
                 places.map((place, index) => {
 
-                    const distance =
-                        place.distance !== undefined
-                            ? `${place.distance} km`
-                            : '';
+                    const distance = place.distance !== undefined ? `${place.distance} km` : '';
                     const rating = Number(place.rating || 0);
                     const reviewCount = Number(place.user_rating_count || 0);
                     const fullStars = Math.min(5, Math.max(0, Math.round(rating)));
@@ -2300,27 +2420,11 @@
                         <div
                             class="place-search-item"
                             data-index="${index}"
-                            style="
-                                padding:11px 12px;
-                                margin-bottom:7px;
-                                background:white;
-                                border:1px solid #e2e8f0;
-                                border-radius:10px;
-                                cursor:pointer;
-                                transition:all .2s ease;
-                                box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-                            "
+                            style="padding:11px 12px;margin-bottom:7px;background:white;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .2s ease;box-shadow: 0 1px 3px rgba(0,0,0,0.03);"
                         >
                             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                                <div
-                                    style="
-                                        font-weight:700;
-                                        font-size:13.5px;
-                                        color:#1e293b;
-                                        line-height:1.35;
-                                    "
-                                >
-                                    ${category === 'wisata' ? '🏞️' : '🍜'}
+                                <div style="font-weight:700;font-size:13.5px;color:#1e293b;line-height:1.35;">
+                                    ${emoji}
                                     ${escapeHtml(place.name)}
                                 </div>
                                 ${distance ? `
@@ -2330,13 +2434,7 @@
                                 ` : ''}
                             </div>
 
-                            <div
-                                style="
-                                    margin-top:3px;
-                                    font-size:11.5px;
-                                    color:#64748b;
-                                "
-                            >
+                            <div style="margin-top:3px;font-size:11.5px;color:#64748b;">
                                 ${escapeHtml(place.type || '')}
                             </div>
 
@@ -2368,27 +2466,20 @@
                     `;
                 }).join('');
 
-            const items =
-                placeSearchResults.querySelectorAll('.place-search-item');
+            const items = placeSearchResults.querySelectorAll('.place-search-item');
 
             items.forEach(item => {
-
                 item.addEventListener('mouseenter', function () {
                     this.style.background = '#f8fafc';
                     this.style.borderColor = '#cbd5e1';
                 });
-
                 item.addEventListener('mouseleave', function () {
                     this.style.background = 'white';
                     this.style.borderColor = '#e2e8f0';
                 });
-
                 item.addEventListener('click', function () {
-
                     const index = parseInt(this.dataset.index, 10);
-
                     const place = places[index];
-
                     if (place) {
                         showSelectedPlace(place, category);
                     }
@@ -2405,7 +2496,7 @@
 
 
         /* =====================================================
-           FILTER & SORT TEMPAT (GOOGLE RATING & JARAK)
+           FILTER & SORT TEMPAT
         ====================================================== */
 
         function applyFiltersAndSort() {
@@ -2419,7 +2510,6 @@
             const sortMode = placeRatingSort ? placeRatingSort.value : 'rating-desc';
             const filterRating = placeRatingFilter ? placeRatingFilter.value : 'all';
 
-            // 1. Filter pencarian teks
             let filtered = loadedPlaces.filter(place => {
                 if (!keyword) return true;
                 const name = (place.name || '').toLowerCase();
@@ -2428,7 +2518,6 @@
                 return name.includes(keyword) || type.includes(keyword) || address.includes(keyword);
             });
 
-            // 2. Filter batas rating minimum / kategori rating
             if (filterRating !== 'all') {
                 if (filterRating === 'under-4') {
                     filtered = filtered.filter(place => {
@@ -2446,7 +2535,6 @@
                 }
             }
 
-            // 3. Pengurutan (Rating tertinggi/terendah, ulasan terbanyak, atau terdekat)
             filtered.sort((a, b) => {
                 const ar = (a.rating !== null && a.rating !== undefined && Number.isFinite(Number(a.rating))) ? Number(a.rating) : 0;
                 const br = (b.rating !== null && b.rating !== undefined && Number.isFinite(Number(b.rating))) ? Number(b.rating) : 0;
@@ -2456,21 +2544,17 @@
                 const bd = Number(b.distance) || 0;
 
                 if (sortMode === 'rating-desc') {
-                    // Rating tertinggi ke terendah (5.0 -> 1.0)
                     if (br !== ar) return br - ar;
-                    if (bc !== ac) return bc - ac; // Tie-breaker: ulasan terbanyak
-                    return ad - bd; // Tie-breaker: jarak terdekat
+                    if (bc !== ac) return bc - ac;
+                    return ad - bd;
                 } else if (sortMode === 'rating-asc') {
-                    // Rating terendah ke tertinggi (1.0 -> 5.0)
                     if (ar !== br) return ar - br;
                     if (ac !== bc) return ac - bc;
                     return ad - bd;
                 } else if (sortMode === 'reviews-desc') {
-                    // Ulasan terbanyak
                     if (bc !== ac) return bc - ac;
                     return br - ar;
                 } else {
-                    // Default: Jarak terdekat
                     if (ad !== bd) return ad - bd;
                     return br - ar;
                 }
@@ -2483,17 +2567,9 @@
             renderPlaceSearchResults(filtered, currentPlaceCategory);
         }
 
-        if (placeRatingSort) {
-            placeRatingSort.addEventListener('change', applyFiltersAndSort);
-        }
-
-        if (placeRatingFilter) {
-            placeRatingFilter.addEventListener('change', applyFiltersAndSort);
-        }
-
-        if (placeSearchInput) {
-            placeSearchInput.addEventListener('input', applyFiltersAndSort);
-        }
+        if (placeRatingSort) placeRatingSort.addEventListener('change', applyFiltersAndSort);
+        if (placeRatingFilter) placeRatingFilter.addEventListener('change', applyFiltersAndSort);
+        if (placeSearchInput) placeSearchInput.addEventListener('input', applyFiltersAndSort);
 
 
         /* =====================================================
@@ -2503,56 +2579,31 @@
         function makeFavoriteKey(place, latitude, longitude) {
             const id = place.place_id || place.id;
             const geo = Number(latitude).toFixed(5) + ',' + Number(longitude).toFixed(5);
-
-            // Maksimal 190 karakter agar muat di kolom database
-            if (id) {
-                return ('pid:' + id + '|' + geo).slice(0, 190);
-            }
-
-            return (
-                'geo:' + geo + '|' +
-                String(place.name || 'tempat').toLowerCase().trim().slice(0, 80)
-            ).slice(0, 190);
+            if (id) return ('pid:' + id + '|' + geo).slice(0, 190);
+            return ('geo:' + geo + '|' + String(place.name || 'tempat').toLowerCase().trim().slice(0, 80)).slice(0, 190);
         }
 
 
         /* =====================================================
-           TAMPILKAN MARKER HANYA TEMPAT YANG DIPILIH
+           TAMPILKAN MARKER TEMPAT (yang dipilih)
         ====================================================== */
 
         function showSelectedPlace(place, category) {
 
             clearPlaceMarkers();
 
-            let icon;
-
-            if (category === 'wisata') {
-                icon = createTourismIcon();
-            } else {
-                icon = createFoodIcon();
-            }
-
+            const icon = createPlaceIcon(category);
             const latitude = parseFloat(place.latitude);
-
             const longitude = parseFloat(place.longitude);
 
-            // Pengaman koordinat
             if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
                 alert('Koordinat tempat ini tidak valid.');
                 return;
             }
 
-            const marker =
-                L.marker(
-                    [latitude, longitude],
-                    { icon: icon }
-                );
+            const marker = L.marker([latitude, longitude], { icon: icon });
 
-            const categoryName =
-                category === 'wisata'
-                    ? '🏞️ Wisata'
-                    : '🍜 Kuliner';
-
+            const categoryName = categoryLabel(category);
             const rating = Number(place.rating || 0);
             const reviewCount = Number(place.user_rating_count || 0);
             const fullStars = Math.min(5, Math.max(0, Math.round(rating)));
@@ -2568,25 +2619,12 @@
                     type="button"
                     class="favorite-toggle-btn"
                     data-place-key="${escapeHtml(favoriteKey)}"
-                    style="
-                        display:inline-flex;
-                        align-items:center;
-                        gap:6px;
-                        padding:7px 10px;
-                        background:#fff1f2;
-                        color:#dc2626;
-                        border:1px solid #fecdd3;
-                        border-radius:7px;
-                        font-size:12px;
-                        font-weight:700;
-                        cursor:pointer;
-                    "
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 10px;background:#fff1f2;color:#dc2626;border:1px solid #fecdd3;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;"
                 >
                     <span class="favorite-heart">♡</span>
                     <span class="favorite-label">Memeriksa...</span>
                 </button>
             `;
-
 
             marker.bindPopup(`
                 <div class="place-popup-title" style="font-size:14px;font-weight:700;margin-bottom:2px;">
@@ -2610,43 +2648,28 @@
                     </span>
                 </div>
 
-                ${
-                    place.address
-                        ? `
-                            <div class="place-popup-address" style="margin-top:6px;font-size:11.5px;color:#475569;">
-                                📍 ${escapeHtml(place.address)}
-                            </div>
-                        `
-                        : ''
-                }
+                ${place.address ? `
+                    <div class="place-popup-address" style="margin-top:6px;font-size:11.5px;color:#475569;">
+                        📍 ${escapeHtml(place.address)}
+                    </div>
+                ` : ''}
 
                 <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-                    <a
-                        href="${googleMapsUrl}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1a73e8;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;"
-                    >
+                    <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer"
+                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1a73e8;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         Google Maps ↗
                     </a>
-                    <a
-                        href="${directionUrl}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#fff;color:#1a73e8;border:1px solid #1a73e8;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;"
-                    >
+                    <a href="${directionUrl}" target="_blank" rel="noopener noreferrer"
+                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#fff;color:#1a73e8;border:1px solid #1a73e8;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;">
                         🚗 Rute
                     </a>
                     ${favoriteButton}
                 </div>
             `);
 
-            // Data yang dikirim ke server saat tombol favorit ditekan
             const ratingValue =
-                place.rating !== null &&
-                place.rating !== undefined &&
-                Number.isFinite(Number(place.rating))
+                place.rating !== null && place.rating !== undefined && Number.isFinite(Number(place.rating))
                     ? Number(place.rating)
                     : null;
 
@@ -2665,7 +2688,6 @@
                 city: currentCity ? currentCity.name : null
             };
 
-            // Aktifkan tombol favorit di popup (tersimpan ke database)
             marker.on('popupopen', function (e) {
                 const popupEl = e.popup.getElement();
                 if (!popupEl) return;
@@ -2679,9 +2701,7 @@
 
                 function render() {
                     const fav = isLoggedIn && favoriteKeys.has(favoriteKey);
-
                     heart.textContent = fav ? '♥' : '♡';
-
                     if (!isLoggedIn) {
                         label.textContent = 'Masuk untuk simpan';
                     } else if (busy) {
@@ -2689,24 +2709,17 @@
                     } else {
                         label.textContent = fav ? 'Tersimpan' : 'Simpan Favorit';
                     }
-
                     btn.classList.toggle('is-saved', fav);
                     btn.disabled = busy;
                 }
 
                 btn.onclick = async function (ev) {
                     ev.stopPropagation();
-
                     if (!isLoggedIn) {
-                        showToast(
-                            'Masuk dulu untuk menyimpan destinasi favorit.',
-                            { href: loginUrl, text: 'Masuk' }
-                        );
+                        showToast('Masuk dulu untuk menyimpan destinasi favorit.', { href: loginUrl, text: 'Masuk' });
                         return;
                     }
-
                     if (busy) return;
-
                     busy = true;
                     render();
 
@@ -2724,11 +2737,7 @@
                         });
 
                         if (response.status === 401 || response.status === 419) {
-                            showToast(
-                                'Sesi berakhir. Silakan masuk kembali.',
-                                { href: loginUrl, text: 'Masuk' },
-                                true
-                            );
+                            showToast('Sesi berakhir. Silakan masuk kembali.', { href: loginUrl, text: 'Masuk' }, true);
                             return;
                         }
 
@@ -2740,10 +2749,8 @@
 
                         if (data.favorited) {
                             favoriteKeys.add(favoriteKey);
-                            showToast(
-                                'Tersimpan di Destinasi Favorit Saya.',
-                                profileUrl ? { href: profileUrl, text: 'Lihat' } : null
-                            );
+                            showToast('Tersimpan di Destinasi Favorit Saya.',
+                                profileUrl ? { href: profileUrl, text: 'Lihat' } : null);
                         } else {
                             favoriteKeys.delete(favoriteKey);
                             showToast('Dihapus dari Destinasi Favorit.');
@@ -2762,19 +2769,10 @@
             });
 
             marker.addTo(map);
-
             placeMarkers.push(marker);
             selectedPlaceMarker = marker;
 
-            map.flyTo(
-                [latitude, longitude],
-                16,
-                {
-                    animate: true,
-                    duration: 1.5
-                }
-            );
-
+            map.flyTo([latitude, longitude], 16, { animate: true, duration: 1.5 });
             marker.openPopup();
 
             clearPlaces.style.display = 'block';
@@ -2786,19 +2784,12 @@
         ====================================================== */
 
         function clearPlaceMarkers() {
-
-            placeMarkers.forEach(marker => {
-                map.removeLayer(marker);
-            });
-
+            placeMarkers.forEach(marker => map.removeLayer(marker));
             placeMarkers = [];
             selectedPlaceMarker = null;
-
             clearPlaces.style.display = 'none';
         }
 
-
-        /* BUTTON HAPUS MARKER */
         clearPlaces.addEventListener('click', function () {
             clearPlaceMarkers();
         });
@@ -2811,9 +2802,7 @@
         let toastTimer = null;
 
         function showToast(message, action, isError) {
-
             const el = document.getElementById('toast');
-
             if (!el) return;
 
             el.className = isError ? 'show error' : 'show';
@@ -2827,7 +2816,6 @@
             }
 
             clearTimeout(toastTimer);
-
             toastTimer = setTimeout(function () {
                 el.className = '';
             }, 4500);
@@ -2839,18 +2827,13 @@
         ====================================================== */
 
         function escapeHtml(value) {
-
-            if (value === null || value === undefined) {
-                return '';
-            }
-
+            if (value === null || value === undefined) return '';
             return String(value)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
-
         }
 
 

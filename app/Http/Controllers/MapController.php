@@ -16,15 +16,10 @@ class MapController extends Controller
     {
         $indonesia = Country::where('code', 'ID')->first();
 
-        // Sistem hanya fokus pada Indonesia.
         $countries = $indonesia
-            ? collect([$indonesia->only([
-                'id', 'name', 'code', 'latitude', 'longitude'
-            ])])
+            ? collect([$indonesia->only(['id', 'name', 'code', 'latitude', 'longitude'])])
             : collect();
 
-        // HANYA ambil provinsi Indonesia untuk mode Indonesia.
-        // Ini mencegah data wilayah negara lain ikut masuk ke daftar.
         $indonesiaProvinceNames = [
             'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau',
             'Kepulauan Riau', 'Jambi', 'Sumatera Selatan',
@@ -41,8 +36,6 @@ class MapController extends Controller
             'Papua Tengah', 'Papua Pegunungan', 'Papua Barat Daya',
         ];
 
-        // Ambil berdasarkan relasi negara ATAU nama provinsi Indonesia.
-        // Ini menghindari daftar kosong jika country_id di database belum konsisten.
         $provinces = Province::query()
             ->where(function ($query) use ($indonesia, $indonesiaProvinceNames) {
                 if ($indonesia) {
@@ -55,7 +48,6 @@ class MapController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Kota Indonesia hanya yang provinsinya juga milik Indonesia.
         $cities = $indonesia
             ? City::with('province')
                 ->whereHas('province', function ($query) use ($indonesia) {
@@ -65,125 +57,69 @@ class MapController extends Controller
                 ->get()
             : collect();
 
-        return view(
-            'map.index',
-            compact('countries', 'provinces', 'cities')
-        );
+        return view('map.index', compact('countries', 'provinces', 'cities'));
     }
 
     public function province($slug)
     {
         $indonesia = Country::where('code', 'ID')->firstOrFail();
-
         $province = Province::where('slug', $slug)
             ->where('country_id', $indonesia->id)
             ->firstOrFail();
-
-        $countries = collect([$indonesia->only([
-            'id', 'name', 'code', 'latitude', 'longitude'
-        ])]);
-
-        $provinces = Province::where('country_id', $indonesia->id)
-            ->orderBy('name')
-            ->get();
-
-        $cities = City::with('province')
-            ->where('province_id', $province->id)
-            ->orderBy('name')
-            ->get();
-
-        return view(
-            'map.index',
-            compact('countries', 'provinces', 'province', 'cities')
-        );
+        $countries = collect([$indonesia->only(['id', 'name', 'code', 'latitude', 'longitude'])]);
+        $provinces = Province::where('country_id', $indonesia->id)->orderBy('name')->get();
+        $cities = City::with('province')->where('province_id', $province->id)->orderBy('name')->get();
+        return view('map.index', compact('countries', 'provinces', 'province', 'cities'));
     }
 
     public function city($slug)
     {
         $indonesia = Country::where('code', 'ID')->firstOrFail();
-
         $city = City::with('province')
             ->where('slug', $slug)
             ->whereHas('province', function ($query) use ($indonesia) {
                 $query->where('country_id', $indonesia->id);
             })
             ->firstOrFail();
-
-        $countries = collect([$indonesia->only([
-            'id', 'name', 'code', 'latitude', 'longitude'
-        ])]);
-
-        $provinces = Province::where('country_id', $indonesia->id)
-            ->orderBy('name')
-            ->get();
-
-        $cities = City::with('province')
-            ->where('province_id', $city->province_id)
-            ->orderBy('name')
-            ->get();
-
-        return view(
-            'map.index',
-            compact('countries', 'provinces', 'cities', 'city')
-        );
+        $countries = collect([$indonesia->only(['id', 'name', 'code', 'latitude', 'longitude'])]);
+        $provinces = Province::where('country_id', $indonesia->id)->orderBy('name')->get();
+        $cities = City::with('province')->where('province_id', $city->province_id)->orderBy('name')->get();
+        return view('map.index', compact('countries', 'provinces', 'cities', 'city'));
     }
 
     public function countries()
     {
         $indonesia = Country::where('code', 'ID')->first();
-
         return response()->json($indonesia
             ? [$indonesia->only(['id', 'name', 'code', 'latitude', 'longitude'])]
-            : []
-        );
+            : []);
     }
 
     public function provinces($countryId)
     {
         $indonesia = Country::where('code', 'ID')->first();
-
         if (!$indonesia || (string) $countryId !== (string) $indonesia->id) {
             return response()->json([]);
         }
-
-        $provinces = Province::where('country_id', $indonesia->id)
-            ->orderBy('name')
-            ->get([
-                'id', 'country_id', 'name', 'type', 'slug',
-                'latitude', 'longitude'
-            ]);
-
-        return response()->json($provinces);
+        return response()->json(
+            Province::where('country_id', $indonesia->id)
+                ->orderBy('name')
+                ->get(['id', 'country_id', 'name', 'type', 'slug', 'latitude', 'longitude'])
+        );
     }
 
     public function cities($provinceId)
     {
         $indonesia = Country::where('code', 'ID')->first();
-
-        if (!$indonesia) {
-            return response()->json([]);
-        }
-
-        $cities = City::where('province_id', $provinceId)
-            ->whereHas('province', function ($query) use ($indonesia) {
-                $query->where('country_id', $indonesia->id);
-            })
-            ->orderBy('name')
-            ->get([
-                'id', 'province_id', 'name', 'type', 'slug',
-                'latitude', 'longitude'
-            ]);
-
-        return response()->json($cities);
+        if (!$indonesia) return response()->json([]);
+        return response()->json(
+            City::where('province_id', $provinceId)
+                ->whereHas('province', fn ($q) => $q->where('country_id', $indonesia->id))
+                ->orderBy('name')
+                ->get(['id', 'province_id', 'name', 'type', 'slug', 'latitude', 'longitude'])
+        );
     }
 
-
-    /**
-     * Kode provinsi resmi yang digunakan oleh API wilayah Indonesia.
-     * Nilai ini dipakai untuk mengambil koordinat provinsi dan kabupaten/kota
-     * yang sudah terikat ke provinsi yang benar, sehingga tidak bergantung
-     * pada koordinat database lama yang mungkin keliru.
-     */
     private function indonesiaProvinceCode(string $provinceName): ?string
     {
         $normalise = static function (string $value): string {
@@ -194,136 +130,92 @@ class MapController extends Controller
         };
 
         $codes = [
-            'aceh' => '11',
-            'sumaterautara' => '12',
-            'sumaterabarat' => '13',
-            'riau' => '14',
-            'jambi' => '15',
-            'sumateraselatan' => '16',
-            'bengkulu' => '17',
-            'lampung' => '18',
-                        'kepulauanbangkabelitung' => '19',
-            'kepulauanriau' => '21',
-            'dki jakarta' => '31',
-            'dkijakarta' => '31',
-            'jakarta' => '31',
-            'jawabarat' => '32',
-            'jawatengah' => '33',
-            'daerahistimewayogyakarta' => '34',
-            'diyogyakarta' => '34',
-            'yogyakarta' => '34',
-            'jawatimur' => '35',
-            'banten' => '36',
-            'bali' => '51',
-            'nusatenggarabarat' => '52',
-            'nusatenggaratimur' => '53',
-            'kalimantanbarat' => '61',
-            'kalimantantengah' => '62',
-            'kalimantanselatan' => '63',
-            'kalimantantimur' => '64',
-            'kalimantanutara' => '65',
-            'sulawesiutara' => '71',
-            'sulawesitengah' => '72',
-            'sulawesiselatan' => '73',
-            'sulawesitenggara' => '74',
-            'gorontalo' => '75',
-            'sulawesibarat' => '76',
-            'maluku' => '81',
-            'malukuutara' => '82',
-            'papua' => '91',
-            'papuabarat' => '92',
-            'papuaselatan' => '93',
-            'papuatengah' => '94',
-            'papuapegunungan' => '95',
-            'papuabaratdaya' => '96',
+            'aceh' => '11', 'sumaterautara' => '12', 'sumaterabarat' => '13',
+            'riau' => '14', 'jambi' => '15', 'sumateraselatan' => '16',
+            'bengkulu' => '17', 'lampung' => '18', 'kepulauanbangkabelitung' => '19',
+            'kepulauanriau' => '21', 'dki jakarta' => '31', 'dkijakarta' => '31',
+            'jakarta' => '31', 'jawabarat' => '32', 'jawatengah' => '33',
+            'daerahistimewayogyakarta' => '34', 'diyogyakarta' => '34',
+            'yogyakarta' => '34', 'jawatimur' => '35', 'banten' => '36',
+            'bali' => '51', 'nusatenggarabarat' => '52', 'nusatenggaratimur' => '53',
+            'kalimantanbarat' => '61', 'kalimantantengah' => '62',
+            'kalimantanselatan' => '63', 'kalimantantimur' => '64',
+            'kalimantanutara' => '65', 'sulawesiutara' => '71',
+            'sulawesitengah' => '72', 'sulawesiselatan' => '73',
+            'sulawesitenggara' => '74', 'gorontalo' => '75',
+            'sulawesibarat' => '76', 'maluku' => '81', 'malukuutara' => '82',
+            'papua' => '91', 'papuabarat' => '92', 'papuaselatan' => '93',
+            'papuatengah' => '94', 'papuapegunungan' => '95', 'papuabaratdaya' => '96',
         ];
 
-        $key = $normalise($provinceName);
-        return $codes[$key] ?? null;
+        return $codes[$normalise($provinceName)] ?? null;
     }
 
-    /**
-     * Ambil koordinat provinsi/kabupaten/kota Indonesia dari dataset
-     * wilayah Indonesia yang menyediakan koordinat per wilayah.
-     */
-    private function indonesiaCoordinatesFromApi(
-        string $type,
-        string $name,
-        string $provinceName = ''
-    ): ?array {
-        if (!in_array($type, ['province', 'city'], true)) {
-            return null;
-        }
+    private function indonesiaCoordinatesFromApi(string $type, string $name, string $provinceName = ''): ?array
+    {
+        if (!in_array($type, ['province', 'city'], true)) return null;
 
         $provinceCode = $type === 'province'
             ? $this->indonesiaProvinceCode($name)
             : $this->indonesiaProvinceCode($provinceName);
 
-        if (!$provinceCode) {
-            return null;
-        }
+        if (!$provinceCode) return null;
 
         $baseUrl = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 
         try {
             if ($type === 'province') {
                 $cacheKey = 'map.indonesia.v2.province-coordinate.' . $provinceCode;
+                $cached = Cache::get($cacheKey);
+                if (is_array($cached)) return $cached;
 
-                return Cache::remember($cacheKey, now()->addDays(30), function () use ($baseUrl, $provinceCode, $name) {
-                    $response = Http::timeout(15)
-                        ->connectTimeout(8)
-                        ->withHeaders([
-                            'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
-                            'Accept' => 'application/json',
-                        ])
-                        ->get($baseUrl . '/provinces/' . $provinceCode . '.json');
+                $response = Http::timeout(12)->connectTimeout(5)
+                    ->withHeaders([
+                        'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                        'Accept' => 'application/json',
+                    ])
+                    ->get($baseUrl . '/provinces/' . $provinceCode . '.json');
 
-                    if (!$response->successful()) {
-                        return null;
-                    }
+                if (!$response->successful()) return null;
 
-                    $data = $response->json();
-                    $row = $data['data'] ?? null;
+                $row = $response->json()['data'] ?? null;
+                if (!is_array($row) || !isset($row['lat'], $row['lng'])) return null;
 
-                    if (!is_array($row) || !isset($row['lat'], $row['lng'])) {
-                        return null;
-                    }
-
-                    return [
-                        'latitude' => (float) $row['lat'],
-                        'longitude' => (float) $row['lng'],
-                        'display_name' => ($row['name'] ?? $name) . ', Indonesia',
-                        'source' => 'Emsifa',
-                    ];
-                });
+                $result = [
+                    'latitude' => (float) $row['lat'],
+                    'longitude' => (float) $row['lng'],
+                    'display_name' => ($row['name'] ?? $name) . ', Indonesia',
+                    'source' => 'Emsifa',
+                ];
+                Cache::put($cacheKey, $result, now()->addDays(30));
+                return $result;
             }
 
             $cacheKey = 'map.indonesia.v2.regencies-coordinate.' . $provinceCode;
+            $rows = Cache::get($cacheKey);
 
-            $rows = Cache::remember($cacheKey, now()->addDays(30), function () use ($baseUrl, $provinceCode) {
-                $response = Http::timeout(20)
-                    ->connectTimeout(8)
+            if (!is_array($rows) || count($rows) === 0) {
+                $response = Http::timeout(15)->connectTimeout(5)
                     ->withHeaders([
                         'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                         'Accept' => 'application/json',
                     ])
                     ->get($baseUrl . '/regencies/' . $provinceCode . '.json');
 
-                if (!$response->successful()) {
-                    return [];
-                }
+                if (!$response->successful()) return null;
 
-                return is_array($response->json()['data'] ?? null)
-                    ? $response->json()['data']
-                    : [];
-            });
+                $fetched = $response->json()['data'] ?? null;
+                if (!is_array($fetched) || count($fetched) === 0) return null;
+
+                Cache::put($cacheKey, $fetched, now()->addDays(30));
+                $rows = $fetched;
+            }
 
             $normaliseCity = static function (string $value): string {
                 $value = Str::ascii($value);
                 $value = Str::lower(trim($value));
                 $value = preg_replace('/^(kabupaten|kota|kota administrasi)\s+/i', '', $value) ?? $value;
-                $value = preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
-                return $value;
+                return preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
             };
 
             $wanted = $normaliseCity($name);
@@ -331,29 +223,15 @@ class MapController extends Controller
             $bestScore = -1;
 
             foreach ($rows as $row) {
-                if (!is_array($row) || !isset($row['lat'], $row['lng'])) {
-                    continue;
-                }
-
+                if (!is_array($row) || !isset($row['lat'], $row['lng'])) continue;
                 $candidateName = (string) ($row['name'] ?? '');
-                if ($candidateName === '') {
-                    continue;
-                }
+                if ($candidateName === '') continue;
 
                 $candidate = $normaliseCity($candidateName);
                 $score = 0;
-
-                if ($candidate === $wanted) {
-                    $score += 200;
-                }
-
-                if (str_contains($candidate, $wanted) || str_contains($wanted, $candidate)) {
-                    $score += 50;
-                }
-
-                if (str_contains(Str::lower((string) ($row['name'] ?? '')), Str::lower($name))) {
-                    $score += 30;
-                }
+                if ($candidate === $wanted) $score += 200;
+                if (str_contains($candidate, $wanted) || str_contains($wanted, $candidate)) $score += 50;
+                if (str_contains(Str::lower($candidateName), Str::lower($name))) $score += 30;
 
                 if ($score > $bestScore) {
                     $bestScore = $score;
@@ -361,9 +239,7 @@ class MapController extends Controller
                 }
             }
 
-            if (!$best || !isset($best['lat'], $best['lng'])) {
-                return null;
-            }
+            if (!$best || !isset($best['lat'], $best['lng'])) return null;
 
             return [
                 'latitude' => (float) $best['lat'],
@@ -379,117 +255,68 @@ class MapController extends Controller
     public function regions(string $countryCode)
     {
         $countryCode = strtoupper(trim($countryCode));
-
         if (!preg_match('/^[A-Z]{2}$/', $countryCode)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode negara tidak valid.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Kode negara tidak valid.'], 422);
         }
 
         $countryNames = [
-            'BN' => 'Brunei Darussalam',
-            'KH' => 'Cambodia',
-            'LA' => 'Laos',
-            'MY' => 'Malaysia',
-            'MM' => 'Myanmar',
-            'PH' => 'Philippines',
-            'SG' => 'Singapore',
-            'TH' => 'Thailand',
-            'TL' => 'Timor-Leste',
-            'VN' => 'Vietnam',
+            'BN' => 'Brunei Darussalam', 'KH' => 'Cambodia', 'LA' => 'Laos',
+            'MY' => 'Malaysia', 'MM' => 'Myanmar', 'PH' => 'Philippines',
+            'SG' => 'Singapore', 'TH' => 'Thailand', 'TL' => 'Timor-Leste', 'VN' => 'Vietnam',
         ];
-
         $countryName = $countryNames[$countryCode] ?? null;
         if (!$countryName) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Negara belum tersedia untuk data wilayah otomatis.',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Negara belum tersedia.'], 404);
         }
 
         $cacheKey = 'map.regions.countriesnow.' . strtolower($countryCode);
-
         try {
             $regions = Cache::remember($cacheKey, now()->addDays(30), function () use ($countryName, $countryCode) {
-                $response = Http::timeout(20)
-                    ->connectTimeout(8)
+                $response = Http::timeout(20)->connectTimeout(8)
                     ->withHeaders([
                         'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                         'Accept' => 'application/json',
                     ])
-                    ->get('https://countriesnow.space/api/v0.1/countries/states/q', [
-                        'country' => $countryName,
-                    ]);
+                    ->get('https://countriesnow.space/api/v0.1/countries/states/q', ['country' => $countryName]);
 
-                if (!$response->successful()) {
-                    throw new \RuntimeException('CountriesNow HTTP ' . $response->status());
-                }
-
+                if (!$response->successful()) throw new \RuntimeException('HTTP ' . $response->status());
                 $data = $response->json();
-                if (($data['error'] ?? true) === true) {
-                    throw new \RuntimeException($data['msg'] ?? 'Data wilayah tidak tersedia.');
-                }
+                if (($data['error'] ?? true) === true) throw new \RuntimeException($data['msg'] ?? 'No data');
 
-                $states = $data['data']['states'] ?? [];
                 $result = [];
-
-                foreach ($states as $state) {
+                foreach (($data['data']['states'] ?? []) as $state) {
                     $name = trim((string) ($state['name'] ?? ''));
-                    if ($name === '') {
-                        continue;
-                    }
-
+                    if ($name === '') continue;
                     $result[] = [
                         'id' => $state['state_code'] ?? $name,
-                        'osm_id' => null,
                         'state_code' => $state['state_code'] ?? null,
-                        'name' => $name,
-                        'type' => 'Wilayah',
-                        'admin_level' => 4,
-                        'latitude' => null,
-                        'longitude' => null,
-                        'osm_type' => null,
+                        'name' => $name, 'type' => 'Wilayah',
+                        'admin_level' => 4, 'latitude' => null, 'longitude' => null,
                         'country_code' => strtolower($countryCode),
                     ];
                 }
-
                 usort($result, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
                 return $result;
             });
 
-            if (empty($regions)) {
-                throw new \RuntimeException('CountriesNow mengembalikan daftar wilayah kosong.');
-            }
-
             return response()->json([
-                'success' => true,
-                'country_code' => strtolower($countryCode),
-                'count' => count($regions),
-                'regions' => $regions,
-                'source' => 'CountriesNow',
-                'cached' => true,
+                'success' => true, 'country_code' => strtolower($countryCode),
+                'count' => count($regions), 'regions' => $regions,
+                'source' => 'CountriesNow', 'cached' => true,
             ]);
         } catch (\Throwable $e) {
-            // Fallback ke OSM jika CountriesNow sedang tidak tersedia.
             try {
                 $regions = $this->regionsFromOverpass($countryCode);
-
                 return response()->json([
-                    'success' => true,
-                    'country_code' => strtolower($countryCode),
-                    'count' => count($regions),
-                    'regions' => $regions,
-                    'source' => 'OpenStreetMap',
-                    'cached' => false,
+                    'success' => true, 'country_code' => strtolower($countryCode),
+                    'count' => count($regions), 'regions' => $regions,
+                    'source' => 'OpenStreetMap', 'cached' => false,
                 ]);
             } catch (\Throwable $fallbackError) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Daftar wilayah belum dapat dimuat. Silakan coba lagi.',
-                    'error' => config('app.debug')
-                        ? $e->getMessage() . ' | Fallback: ' . $fallbackError->getMessage()
-                        : null,
+                    'error' => config('app.debug') ? $e->getMessage() : null,
                 ], 503);
             }
         }
@@ -499,123 +326,71 @@ class MapController extends Controller
     {
         $countryCode = strtoupper(trim($countryCode));
         $regionName = trim((string) $request->query('region_name', ''));
-
         if (!preg_match('/^[A-Z]{2}$/', $countryCode) || $regionName === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Negara atau wilayah tidak valid.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Negara atau wilayah tidak valid.'], 422);
         }
 
         $countryNames = [
-            'BN' => 'Brunei Darussalam',
-            'KH' => 'Cambodia',
-            'LA' => 'Laos',
-            'MY' => 'Malaysia',
-            'MM' => 'Myanmar',
-            'PH' => 'Philippines',
-            'SG' => 'Singapore',
-            'TH' => 'Thailand',
-            'TL' => 'Timor-Leste',
-            'VN' => 'Vietnam',
+            'BN' => 'Brunei Darussalam', 'KH' => 'Cambodia', 'LA' => 'Laos',
+            'MY' => 'Malaysia', 'MM' => 'Myanmar', 'PH' => 'Philippines',
+            'SG' => 'Singapore', 'TH' => 'Thailand', 'TL' => 'Timor-Leste', 'VN' => 'Vietnam',
         ];
-
         $countryName = $countryNames[$countryCode] ?? null;
-        if (!$countryName) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Negara belum tersedia.',
-            ], 404);
-        }
+        if (!$countryName) return response()->json(['success' => false, 'message' => 'Negara belum tersedia.'], 404);
 
         if ($countryCode === 'SG') {
-            $cities = [[
-                'id' => 'SG-SIN',
-                'name' => 'Singapore',
-                'type' => 'Kota',
-                'latitude' => 1.3521,
-                'longitude' => 103.8198,
-                'display_name' => 'Singapore • Singapore',
-                'country_code' => 'sg',
-            ]];
-
             return response()->json([
-                'success' => true,
-                'country_code' => 'sg',
-                'region_name' => $regionName,
-                'count' => 1,
-                'cities' => $cities,
-                'source' => 'Local',
-                'cached' => true,
+                'success' => true, 'country_code' => 'sg', 'region_name' => $regionName,
+                'count' => 1, 'source' => 'Local', 'cached' => true,
+                'cities' => [[
+                    'id' => 'SG-SIN', 'name' => 'Singapore', 'type' => 'Kota',
+                    'latitude' => 1.3521, 'longitude' => 103.8198,
+                    'display_name' => 'Singapore • Singapore', 'country_code' => 'sg',
+                ]],
             ]);
         }
 
         $cacheKey = 'map.cities.countriesnow.' . strtolower($countryCode) . '.' . sha1(strtolower($regionName));
-
         try {
             $cities = Cache::remember($cacheKey, now()->addDays(30), function () use ($countryName, $countryCode, $regionName) {
-                $response = Http::timeout(20)
-                    ->connectTimeout(8)
+                $response = Http::timeout(20)->connectTimeout(8)
                     ->withHeaders([
                         'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                         'Accept' => 'application/json',
                     ])
                     ->get('https://countriesnow.space/api/v0.1/countries/state/cities/q', [
-                        'country' => $countryName,
-                        'state' => $regionName,
+                        'country' => $countryName, 'state' => $regionName,
                     ]);
 
-                if (!$response->successful()) {
-                    throw new \RuntimeException('CountriesNow HTTP ' . $response->status());
-                }
-
+                if (!$response->successful()) throw new \RuntimeException('HTTP ' . $response->status());
                 $data = $response->json();
-                if (($data['error'] ?? true) === true) {
-                    throw new \RuntimeException($data['msg'] ?? 'Data kota tidak tersedia.');
-                }
+                if (($data['error'] ?? true) === true) throw new \RuntimeException($data['msg'] ?? 'No data');
 
-                $rawCities = $data['data'] ?? [];
                 $result = [];
                 $used = [];
-
-                foreach ($rawCities as $city) {
-                    $name = is_array($city)
-                        ? trim((string) ($city['name'] ?? ''))
-                        : trim((string) $city);
-
-                    if ($name === '') {
-                        continue;
-                    }
-
+                foreach (($data['data'] ?? []) as $city) {
+                    $name = is_array($city) ? trim((string) ($city['name'] ?? '')) : trim((string) $city);
+                    if ($name === '') continue;
                     $key = strtolower($name);
-                    if (isset($used[$key])) {
-                        continue;
-                    }
+                    if (isset($used[$key])) continue;
                     $used[$key] = true;
-
                     $result[] = [
                         'id' => is_array($city) ? ($city['id'] ?? null) : null,
-                        'name' => $name,
-                        'type' => 'Kota/Kabupaten',
+                        'name' => $name, 'type' => 'Kota/Kabupaten',
                         'latitude' => is_array($city) && isset($city['latitude']) ? (float) $city['latitude'] : null,
                         'longitude' => is_array($city) && isset($city['longitude']) ? (float) $city['longitude'] : null,
                         'display_name' => $name . ' • ' . $regionName,
                         'country_code' => strtolower($countryCode),
                     ];
                 }
-
                 usort($result, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
                 return $result;
             });
 
             return response()->json([
-                'success' => true,
-                'country_code' => strtolower($countryCode),
-                'region_name' => $regionName,
-                'count' => count($cities),
-                'cities' => $cities,
-                'source' => 'CountriesNow',
-                'cached' => true,
+                'success' => true, 'country_code' => strtolower($countryCode),
+                'region_name' => $regionName, 'count' => count($cities),
+                'cities' => $cities, 'source' => 'CountriesNow', 'cached' => true,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -629,24 +404,23 @@ class MapController extends Controller
     private function regionsFromOverpass(string $countryCode): array
     {
         $query = <<<OVERPASS
-[out:json][timeout:45];
+[out:json][timeout:30];
 area["ISO3166-1"="$countryCode"]["boundary"="administrative"]->.country;
 relation(area.country)["boundary"="administrative"]["admin_level"~"4|5"];
 out center tags;
 OVERPASS;
 
         $servers = [
-            'https://lz4.overpass-api.de/api/interpreter',
-            'https://z.overpass-api.de/api/interpreter',
+            'https://overpass.kumi.systems/api/interpreter',
             'https://overpass-api.de/api/interpreter',
+            'https://overpass.private.coffee/api/interpreter',
+            'https://lz4.overpass-api.de/api/interpreter',
         ];
 
         $lastError = null;
-
         foreach ($servers as $server) {
             try {
-                $response = Http::timeout(60)
-                    ->connectTimeout(15)
+                $response = Http::timeout(30)->connectTimeout(10)
                     ->withHeaders([
                         'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                         'Accept' => 'application/json',
@@ -659,63 +433,45 @@ OVERPASS;
                     continue;
                 }
 
-                $data = $response->json();
-                $elements = $data['elements'] ?? [];
+                $elements = $response->json()['elements'] ?? [];
                 $levels = [];
-
-                foreach ($elements as $element) {
-                    $level = (int) ($element['tags']['admin_level'] ?? 0);
-                    if ($level > 0) {
-                        $levels[] = $level;
-                    }
+                foreach ($elements as $el) {
+                    $lvl = (int) ($el['tags']['admin_level'] ?? 0);
+                    if ($lvl > 0) $levels[] = $lvl;
                 }
-
                 $preferredLevel = !empty($levels) ? min($levels) : 4;
                 $regions = [];
                 $used = [];
-
-                foreach ($elements as $element) {
-                    $tags = $element['tags'] ?? [];
+                foreach ($elements as $el) {
+                    $tags = $el['tags'] ?? [];
                     $level = (int) ($tags['admin_level'] ?? 0);
                     $name = trim((string) ($tags['name'] ?? ''));
-                    if ($level !== $preferredLevel || $name === '') {
-                        continue;
-                    }
+                    if ($level !== $preferredLevel || $name === '') continue;
 
-                    $lat = $element['center']['lat'] ?? null;
-                    $lon = $element['center']['lon'] ?? null;
-                    if ($lat === null || $lon === null) {
-                        continue;
-                    }
+                    $lat = $el['center']['lat'] ?? null;
+                    $lon = $el['center']['lon'] ?? null;
+                    if ($lat === null || $lon === null) continue;
 
                     $key = strtolower($name);
-                    if (isset($used[$key])) {
-                        continue;
-                    }
+                    if (isset($used[$key])) continue;
                     $used[$key] = true;
 
                     $regions[] = [
-                        'id' => $element['id'] ?? null,
-                        'osm_id' => $element['id'] ?? null,
-                        'state_code' => null,
-                        'name' => $name,
-                        'type' => 'Wilayah',
-                        'admin_level' => $level,
-                        'latitude' => (float) $lat,
-                        'longitude' => (float) $lon,
-                        'osm_type' => $element['type'] ?? 'relation',
+                        'id' => $el['id'] ?? null, 'osm_id' => $el['id'] ?? null,
+                        'state_code' => null, 'name' => $name,
+                        'type' => 'Wilayah', 'admin_level' => $level,
+                        'latitude' => (float) $lat, 'longitude' => (float) $lon,
+                        'osm_type' => $el['type'] ?? 'relation',
                         'country_code' => strtolower($countryCode),
                     ];
                 }
-
                 usort($regions, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
                 return $regions;
             } catch (\Throwable $e) {
                 $lastError = $e->getMessage();
             }
         }
-
-        throw new \RuntimeException($lastError ?: 'Data wilayah OpenStreetMap tidak tersedia.');
+        throw new \RuntimeException($lastError ?: 'Overpass unavailable.');
     }
 
     public function locationSearch(Request $request)
@@ -726,36 +482,21 @@ OVERPASS;
         $countryCode = strtolower(trim((string) $request->query('country_code', '')));
         $countryName = trim((string) $request->query('country_name', ''));
 
-        if ($name === '' || strlen($name) < 2) {
-            return response()->json([
-                'success' => true,
-                'results' => [],
-            ]);
-        }
-
+        if ($name === '' || strlen($name) < 2) return response()->json(['success' => true, 'results' => []]);
         if (!in_array($type, ['province', 'city'], true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tipe lokasi tidak valid.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Tipe lokasi tidak valid.'], 422);
         }
 
         $params = [
             'q' => $name . ($province !== '' ? ', ' . $province : '') . ($countryName !== '' ? ', ' . $countryName : ''),
-            'format' => 'jsonv2',
-            'limit' => 10,
-            'addressdetails' => 1,
+            'format' => 'jsonv2', 'limit' => 10, 'addressdetails' => 1,
             'layer' => 'address',
             'featureType' => $type === 'province' ? 'state' : 'city',
         ];
-
-        if ($countryCode !== '') {
-            $params['countrycodes'] = $countryCode;
-        }
+        if ($countryCode !== '') $params['countrycodes'] = $countryCode;
 
         try {
-            $response = Http::timeout(30)
-                ->connectTimeout(10)
+            $response = Http::timeout(20)->connectTimeout(8)
                 ->withHeaders([
                     'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                     'Accept' => 'application/json',
@@ -763,37 +504,22 @@ OVERPASS;
                 ->get('https://nominatim.openstreetmap.org/search', $params);
 
             if (!$response->successful()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'OpenStreetMap gagal melakukan pencarian.',
-                ], 502);
+                return response()->json(['success' => false, 'message' => 'OpenStreetMap gagal melakukan pencarian.'], 502);
             }
 
             $results = [];
             $used = [];
-
             foreach (($response->json() ?? []) as $item) {
-                if (!isset($item['lat'], $item['lon'])) {
-                    continue;
-                }
-
+                if (!isset($item['lat'], $item['lon'])) continue;
                 $address = $item['address'] ?? [];
                 $resultName = $type === 'city'
                     ? ($address['city'] ?? $address['town'] ?? $address['municipality'] ?? $address['village'] ?? null)
                     : ($address['state'] ?? null);
-
-                if (!$resultName) {
-                    $resultName = $item['name'] ?? null;
-                }
-
-                if (!$resultName) {
-                    continue;
-                }
+                if (!$resultName) $resultName = $item['name'] ?? null;
+                if (!$resultName) continue;
 
                 $key = strtolower($resultName . '|' . $item['lat'] . '|' . $item['lon']);
-                if (isset($used[$key])) {
-                    continue;
-                }
+                if (isset($used[$key])) continue;
                 $used[$key] = true;
 
                 $results[] = [
@@ -806,10 +532,7 @@ OVERPASS;
                 ];
             }
 
-            return response()->json([
-                'success' => true,
-                'results' => $results,
-            ]);
+            return response()->json(['success' => true, 'results' => $results]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -821,6 +544,9 @@ OVERPASS;
 
     public function geocode(Request $request)
     {
+        @set_time_limit(90);
+        @ini_set('max_execution_time', '90');
+
         $name = trim((string) $request->query('name', ''));
         $type = trim((string) $request->query('type', ''));
         $province = trim((string) $request->query('province', ''));
@@ -829,35 +555,21 @@ OVERPASS;
         $countryName = trim((string) $request->query('country_name', ''));
 
         if ($name === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Nama lokasi tidak boleh kosong.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Nama lokasi tidak boleh kosong.'], 422);
         }
 
-        // Untuk Indonesia, utamakan dataset wilayah yang memiliki koordinat
-        // langsung pada level provinsi dan kabupaten/kota. Ini mencegah
-        // marker jatuh ke POI atau koordinat database lama yang salah.
         if ($type === 'province' || $type === 'city') {
             $isIndonesia = $countryCode === ''
                 ? ($countryName === '' || stripos($countryName, 'indonesia') !== false)
                 : $countryCode === 'id';
 
             if ($isIndonesia) {
-                $exact = $this->indonesiaCoordinatesFromApi(
-                    $type,
-                    $name,
-                    $province
-                );
-
+                $exact = $this->indonesiaCoordinatesFromApi($type, $name, $province);
                 if ($exact
                     && is_numeric($exact['latitude'] ?? null)
                     && is_numeric($exact['longitude'] ?? null)
-                    && $exact['latitude'] >= -11.5
-                    && $exact['latitude'] <= 6.5
-                    && $exact['longitude'] >= 94.0
-                    && $exact['longitude'] <= 141.5
-                ) {
+                    && $exact['latitude'] >= -11.5 && $exact['latitude'] <= 6.5
+                    && $exact['longitude'] >= 94.0 && $exact['longitude'] <= 141.5) {
                     return response()->json([
                         'success' => true,
                         'latitude' => (float) $exact['latitude'],
@@ -869,260 +581,96 @@ OVERPASS;
             }
         }
 
-        /*
-         * PENTING:
-         * Jangan melakukan pencarian kota sebagai POI umum.
-         * Query seperti "Palembang, Indonesia" tanpa filter address
-         * bisa mengembalikan sekolah/toko/POI bernama Palembang.
-         * Untuk kota kita pakai layer=address + featureType=city,
-         * sehingga titik yang dipilih berasal dari data wilayah kota.
-         */
         if ($type === 'city') {
             $searchName = $name;
-
-            if ($province !== '') {
-                $searchName .= ', ' . $province;
-            }
-
-            if ($countryName !== '') {
-                $searchName .= ', ' . $countryName;
-            }
-
-            $params = [
-                'q' => $searchName,
-                'format' => 'jsonv2',
-                'limit' => 10,
-                'layer' => 'address',
-                'addressdetails' => 1,
-            ];
-
-            if ($countryCode !== '') {
-                $params['countrycodes'] = $countryCode;
-            }
+            if ($province !== '') $searchName .= ', ' . $province;
+            if ($countryName !== '') $searchName .= ', ' . $countryName;
+            $params = ['q' => $searchName, 'format' => 'jsonv2', 'limit' => 10, 'layer' => 'address', 'addressdetails' => 1];
+            if ($countryCode !== '') $params['countrycodes'] = $countryCode;
         } elseif ($type === 'province') {
             $searchName = $name;
-
-            if ($countryName !== '') {
-                $searchName .= ', ' . $countryName;
-            }
-
-            $params = [
-                'q' => $searchName,
-                'format' => 'jsonv2',
-                'limit' => 10,
-                'layer' => 'address',
-                'addressdetails' => 1,
-            ];
-
-            if ($countryCode !== '') {
-                $params['countrycodes'] = $countryCode;
-            }
+            if ($countryName !== '') $searchName .= ', ' . $countryName;
+            $params = ['q' => $searchName, 'format' => 'jsonv2', 'limit' => 10, 'layer' => 'address', 'addressdetails' => 1];
+            if ($countryCode !== '') $params['countrycodes'] = $countryCode;
         } elseif ($type === 'country') {
-            $searchName = $name;
-
-            $params = [
-                'q' => $searchName,
-                'format' => 'jsonv2',
-                'limit' => 10,
-                'layer' => 'address',
-                'featureType' => 'country',
-                'addressdetails' => 1,
-            ];
-
-            if ($countryCode !== '') {
-                $params['countrycodes'] = $countryCode;
-            }
+            $params = ['q' => $name, 'format' => 'jsonv2', 'limit' => 10, 'layer' => 'address', 'featureType' => 'country', 'addressdetails' => 1];
+            if ($countryCode !== '') $params['countrycodes'] = $countryCode;
         } else {
             $searchName = $name;
-
-            if ($countryName !== '') {
-                $searchName .= ', ' . $countryName;
-            }
-
-            $params = [
-                'q' => $searchName,
-                'format' => 'jsonv2',
-                'limit' => 10,
-                'layer' => 'address',
-                'addressdetails' => 1,
-            ];
-
-            if ($countryCode !== '') {
-                $params['countrycodes'] = $countryCode;
-            }
+            if ($countryName !== '') $searchName .= ', ' . $countryName;
+            $params = ['q' => $searchName, 'format' => 'jsonv2', 'limit' => 10, 'layer' => 'address', 'addressdetails' => 1];
+            if ($countryCode !== '') $params['countrycodes'] = $countryCode;
         }
 
         try {
-            $response = Http::timeout(30)
-                ->connectTimeout(10)
+            $response = Http::timeout(20)->connectTimeout(8)
                 ->withHeaders([
-                    'User-Agent' =>
-                        'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                    'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
                     'Accept' => 'application/json',
                 ])
-                ->get(
-                    'https://nominatim.openstreetmap.org/search',
-                    $params
-                );
+                ->get('https://nominatim.openstreetmap.org/search', $params);
 
             if (!$response->successful()) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'OpenStreetMap gagal melakukan pencarian lokasi.',
+                    'message' => 'OpenStreetMap gagal melakukan pencarian lokasi.',
                     'status' => $response->status(),
                 ], 502);
             }
 
             $data = $response->json();
-
             if (!is_array($data) || count($data) === 0) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        $type === 'country'
-                            ? 'Negara tidak ditemukan di OpenStreetMap.'
-                            : 'Wilayah tidak ditemukan di OpenStreetMap.',
+                    'message' => $type === 'country' ? 'Negara tidak ditemukan.' : 'Wilayah tidak ditemukan.',
                 ], 404);
             }
 
-            /*
-             * Pilih hasil yang benar-benar merupakan wilayah kota,
-             * bukan POI yang kebetulan mempunyai nama sama.
-             */
             $location = null;
             $bestScore = -1;
 
             foreach ($data as $candidate) {
-                if (!isset($candidate['lat'], $candidate['lon'])) {
-                    continue;
-                }
+                if (!isset($candidate['lat'], $candidate['lon'])) continue;
 
                 $score = 0;
-                $candidateType = strtolower(
-                    (string) ($candidate['type'] ?? '')
-                );
-                $candidateClass = strtolower(
-                    (string) ($candidate['class'] ?? '')
-                );
-                $addressType = strtolower(
-                    (string) ($candidate['addresstype'] ?? '')
-                );
+                $candidateType = strtolower((string) ($candidate['type'] ?? ''));
+                $candidateClass = strtolower((string) ($candidate['class'] ?? ''));
+                $addressType = strtolower((string) ($candidate['addresstype'] ?? ''));
                 $address = $candidate['address'] ?? [];
 
                 if ($type === 'city') {
-                    if ($addressType === 'city') {
-                        $score += 120;
-                    } elseif (in_array($addressType, [
-                        'town', 'municipality', 'village'
-                    ], true)) {
-                        $score += 95;
-                    }
-
-                    if ($candidateType === 'administrative') {
-                        $score += 80;
-                    }
-
-                    if ($candidateClass === 'boundary') {
-                        $score += 50;
-                    }
-
-                    foreach (['city', 'town', 'municipality', 'village'] as $placeKey) {
-                        if (isset($address[$placeKey])) {
-                            similar_text(
-                                strtolower($name),
-                                strtolower((string) $address[$placeKey]),
-                                $percent
-                            );
-
-                            $score += (int) round($percent);
+                    if ($addressType === 'city') $score += 120;
+                    elseif (in_array($addressType, ['town', 'municipality', 'village'], true)) $score += 95;
+                    if ($candidateType === 'administrative') $score += 80;
+                    if ($candidateClass === 'boundary') $score += 50;
+                    foreach (['city', 'town', 'municipality', 'village'] as $k) {
+                        if (isset($address[$k])) {
+                            similar_text(strtolower($name), strtolower((string) $address[$k]), $pct);
+                            $score += (int) round($pct);
                         }
                     }
-
-                    if (
-                        $cityType === 'Kota' &&
-                        isset($address['city'])
-                    ) {
-                        $score += 20;
-                    }
-
-                    // Tolak hasil yang jelas-jelas berupa POI/bangunan.
-                    if (in_array($candidateClass, [
-                        'amenity',
-                        'shop',
-                        'building',
-                        'tourism',
-                        'leisure',
-                        'place_of_worship',
-                    ], true)) {
-                        $score -= 200;
-                    }
+                    if ($cityType === 'Kota' && isset($address['city'])) $score += 20;
+                    if (in_array($candidateClass, ['amenity', 'shop', 'building', 'tourism', 'leisure', 'place_of_worship'], true)) $score -= 200;
                 } elseif ($type === 'province') {
-                    if (in_array($addressType, [
-                        'state', 'province', 'region', 'administrative',
-                        'state_district'
-                    ], true)) {
-                        $score += 120;
-                    }
-
-                    if ($candidateType === 'administrative') {
-                        $score += 100;
-                    }
-
-                    if ($candidateClass === 'boundary') {
-                        $score += 60;
-                    }
-
-                    foreach ([
-                        'state', 'province', 'region', 'state_district',
-                        'municipality', 'county'
-                    ] as $regionKey) {
-                        if (isset($address[$regionKey])) {
-                            similar_text(
-                                strtolower($name),
-                                strtolower((string) $address[$regionKey]),
-                                $percent
-                            );
-
-                            $score += (int) round($percent);
+                    if (in_array($addressType, ['state', 'province', 'region', 'administrative', 'state_district'], true)) $score += 120;
+                    if ($candidateType === 'administrative') $score += 100;
+                    if ($candidateClass === 'boundary') $score += 60;
+                    foreach (['state', 'province', 'region', 'state_district', 'municipality', 'county'] as $k) {
+                        if (isset($address[$k])) {
+                            similar_text(strtolower($name), strtolower((string) $address[$k]), $pct);
+                            $score += (int) round($pct);
                         }
                     }
-
-                    if (stripos(
-                        strtolower((string) ($candidate['display_name'] ?? '')),
-                        strtolower($name)
-                    ) !== false) {
-                        $score += 50;
-                    }
+                    if (stripos(strtolower((string) ($candidate['display_name'] ?? '')), strtolower($name)) !== false) $score += 50;
                 } elseif ($type === 'country') {
-                    if ($addressType === 'country') {
-                        $score += 200;
-                    }
-
-                    if ($candidateType === 'administrative') {
-                        $score += 50;
-                    }
-
-                    if ($candidateClass === 'boundary') {
-                        $score += 50;
-                    }
-
+                    if ($addressType === 'country') $score += 200;
+                    if ($candidateType === 'administrative') $score += 50;
+                    if ($candidateClass === 'boundary') $score += 50;
                     if (isset($address['country'])) {
-                        similar_text(
-                            strtolower($name),
-                            strtolower((string) $address['country']),
-                            $percent
-                        );
-
-                        $score += (int) round($percent);
+                        similar_text(strtolower($name), strtolower((string) $address['country']), $pct);
+                        $score += (int) round($pct);
                     }
-
-                    if (
-                        $countryCode !== '' &&
-                        strtolower((string) ($address['country_code'] ?? '')) === $countryCode
-                    ) {
-                        $score += 100;
-                    }
+                    if ($countryCode !== '' && strtolower((string) ($address['country_code'] ?? '')) === $countryCode) $score += 100;
                 } else {
                     $score = 1;
                 }
@@ -1134,19 +682,14 @@ OVERPASS;
             }
 
             if ($location === null) {
-                return response()->json([
-                    'success' => false,
-                    'message' =>
-                        'Koordinat wilayah tidak tersedia.',
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Koordinat wilayah tidak tersedia.'], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'latitude' => (float) $location['lat'],
                 'longitude' => (float) $location['lon'],
-                'display_name' =>
-                    $location['display_name'] ?? $searchName,
+                'display_name' => $location['display_name'] ?? $searchName,
                 'type' => $location['type'] ?? null,
                 'class' => $location['class'] ?? null,
                 'addresstype' => $location['addresstype'] ?? null,
@@ -1156,253 +699,68 @@ OVERPASS;
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Terjadi kesalahan saat menghubungi OpenStreetMap.',
-                'error' => config('app.debug')
-                    ? $e->getMessage()
-                    : null,
+                'message' => 'Terjadi kesalahan saat menghubungi OpenStreetMap.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
+    /* =================================================================
+       PLACES — strategi 3 lapis: Overpass → Nominatim → Google Places
+       ================================================================= */
+
     public function places(Request $request)
     {
-        $category = strtolower(
-            trim((string) $request->query('category', ''))
-        );
+        @set_time_limit(120);
+        @ini_set('max_execution_time', '120');
 
+        $overallStart = microtime(true);
+
+        $category = strtolower(trim((string) $request->query('category', '')));
         $latitude = $request->query('latitude');
         $longitude = $request->query('longitude');
 
         if ($latitude === null || $longitude === null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Koordinat kota tidak tersedia.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Koordinat kota tidak tersedia.'], 422);
         }
-
         if (!is_numeric($latitude) || !is_numeric($longitude)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Koordinat tidak valid.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Koordinat tidak valid.'], 422);
         }
 
         $latitude = (float) $latitude;
         $longitude = (float) $longitude;
 
-        if (!in_array($category, ['wisata', 'kuliner'], true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kategori tempat tidak valid.',
-            ], 422);
+        if (!in_array($category, ['wisata', 'kuliner', 'hotel', 'ibadah'], true)) {
+            return response()->json(['success' => false, 'message' => 'Kategori tempat tidak valid.'], 422);
         }
 
-        if ($category === 'wisata') {
-            $query = <<<OVERPASS
-[out:json][timeout:60];
-(
-    nwr(around:10000,$latitude,$longitude)["tourism"="attraction"];
-    nwr(around:10000,$latitude,$longitude)["tourism"="museum"];
-    nwr(around:10000,$latitude,$longitude)["tourism"="gallery"];
-    nwr(around:10000,$latitude,$longitude)["tourism"="theme_park"];
-    nwr(around:10000,$latitude,$longitude)["tourism"="zoo"];
-    nwr(around:10000,$latitude,$longitude)["tourism"="viewpoint"];
-    nwr(around:10000,$latitude,$longitude)["historic"="monument"];
-    nwr(around:10000,$latitude,$longitude)["historic"="castle"];
-    nwr(around:10000,$latitude,$longitude)["leisure"="park"];
-    nwr(around:10000,$latitude,$longitude)["natural"="beach"];
-);
-out center tags;
-OVERPASS;
-        } else {
-            $query = <<<OVERPASS
-[out:json][timeout:60];
-(
-    nwr(around:10000,$latitude,$longitude)["amenity"="restaurant"];
-    nwr(around:10000,$latitude,$longitude)["amenity"="cafe"];
-    nwr(around:10000,$latitude,$longitude)["amenity"="fast_food"];
-    nwr(around:10000,$latitude,$longitude)["amenity"="food_court"];
-    nwr(around:10000,$latitude,$longitude)["amenity"="ice_cream"];
-);
-out center tags;
-OVERPASS;
+        // ---------- LAPIS 1: Overpass ----------
+        $places = $this->fetchFromOverpass($category, $latitude, $longitude, $overallStart);
+
+        // ---------- LAPIS 2: Nominatim (jika Overpass kosong) ----------
+        if (count($places) === 0) {
+            $places = $this->fetchFromNominatim($category, $latitude, $longitude);
         }
 
-        $cacheKey = sprintf('map.overpass.places.v2.%s.%.3f.%.3f', $category, $latitude, $longitude);
-        $elements = Cache::get($cacheKey);
-
-        if (!is_array($elements)) {
-            $servers = [
-                'https://lz4.overpass-api.de/api/interpreter',
-                'https://z.overpass-api.de/api/interpreter',
-                'https://overpass-api.de/api/interpreter',
-            ];
-
-            $lastError = null;
-
-            foreach ($servers as $server) {
-                try {
-                    $response = Http::timeout(90)
-                        ->connectTimeout(20)
-                        ->withHeaders([
-                            'User-Agent' =>
-                                'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
-                            'Accept' => 'application/json',
-                        ])
-                        ->asForm()
-                        ->post(
-                            $server,
-                            ['data' => $query]
-                        );
-
-                    if ($response->successful()) {
-                        $data = $response->json();
-
-                        if (
-                            is_array($data) &&
-                            isset($data['elements']) &&
-                            is_array($data['elements'])
-                        ) {
-                            $elements = $data['elements'];
-                            Cache::put($cacheKey, $elements, now()->addHours(6));
-                            break;
-                        }
-
-                        $lastError = 'Format data Overpass tidak valid.';
-                        continue;
-                    }
-
-                    $lastError =
-                        'HTTP ' .
-                        $response->status() .
-                        ': ' .
-                        $response->body();
-                } catch (\Throwable $e) {
-                    $lastError = $e->getMessage();
-                }
-            }
-
-            if (!is_array($elements)) {
-                return response()->json([
-                    'success' => false,
-                    'message' =>
-                        'Server data OpenStreetMap sedang sibuk. Silakan coba lagi beberapa saat lagi.',
-                    'error' => config('app.debug') ? $lastError : null,
-                ], 503);
-            }
-        }
-
-        $places = [];
-        $used = [];
-
-        foreach ($elements as $element) {
-            $osmType = $element['type'] ?? '';
-            $osmId = $element['id'] ?? null;
-
-            if ($osmType === '' || $osmId === null) {
-                continue;
-            }
-
-            $uniqueKey = $osmType . '-' . $osmId;
-
-            if (isset($used[$uniqueKey])) {
-                continue;
-            }
-
-            $used[$uniqueKey] = true;
-
-            $tags = $element['tags'] ?? [];
-
-            $name =
-                $tags['name'] ??
-                $tags['name:id'] ??
-                null;
-
-            if (!$name || trim($name) === '') {
-                continue;
-            }
-
-            if (
-                isset($element['lat']) &&
-                isset($element['lon'])
-            ) {
-                $placeLatitude = (float) $element['lat'];
-                $placeLongitude = (float) $element['lon'];
-            } elseif (
-                isset($element['center']['lat']) &&
-                isset($element['center']['lon'])
-            ) {
-                $placeLatitude =
-                    (float) $element['center']['lat'];
-                $placeLongitude =
-                    (float) $element['center']['lon'];
-            } else {
-                continue;
-            }
-
-            $distance = $this->calculateDistance(
-                $latitude,
-                $longitude,
-                $placeLatitude,
-                $placeLongitude
-            );
-
-            if ($category === 'wisata') {
-                if (isset($tags['tourism'])) {
-                    $placeType = $tags['tourism'];
-                } elseif (isset($tags['historic'])) {
-                    $placeType = $tags['historic'];
-                } elseif (isset($tags['leisure'])) {
-                    $placeType = $tags['leisure'];
-                } elseif (isset($tags['natural'])) {
-                    $placeType = $tags['natural'];
-                } else {
-                    $placeType = 'wisata';
-                }
-            } else {
-                $placeType =
-                    $tags['amenity'] ?? 'kuliner';
-            }
-
-            $places[] = [
-                'id' => $osmId,
-                'osm_type' => $osmType,
-                'name' => $name,
-                'latitude' => $placeLatitude,
-                'longitude' => $placeLongitude,
-                'distance' => round($distance, 2),
-                'type' => $placeType,
-                'category' => $category,
-                'address' =>
-                    $tags['addr:full'] ??
-                    $tags['addr:street'] ??
-                    null,
-                'phone' =>
-                    $tags['phone'] ??
-                    $tags['contact:phone'] ??
-                    null,
-                'website' =>
-                    $tags['website'] ??
-                    $tags['contact:website'] ??
-                    null,
-                'rating' => null,
-                'user_rating_count' => null,
-                'rating_source' => null,
-                'google_maps_url' => null,
-            ];
-        }
-
-        // Rating real-time dari Google Places API (New), jika API key tersedia.
-        $ratingsAvailable = false;
+        // ---------- LAPIS 3: Google Places Nearby (jika kosong & ada key) ----------
         $googleApiKey = (string) env('GOOGLE_MAPS_API_KEY', '');
-        if ($googleApiKey !== '') {
+        if (count($places) === 0 && $googleApiKey !== '') {
+            $places = $this->fetchFromGooglePlaces($category, $latitude, $longitude, $googleApiKey);
+        }
+
+        // ---------- LAPIS 4: Beri rating Google untuk setiap tempat ----------
+        $ratingsAvailable = false;
+        if (count($places) > 0 && $googleApiKey !== '' && (microtime(true) - $overallStart) < 40) {
             try {
-                $googleTypes = $category === 'wisata'
-                    ? ['tourist_attraction', 'museum', 'park']
-                    : ['restaurant', 'cafe'];
-                $googleResponse = Http::timeout(12)
-                    ->connectTimeout(5)
+                $googleTypes = match ($category) {
+                    'wisata' => ['tourist_attraction', 'museum', 'park'],
+                    'kuliner' => ['restaurant', 'cafe'],
+                    'hotel' => ['lodging', 'hotel', 'motel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel'],
+                    'ibadah' => ['place_of_worship'],
+                    default => ['tourist_attraction'],
+                };
+
+                $googleResponse = Http::timeout(10)->connectTimeout(4)
                     ->withHeaders([
                         'Content-Type' => 'application/json',
                         'X-Goog-Api-Key' => $googleApiKey,
@@ -1419,27 +777,28 @@ OVERPASS;
                             ],
                         ],
                     ]);
+
                 if ($googleResponse->successful()) {
                     $googlePlaces = $googleResponse->json('places', []);
                     foreach ($places as &$placeItem) {
                         $osmName = mb_strtolower(trim($placeItem['name']));
                         $bestMatch = null;
                         $bestDistance = INF;
-                        foreach ($googlePlaces as $googlePlace) {
-                            $googleName = trim((string) data_get($googlePlace, 'displayName.text', ''));
-                            if ($googleName === '' || !isset($googlePlace['location']['latitude'], $googlePlace['location']['longitude'])) continue;
+                        foreach ($googlePlaces as $gp) {
+                            $googleName = trim((string) data_get($gp, 'displayName.text', ''));
+                            if ($googleName === '' || !isset($gp['location']['latitude'], $gp['location']['longitude'])) continue;
                             $nameMatch = mb_strtolower($googleName) === $osmName
                                 || str_contains(mb_strtolower($googleName), $osmName)
                                 || str_contains($osmName, mb_strtolower($googleName));
                             if (!$nameMatch) continue;
-                            $matchDistance = $this->calculateDistance(
+                            $d = $this->calculateDistance(
                                 $placeItem['latitude'], $placeItem['longitude'],
-                                (float) $googlePlace['location']['latitude'],
-                                (float) $googlePlace['location']['longitude']
+                                (float) $gp['location']['latitude'],
+                                (float) $gp['location']['longitude']
                             );
-                            if ($matchDistance < $bestDistance && $matchDistance <= 2) {
-                                $bestDistance = $matchDistance;
-                                $bestMatch = $googlePlace;
+                            if ($d < $bestDistance && $d <= 2) {
+                                $bestDistance = $d;
+                                $bestMatch = $gp;
                             }
                         }
                         if ($bestMatch && isset($bestMatch['rating'])) {
@@ -1453,15 +812,14 @@ OVERPASS;
                     unset($placeItem);
                 }
             } catch (\Throwable $ratingError) {
-                // Data tempat tetap ditampilkan meski layanan rating tidak tersedia.
                 report($ratingError);
             }
         }
 
-        // Lengkapi setiap tempat dengan rating dan jumlah ulasan standar Google
+        // ---------- LAPIS 5: Generator rating deterministik ----------
         foreach ($places as &$placeItem) {
             if ($placeItem['rating'] === null) {
-                $est = $this->generateRealisticGoogleRating($placeItem['name'], $placeItem['id'], $category);
+                $est = $this->generateRealisticGoogleRating($placeItem['name'], $placeItem['id'] ?? '', $category);
                 $placeItem['rating'] = $est['rating'];
                 $placeItem['user_rating_count'] = $est['user_rating_count'];
                 $placeItem['rating_source'] = $est['rating_source'];
@@ -1472,32 +830,28 @@ OVERPASS;
         unset($placeItem);
         $ratingsAvailable = true;
 
-        // Filter rating minimal jika diminta pada query URL
+        // ---------- Filter & sort opsional ----------
         $minRating = $request->query('min_rating');
         if ($minRating !== null && is_numeric($minRating)) {
             $min = (float) $minRating;
             $places = array_values(array_filter($places, fn ($p) => ($p['rating'] ?? 0) >= $min));
         }
 
-        // Urutkan data berdasarkan parameter sort
         $sort = (string) $request->query('sort', 'default');
         if ($sort === 'rating-desc') {
             usort($places, function ($a, $b) {
-                $rDiff = ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0);
-                if ($rDiff !== 0) return $rDiff;
-                return ($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0);
+                $r = ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0);
+                return $r !== 0 ? $r : (($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0));
             });
         } elseif ($sort === 'rating-asc') {
             usort($places, function ($a, $b) {
-                $rDiff = ($a['rating'] ?? 0) <=> ($b['rating'] ?? 0);
-                if ($rDiff !== 0) return $rDiff;
-                return ($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0);
+                $r = ($a['rating'] ?? 0) <=> ($b['rating'] ?? 0);
+                return $r !== 0 ? $r : (($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0));
             });
         } elseif ($sort === 'reviews-desc') {
             usort($places, function ($a, $b) {
-                $cDiff = ($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0);
-                if ($cDiff !== 0) return $cDiff;
-                return ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0);
+                $c = ($b['user_rating_count'] ?? 0) <=> ($a['user_rating_count'] ?? 0);
+                return $c !== 0 ? $c : (($b['rating'] ?? 0) <=> ($a['rating'] ?? 0));
             });
         } else {
             usort($places, fn ($a, $b) => ($a['distance'] ?? 0) <=> ($b['distance'] ?? 0));
@@ -1505,6 +859,8 @@ OVERPASS;
 
         $places = array_slice($places, 0, 100);
 
+        // [PENTING] Selalu kembalikan success:true — jangan error 503.
+        // Jika kosong, frontend akan menampilkan "tidak ada tempat yang sesuai".
         return response()->json([
             'success' => true,
             'category' => $category,
@@ -1513,14 +869,389 @@ OVERPASS;
             'count' => count($places),
             'ratings_available' => $ratingsAvailable,
             'places' => $places,
+            'warning' => count($places) === 0
+                ? 'Server sedang sibuk. Coba lagi beberapa saat atau ganti kota lain.'
+                : null,
         ]);
     }
 
-    /**
-     * Menghasilkan rating dan ulasan standar Google yang realistis dan konsisten
-     * (deterministic berdasarkan nama dan ID tempat) saat Google Places API key
-     * belum dikonfigurasi atau tidak mengembalikan data untuk tempat tersebut.
-     */
+    /* =================================================================
+       LAPIS 1: Overpass — 8 mirror, timeout pendek per request
+       ================================================================= */
+
+    private function fetchFromOverpass(string $category, float $lat, float $lon, float $startTime): array
+    {
+        if ($category === 'wisata') {
+            $query = <<<OVERPASS
+[out:json][timeout:10];
+(
+    nwr(around:10000,$lat,$lon)["tourism"="attraction"];
+    nwr(around:10000,$lat,$lon)["tourism"="museum"];
+    nwr(around:10000,$lat,$lon)["tourism"="theme_park"];
+    nwr(around:10000,$lat,$lon)["tourism"="zoo"];
+    nwr(around:10000,$lat,$lon)["tourism"="viewpoint"];
+    nwr(around:10000,$lat,$lon)["historic"="monument"];
+    nwr(around:10000,$lat,$lon)["leisure"="park"];
+    nwr(around:10000,$lat,$lon)["natural"="beach"];
+);
+out center tags;
+OVERPASS;
+        } elseif ($category === 'kuliner') {
+            $query = <<<OVERPASS
+[out:json][timeout:10];
+(
+    nwr(around:10000,$lat,$lon)["amenity"="restaurant"];
+    nwr(around:10000,$lat,$lon)["amenity"="cafe"];
+    nwr(around:10000,$lat,$lon)["amenity"="fast_food"];
+    nwr(around:10000,$lat,$lon)["amenity"="food_court"];
+);
+out center tags;
+OVERPASS;
+        } elseif ($category === 'hotel') {
+            $query = <<<OVERPASS
+[out:json][timeout:10];
+(
+    nwr(around:10000,$lat,$lon)["tourism"~"^(hotel|motel|guest_house|hostel|apartment|resort|chalet)$"];
+    nwr(around:10000,$lat,$lon)["building"="hotel"];
+);
+out center tags;
+OVERPASS;
+        } else {
+            $query = <<<OVERPASS
+[out:json][timeout:10];
+(
+    nwr(around:10000,$lat,$lon)["amenity"="place_of_worship"];
+);
+out center tags;
+OVERPASS;
+        }
+
+        $cacheKey = sprintf('map.overpass.places.v4.%s.%.3f.%.3f', $category, $lat, $lon);
+        $elements = Cache::get($cacheKey);
+        if (is_array($elements)) {
+            return $this->convertOverpassElements($elements, $category, $lat, $lon);
+        }
+
+        $servers = [
+            'https://overpass.kumi.systems/api/interpreter',
+            'https://overpass-api.de/api/interpreter',
+            'https://overpass.private.coffee/api/interpreter',
+            'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+            'https://overpass.openstreetmap.ru/api/interpreter',
+            'https://lz4.overpass-api.de/api/interpreter',
+            'https://z.overpass-api.de/api/interpreter',
+            'https://overpass.osm.ch/api/interpreter',
+        ];
+
+        $totalBudget = 45;
+        $lastError = null;
+
+        foreach ($servers as $server) {
+            $elapsed = microtime(true) - $startTime;
+            $remaining = $totalBudget - $elapsed;
+            if ($remaining < 4) {
+                $lastError = 'Budget habis';
+                break;
+            }
+
+            $perTimeout = (int) min(12, $remaining);
+
+            try {
+                $response = Http::timeout($perTimeout)->connectTimeout(3)
+                    ->withHeaders([
+                        'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                        'Accept' => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post($server, ['data' => $query]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (is_array($data) && isset($data['elements']) && is_array($data['elements'])) {
+                        Cache::put($cacheKey, $data['elements'], now()->addHours(6));
+                        return $this->convertOverpassElements($data['elements'], $category, $lat, $lon);
+                    }
+                    $lastError = 'Format invalid';
+                    continue;
+                }
+                $lastError = 'HTTP ' . $response->status();
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+            }
+        }
+
+        \Log::info('Overpass all mirrors failed', ['error' => $lastError, 'category' => $category]);
+        return [];
+    }
+
+    private function convertOverpassElements(array $elements, string $category, float $lat, float $lon): array
+    {
+        $places = [];
+        $used = [];
+
+        foreach ($elements as $element) {
+            $osmType = $element['type'] ?? '';
+            $osmId = $element['id'] ?? null;
+            if ($osmType === '' || $osmId === null) continue;
+
+            $uniqueKey = $osmType . '-' . $osmId;
+            if (isset($used[$uniqueKey])) continue;
+            $used[$uniqueKey] = true;
+
+            $tags = $element['tags'] ?? [];
+            $name = $tags['name'] ?? $tags['name:id'] ?? null;
+            if (!$name || trim($name) === '') continue;
+
+            if (isset($element['lat'], $element['lon'])) {
+                $placeLat = (float) $element['lat'];
+                $placeLon = (float) $element['lon'];
+            } elseif (isset($element['center']['lat'], $element['center']['lon'])) {
+                $placeLat = (float) $element['center']['lat'];
+                $placeLon = (float) $element['center']['lon'];
+            } else {
+                continue;
+            }
+
+            $distance = $this->calculateDistance($lat, $lon, $placeLat, $placeLon);
+
+            if ($category === 'wisata') {
+                $type = $tags['tourism'] ?? $tags['historic'] ?? $tags['leisure'] ?? $tags['natural'] ?? 'wisata';
+            } elseif ($category === 'kuliner') {
+                $type = $tags['amenity'] ?? 'kuliner';
+            } elseif ($category === 'hotel') {
+                $type = $tags['tourism'] ?? $tags['building'] ?? 'hotel';
+                if (isset($tags['stars'])) $type .= ' • ' . $tags['stars'] . '★';
+            } else {
+                $religion = $tags['religion'] ?? null;
+                $denom = $tags['denomination'] ?? null;
+                $type = $religion ? ($religion . ($denom ? ' (' . $denom . ')' : '')) : 'place_of_worship';
+            }
+
+            $places[] = [
+                'id' => $osmId,
+                'osm_type' => $osmType,
+                'name' => $name,
+                'latitude' => $placeLat,
+                'longitude' => $placeLon,
+                'distance' => round($distance, 2),
+                'type' => $type,
+                'category' => $category,
+                'address' => $tags['addr:full'] ?? $tags['addr:street'] ?? null,
+                'phone' => $tags['phone'] ?? $tags['contact:phone'] ?? null,
+                'website' => $tags['website'] ?? $tags['contact:website'] ?? null,
+                'rating' => null,
+                'user_rating_count' => null,
+                'rating_source' => null,
+                'google_maps_url' => null,
+                'source' => 'Overpass',
+            ];
+        }
+
+        return $places;
+    }
+
+    /* =================================================================
+       LAPIS 2: Nominatim — cari POI via tag filter [key=value]
+       ================================================================= */
+
+    private function fetchFromNominatim(string $category, float $lat, float $lon): array
+    {
+        $tags = match ($category) {
+            'wisata' => [
+                'tourism=attraction', 'tourism=museum', 'tourism=zoo',
+                'leisure=park', 'historic=monument', 'tourism=viewpoint',
+                'tourism=theme_park',
+            ],
+            'kuliner' => [
+                'amenity=restaurant', 'amenity=cafe', 'amenity=fast_food',
+                'amenity=food_court',
+            ],
+            'hotel' => [
+                'tourism=hotel', 'tourism=motel', 'tourism=hostel',
+                'tourism=guest_house', 'tourism=apartment', 'tourism=resort',
+            ],
+            'ibadah' => [
+                'amenity=place_of_worship',
+            ],
+            default => [],
+        };
+
+        if (empty($tags)) return [];
+
+        // Viewbox ~10km (0.09 derajat ±)
+        $delta = 0.09;
+        $viewbox = sprintf(
+            '%f,%f,%f,%f',
+            $lon - $delta, $lat + $delta,
+            $lon + $delta, $lat - $delta
+        );
+
+        $places = [];
+        $seen = [];
+        $cacheKey = 'map.nominatim.places.v1.' . $category . '.' . round($lat, 3) . '.' . round($lon, 3);
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) return $cached;
+
+        foreach ($tags as $tag) {
+            try {
+                $response = Http::timeout(8)->connectTimeout(3)
+                    ->withHeaders([
+                        'User-Agent' => 'JelajahWisataIndonesia/1.0 Laravel Tourism Map',
+                        'Accept' => 'application/json',
+                    ])
+                    ->get('https://nominatim.openstreetmap.org/search', [
+                        'q' => "[$tag]",
+                        'viewbox' => $viewbox,
+                        'bounded' => 1,
+                        'format' => 'jsonv2',
+                        'limit' => 30,
+                        'addressdetails' => 1,
+                    ]);
+
+                if (!$response->successful()) continue;
+
+                foreach (($response->json() ?? []) as $item) {
+                    if (!isset($item['lat'], $item['lon'])) continue;
+
+                    $osmType = $item['osm_type'] ?? 'node';
+                    $osmId = $item['osm_id'] ?? null;
+                    if (!$osmId) continue;
+
+                    $id = $osmType . '-' . $osmId;
+                    if (isset($seen[$id])) continue;
+                    $seen[$id] = true;
+
+                    $name = $item['name'] ?? ($item['display_name'] ?? null);
+                    if (!$name) continue;
+
+                    $placeLat = (float) $item['lat'];
+                    $placeLon = (float) $item['lon'];
+                    $distance = $this->calculateDistance($lat, $lon, $placeLat, $placeLon);
+                    if ($distance > 10) continue;
+
+                    // Tipe dari tag: "amenity=restaurant" → "restaurant"
+                    $typeParts = explode('=', $tag);
+                    $type = $typeParts[1] ?? $category;
+
+                    $places[] = [
+                        'id' => $osmId,
+                        'osm_type' => $osmType,
+                        'name' => $name,
+                        'latitude' => $placeLat,
+                        'longitude' => $placeLon,
+                        'distance' => round($distance, 2),
+                        'type' => $type,
+                        'category' => $category,
+                        'address' => $item['display_name'] ?? null,
+                        'phone' => null,
+                        'website' => null,
+                        'rating' => null,
+                        'user_rating_count' => null,
+                        'rating_source' => null,
+                        'google_maps_url' => null,
+                        'source' => 'Nominatim',
+                    ];
+                }
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+
+        // Cache sukses 6 jam, cache kosong 60 detik (agar bisa retry cepat)
+        $ttl = count($places) > 0 ? now()->addHours(6) : now()->addSeconds(60);
+        Cache::put($cacheKey, $places, $ttl);
+
+        if (count($places) > 0) {
+            \Log::info('Nominatim fallback succeeded', ['count' => count($places), 'category' => $category]);
+        }
+
+        return $places;
+    }
+
+    /* =================================================================
+       LAPIS 3: Google Places Nearby — daftar lengkap (bukan hanya rating)
+       ================================================================= */
+
+    private function fetchFromGooglePlaces(string $category, float $lat, float $lon, string $apiKey): array
+    {
+        try {
+            $googleTypes = match ($category) {
+                'wisata' => ['tourist_attraction', 'museum', 'park'],
+                'kuliner' => ['restaurant', 'cafe'],
+                'hotel' => ['lodging', 'hotel', 'motel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel'],
+                'ibadah' => ['place_of_worship'],
+                default => ['tourist_attraction'],
+            };
+
+            $response = Http::timeout(15)->connectTimeout(5)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'X-Goog-Api-Key' => $apiKey,
+                    'X-Goog-FieldMask' => 'places.id,places.displayName,places.location,places.rating,places.userRatingCount,places.formattedAddress,places.types',
+                ])
+                ->post('https://places.googleapis.com/v1/places:searchNearby', [
+                    'includedTypes' => $googleTypes,
+                    'maxResultCount' => 20,
+                    'rankPreference' => 'DISTANCE',
+                    'locationRestriction' => [
+                        'circle' => [
+                            'center' => ['latitude' => $lat, 'longitude' => $lon],
+                            'radius' => 10000.0,
+                        ],
+                    ],
+                ]);
+
+            if (!$response->successful()) {
+                \Log::warning('Google Places fallback failed', ['status' => $response->status()]);
+                return [];
+            }
+
+            $googlePlaces = $response->json('places', []);
+            $places = [];
+
+            foreach ($googlePlaces as $gp) {
+                $name = trim((string) data_get($gp, 'displayName.text', ''));
+                if ($name === '') continue;
+                if (!isset($gp['location']['latitude'], $gp['location']['longitude'])) continue;
+
+                $placeLat = (float) $gp['location']['latitude'];
+                $placeLon = (float) $gp['location']['longitude'];
+                $distance = $this->calculateDistance($lat, $lon, $placeLat, $placeLon);
+
+                $types = $gp['types'] ?? [];
+                $type = $types[0] ?? $category;
+
+                $places[] = [
+                    'id' => $gp['id'] ?? md5($name . $placeLat . $placeLon),
+                    'osm_type' => 'google',
+                    'name' => $name,
+                    'latitude' => $placeLat,
+                    'longitude' => $placeLon,
+                    'distance' => round($distance, 2),
+                    'type' => $type,
+                    'category' => $category,
+                    'address' => $gp['formattedAddress'] ?? null,
+                    'phone' => null,
+                    'website' => null,
+                    'rating' => isset($gp['rating']) ? (float) $gp['rating'] : null,
+                    'user_rating_count' => (int) ($gp['userRatingCount'] ?? 0),
+                    'rating_source' => 'Google Places API',
+                    'google_maps_url' => null,
+                    'source' => 'Google Places',
+                ];
+            }
+
+            if (count($places) > 0) {
+                \Log::info('Google Places fallback succeeded', ['count' => count($places), 'category' => $category]);
+            }
+
+            return $places;
+        } catch (\Throwable $e) {
+            \Log::warning('Google Places fallback exception', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
     private function generateRealisticGoogleRating(string $name, int|string $id, string $category): array
     {
         $cleanName = trim(mb_strtolower($name));
@@ -1528,19 +1259,49 @@ OVERPASS;
 
         $isTopTier = (bool) preg_match('/(monas|candi|pantai|curug|waterpark|alun-alun|museum|danau|istana|mall|plaza|resort|hotel|heritage|kraton|taman mini|ancol|borobudur|prambanan|kebun raya|zoo|waterboom)/i', $cleanName);
         $isPopularCulinary = (bool) preg_match('/(restoran|restaurant|cafe|kopi|coffee|bakso|soto|sate|seafood|bebek|ayam goreng|warung|kedai|kitchen|bistro|steak|mie|nasi goreng|pizza|burger)/i', $cleanName);
+        $isLuxuryHotel = (bool) preg_match('/(resort|grand|bintang|star|suite|premium|luxury|hyatt|marriott|hilton|sheraton|pullman|novotel|ibis|aston|swiss|best western|fave|amaris|whiz|harris|santika|aria|kempinski|raffles|ritz|mandarin|four seasons|intercontinental|westin|le meridien|st regis|padma|ayana|mulia|fairmont|sofitel)/i', $cleanName);
+        $isMajorWorship = (bool) preg_match('/(masjid|jami|katedral|cathedral|basilika|basilica|gereja|church|pura|vihara|klenteng|kelenteng|buddhist|hindu|mosque|agung|paroki)/i', $cleanName);
 
-        if ($isTopTier) {
-            $ratings = [4.5, 4.6, 4.6, 4.7, 4.7, 4.8, 4.8, 4.9];
-            $rating = $ratings[$seed % count($ratings)];
-            $reviewCount = 850 + ($seed % 6500) + (($seed % 13) * 280);
-        } elseif ($isPopularCulinary) {
-            $ratings = [4.1, 4.2, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.6, 4.7, 4.8];
-            $rating = $ratings[$seed % count($ratings)];
-            $reviewCount = 120 + ($seed % 2400) + (($seed % 9) * 95);
+        if ($category === 'hotel') {
+            if ($isLuxuryHotel) {
+                $ratings = [4.4, 4.5, 4.5, 4.6, 4.6, 4.7, 4.7, 4.8, 4.9];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 400 + ($seed % 5500) + (($seed % 11) * 180);
+            } else {
+                $ratings = [3.9, 4.0, 4.1, 4.2, 4.2, 4.3, 4.4, 4.4, 4.5, 4.6];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 60 + ($seed % 1800) + (($seed % 8) * 70);
+            }
+        } elseif ($category === 'ibadah') {
+            if ($isMajorWorship) {
+                $ratings = [4.5, 4.6, 4.6, 4.7, 4.7, 4.8, 4.8, 4.9, 4.9, 5.0];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 200 + ($seed % 4000) + (($seed % 9) * 150);
+            } else {
+                $ratings = [4.3, 4.4, 4.5, 4.5, 4.6, 4.6, 4.7, 4.8, 4.8, 4.9];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 30 + ($seed % 900) + (($seed % 6) * 55);
+            }
+        } elseif ($category === 'wisata') {
+            if ($isTopTier) {
+                $ratings = [4.5, 4.6, 4.6, 4.7, 4.7, 4.8, 4.8, 4.9];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 850 + ($seed % 6500) + (($seed % 13) * 280);
+            } else {
+                $ratings = [3.8, 3.9, 4.0, 4.1, 4.2, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.7];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 45 + ($seed % 820) + (($seed % 7) * 40);
+            }
         } else {
-            $ratings = [3.8, 3.9, 4.0, 4.1, 4.2, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.7];
-            $rating = $ratings[$seed % count($ratings)];
-            $reviewCount = 45 + ($seed % 820) + (($seed % 7) * 40);
+            if ($isPopularCulinary) {
+                $ratings = [4.1, 4.2, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.6, 4.7, 4.8];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 120 + ($seed % 2400) + (($seed % 9) * 95);
+            } else {
+                $ratings = [3.8, 3.9, 4.0, 4.1, 4.2, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.7];
+                $rating = $ratings[$seed % count($ratings)];
+                $reviewCount = 45 + ($seed % 820) + (($seed % 7) * 40);
+            }
         }
 
         return [
@@ -1550,26 +1311,15 @@ OVERPASS;
         ];
     }
 
-    private function calculateDistance(
-        float $lat1,
-        float $lon1,
-        float $lat2,
-        float $lon2
-    ): float {
+    private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
         $earthRadius = 6371;
-
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
-
-        $a =
-            sin($dLat / 2) * sin($dLat / 2) +
-            cos(deg2rad($lat1)) *
-                cos(deg2rad($lat2)) *
-                sin($dLon / 2) *
-                sin($dLon / 2);
-
+        $a = sin($dLat / 2) * sin($dLat / 2)
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
+            * sin($dLon / 2) * sin($dLon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
         return $earthRadius * $c;
     }
 }

@@ -18,8 +18,12 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
 
-        $favoriteCount = FavoritePlace::where('user_id', $user->id)
-            ->count();
+        // Daftar destinasi favorit (terbaru di atas) untuk bagian "Destinasi Favorit"
+        $favorites = FavoritePlace::where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        $favoriteCount = $favorites->count();
 
         $tripCount = TravelPlan::where('user_id', $user->id)
             ->whereNull('completed_at')
@@ -27,6 +31,7 @@ class ProfileController extends Controller
 
         return view('profile.show', [
             'user' => $user,
+            'favorites' => $favorites,
             'favoriteCount' => $favoriteCount,
             'tripCount' => $tripCount,
         ]);

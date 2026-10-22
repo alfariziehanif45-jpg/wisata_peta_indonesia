@@ -568,11 +568,13 @@
             padding: 14px 6px;
             border-radius: 18px;
             transition: background .2s, transform .2s;
+            min-width: 0;
         }
 
         .friend-chip:hover { background: rgba(255, 241, 242, .8); transform: translateY(-2px); }
 
         .friend-avatar {
+            flex: none;
             width: 62px;
             height: 62px;
             border-radius: 50%;
@@ -585,9 +587,32 @@
             font-size: 22px;
             border: 3px solid #fff;
             box-shadow: 0 0 0 2px rgba(244, 63, 94, .35), var(--shadow-sm);
+            overflow: hidden;
         }
 
-        .friend-chip small { display: block; color: var(--red); font-weight: 600; font-size: 12px; }
+        .friend-name {
+            display: block;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .friend-name .fn {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .friend-chip small {
+            display: block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--red);
+            font-weight: 600;
+            font-size: 12px;
+        }
 
         .friend-add { text-decoration: none; color: var(--red); }
 
@@ -957,6 +982,29 @@
 </head>
 
 @php
+    // ===== Helper URL foto profil =====
+    // Menormalkan berbagai format avatar_path yang mungkin tersimpan di database:
+    //   - "avatars/x.jpg"          -> /storage/avatars/x.jpg
+    //   - "public/avatars/x.jpg"   -> /storage/avatars/x.jpg
+    //   - "storage/avatars/x.jpg"  -> /storage/avatars/x.jpg
+    //   - "https://..."            -> dipakai apa adanya
+    $avatarUrl = function (?string $path) {
+        if (!$path) {
+            return null;
+        }
+
+        $path = trim($path);
+
+        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://', '//', 'data:'])) {
+            return $path;
+        }
+
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $path = preg_replace('#^(public/|storage/)#', '', $path);
+
+        return asset('storage/' . $path);
+    };
+
     // ===== Teman =====
     // Butuh: trait HasFriends di model User + tabel friendships.
     $friendCount        = $user->friends()->count();
@@ -1098,8 +1146,9 @@
                 @if($user->avatar_path)
                     <img
                         class="avatar"
-                        src="{{ asset('storage/' . $user->avatar_path) }}"
+                        src="{{ $avatarUrl($user->avatar_path) }}"
                         alt="Foto profil"
+                        data-fallback="🧳"
                     >
                 @else
                     <div class="avatar avatar-fallback">🧳</div>
@@ -1244,14 +1293,26 @@
         @if($friendPreview->isNotEmpty())
             <div class="friend-strip">
                 @foreach($friendPreview as $friend)
-                    <div class="friend-chip">
-                        @if($friend->avatar_path)
-                            <img class="friend-avatar" src="{{ asset('storage/' . $friend->avatar_path) }}" alt="Foto {{ $friend->name }}">
+                    @php
+                        $friendInitial = mb_strtoupper(mb_substr($friend->name ?: '?', 0, 1));
+                        $friendAvatar  = $avatarUrl($friend->avatar_path);
+                        $friendHandle  = $friend->username ?: \Illuminate\Support\Str::slug($friend->name, '_');
+                    @endphp
+
+                    <div class="friend-chip" title="{{ $friend->name }} (@ {{ $friendHandle }})">
+                        @if($friendAvatar)
+                            <img class="friend-avatar"
+                                 src="{{ $friendAvatar }}"
+                                 alt=""
+                                 loading="lazy"
+                                 data-fallback="{{ $friendInitial }}">
                         @else
-                            <div class="friend-avatar">{{ mb_strtoupper(mb_substr($friend->name ?: '?', 0, 1)) }}</div>
+                            <div class="friend-avatar">{{ $friendInitial }}</div>
                         @endif
-                        <span>{{ \Illuminate\Support\Str::limit($friend->name, 14) }}
-                            <small>@ {{ $friend->username ?: \Illuminate\Support\Str::slug($friend->name, '_') }}</small>
+
+                        <span class="friend-name">
+                            <span class="fn">{{ \Illuminate\Support\Str::limit($friend->name, 14) }}</span>
+                            <small>@ {{ $friendHandle }}</small>
                         </span>
                     </div>
                 @endforeach
@@ -1270,7 +1331,7 @@
         @endif
     </section>
 
-    {{-- DAFTAR FAVORIT MANUAL --}}
+    {{-- DAFTAR FAVORIT (dari tombol hati di peta + input manual) --}}
     <section class="favorite-section glass anim d3" id="destinasi-favorit">
         <div class="favorite-heading">
             <h2><span class="h-ico">♡</span> Destinasi Favorit Saya</h2>
@@ -1297,9 +1358,12 @@
                             ? 'https://www.google.com/maps/dir/?api=1&destination=' . $attrs['latitude'] . ',' . $attrs['longitude']
                             : null;
 
+                        // Semua kategori yang bisa disimpan dari peta
                         $categoryLabel = match (strtolower((string) $place->category)) {
                             'wisata'  => '🏞️ Wisata',
                             'kuliner' => '🍜 Kuliner',
+                            'hotel'   => '🏨 Hotel',
+                            'ibadah'  => '🕌 Tempat Ibadah',
                             ''        => 'Lainnya',
                             default   => ucfirst((string) $place->category),
                         };
@@ -1497,6 +1561,30 @@
     </div>
 
 </main>
+
+{{-- Fallback foto profil: kalau gambar gagal dimuat, ganti dengan inisial / ikon --}}
+<script>
+    (function () {
+        function useFallback(img) {
+            if (img.dataset.failed) return;
+            img.dataset.failed = '1';
+
+            var box = document.createElement('div');
+            box.className = img.className + (img.classList.contains('avatar') ? ' avatar-fallback' : '');
+            box.textContent = img.getAttribute('data-fallback') || '?';
+            img.replaceWith(box);
+        }
+
+        document.querySelectorAll('img[data-fallback]').forEach(function (img) {
+            img.addEventListener('error', function () { useFallback(img); });
+
+            // Kalau error sudah terjadi sebelum script ini berjalan
+            if (img.complete && img.naturalWidth === 0) {
+                useFallback(img);
+            }
+        });
+    })();
+</script>
 
 {{-- Animasi hitung angka statistik --}}
 <script>

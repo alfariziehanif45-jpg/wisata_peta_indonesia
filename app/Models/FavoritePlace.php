@@ -14,6 +14,8 @@ class FavoritePlace extends Model
         'category',
         'type',
         'address',
+        'description',
+        'url',
         'latitude',
         'longitude',
         'rating',
@@ -24,9 +26,9 @@ class FavoritePlace extends Model
     ];
 
     protected $casts = [
-        'latitude'          => 'float',
-        'longitude'         => 'float',
-        'rating'            => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'rating' => 'float',
         'user_rating_count' => 'integer',
     ];
 
