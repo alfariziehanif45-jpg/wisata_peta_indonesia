@@ -98,7 +98,6 @@ Route::middleware('auth')->group(function () {
 
 
     // Favorit dari tombol hati di popup peta
-    // (didaftarkan SEBELUM /favorites/{id} agar tidak bentrok)
     Route::get('/favorite-places/status', [FavoritePlaceController::class, 'status'])
         ->name('favorite-places.status');
 
@@ -116,13 +115,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/favorites', [FavoritePlaceController::class, 'store'])
         ->name('favorites.store');
 
-    Route::get('/favorites/{id}/edit', [FavoritePlaceController::class, 'edit'])
+    Route::get('/favorites/{favoritePlace}/edit', [FavoritePlaceController::class, 'edit'])
         ->name('favorites.edit');
 
-    Route::put('/favorites/{id}', [FavoritePlaceController::class, 'update'])
+    Route::put('/favorites/{favoritePlace}', [FavoritePlaceController::class, 'update'])
         ->name('favorites.update');
 
-    Route::delete('/favorites/{id}', [FavoritePlaceController::class, 'destroy'])
+    Route::delete('/favorites/{favoritePlace}', [FavoritePlaceController::class, 'destroy'])
         ->name('favorites.destroy');
 
 
@@ -151,16 +150,13 @@ Route::middleware('auth')->group(function () {
         ->name('achievements.index');
 
 
-    // Teman: cari username/nama, lihat profil, kirim, terima, tolak/batalkan, hapus teman
+    // Teman
     Route::get('/friends', [FriendController::class, 'index'])
         ->name('friends.index');
 
-    // Lihat profil teman (hanya baca). Memakai {user} sehingga tidak bentrok
-    // dengan route PATCH/DELETE {friendship} di bawah (beda method & segmen).
     Route::get('/friends/{user}', [FriendController::class, 'show'])
         ->name('friends.show');
 
-    // Data profil teman terbaru (JSON) untuk sinkronisasi otomatis di halaman profil teman.
     Route::get('/friends/{user}/data', [FriendController::class, 'data'])
         ->name('friends.data');
 

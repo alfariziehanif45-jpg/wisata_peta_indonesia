@@ -36,4 +36,9 @@ class FavoritePlace extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getUrlAttribute($value)
+    {
+        return $value ?: $this->google_maps_url;
+    }
 }

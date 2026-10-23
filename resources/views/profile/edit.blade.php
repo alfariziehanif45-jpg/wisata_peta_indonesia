@@ -412,7 +412,7 @@
         }
 
         /* =====================================================================
-           BORDER FOTO PROFIL (efek animasi) - sama dengan halaman profil
+           BORDER FOTO PROFIL (efek animasi + partikel) - sama dengan halaman profil
            ===================================================================== */
         .avatar-wrap {
             --bd-glow: rgba(225, 29, 72, .32);
@@ -432,6 +432,9 @@
             z-index: -2; pointer-events: none; opacity: 0;
             border: 2px solid var(--bd-ring);
         }
+
+        /* Kanvas partikel (dibuat oleh public/js/avatar-fx.js) */
+        .fx-canvas { position: absolute; pointer-events: none; z-index: 5; }
 
         @keyframes bdSpin   { to { transform: rotate(360deg); } }
         @keyframes bdRipple {
@@ -508,7 +511,7 @@
 
         .border-preview {
             display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
-            margin-top: 18px; padding: 30px 20px;
+            margin-top: 18px; padding: 44px 20px 30px;
             border: 1px solid var(--line); border-radius: 22px;
             background:
                 radial-gradient(circle at 20% 20%, rgba(255, 241, 242, .9), transparent 55%),
@@ -516,7 +519,7 @@
                 #fff;
             box-shadow: var(--shadow-sm);
         }
-        .border-preview .bp-name { font-size: 14px; font-weight: 800; color: var(--ink-2); }
+        .border-preview .bp-name { font-size: 14px; font-weight: 800; color: var(--ink-2); margin-top: 18px; }
 
         .border-grid {
             display: grid;
@@ -526,7 +529,7 @@
         .border-grid input { position: absolute; opacity: 0; pointer-events: none; }
         .border-grid label.bd-tile {
             margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
-            padding: 18px 8px 14px; text-align: center; cursor: pointer;
+            padding: 22px 8px 14px; text-align: center; cursor: pointer;
             border: 2px solid #e2e8f0; border-radius: 20px; background: #fff;
             transition: border-color .15s, transform .15s, box-shadow .15s;
         }
@@ -625,15 +628,15 @@
     // ----- Border foto profil -----
     // [ikon, nama, keterangan efek]
     $borders = [
-        'default' => ['🔴', 'Default',  'Gradien merah'],
+        'default' => ['🔴', 'Default',  'Titik cahaya lembut'],
         'none'    => ['⚪', 'Polos',    'Tanpa efek'],
-        'emas'    => ['👑', 'Emas',     'Berkilau & berdenyut'],
-        'pelangi' => ['🌈', 'Pelangi',  'Warna berputar'],
-        'neon'    => ['💠', 'Neon',     'Cahaya menyala'],
-        'api'     => ['🔥', 'Api',      'Menyala berkobar'],
-        'es'      => ['❄️', 'Es',       'Kilau dingin'],
-        'galaksi' => ['🌌', 'Galaksi',  'Cahaya kosmik'],
-        'hati'    => ['💗', 'Hati',     'Detak jantung'],
+        'emas'    => ['👑', 'Emas',     'Kilau bintang'],
+        'pelangi' => ['🌈', 'Pelangi',  'Warna mengorbit'],
+        'neon'    => ['💠', 'Neon',     'Garis cahaya'],
+        'api'     => ['🔥', 'Api',      'Bara menyala'],
+        'es'      => ['❄️', 'Es',       'Salju turun'],
+        'galaksi' => ['🌌', 'Galaksi',  'Blackhole spiral'],
+        'hati'    => ['💗', 'Hati',     'Hati melayang'],
     ];
 
     $avatarBorder = old('avatar_border', $user->avatar_border ?: 'default');
@@ -823,10 +826,11 @@
         {{-- BORDER FOTO PROFIL --}}
         <div class="section">
             <h2 class="title"><span class="ico">💫</span> Border foto profil</h2>
-            <p class="section-desc">Pilih bingkai beranimasi untuk foto profilmu. Hasilnya tampil di halaman profil.</p>
+            <p class="section-desc">Pilih bingkai beranimasi lengkap dengan efek partikel. Hasilnya tampil di halaman profil.</p>
 
             <div class="border-preview">
-                <div class="avatar-wrap lg bd-{{ $avatarBorder }}" id="borderPreview">
+                <div class="avatar-wrap lg bd-{{ $avatarBorder }}" id="borderPreview"
+                     data-fx="{{ $avatarBorder }}" data-fx-pad="36">
                     @if($avatarSrc)
                         <img class="bd-inner" id="borderPreviewImg" src="{{ $avatarSrc }}" alt="Pratinjau border">
                     @else
@@ -844,7 +848,8 @@
                            data-label="{{ $b[0] }} {{ $b[1] }}"
                            {{ $avatarBorder === $key ? 'checked' : '' }}>
                     <label class="bd-tile" for="abd_{{ $key }}">
-                        <div class="avatar-wrap sm bd-{{ $key }}">
+                        <div class="avatar-wrap sm bd-{{ $key }}"
+                             data-fx="{{ $key }}" data-fx-pad="16" data-fx-density=".8">
                             <div class="bd-inner">{{ $b[0] }}</div>
                         </div>
                         <div>
@@ -1078,6 +1083,9 @@
 
 {{-- Mesin partikel salju (public/js/snow-fx.js) --}}
 <script src="{{ asset('js/snow-fx.js') }}"></script>
+
+{{-- Efek partikel border foto profil (public/js/avatar-fx.js) --}}
+<script src="{{ asset('js/avatar-fx.js') }}"></script>
 
 <script>
 (function () {
@@ -1642,11 +1650,14 @@
         paint();
     })();
 
-    /* ===== Border foto profil (pratinjau langsung) ===== */
+    /* ===== Border foto profil (pratinjau langsung + partikel) ===== */
     (function () {
         var preview = document.getElementById('borderPreview');
         var nameEl = document.getElementById('borderPreviewName');
         var radios = document.querySelectorAll('input[name="avatar_border"]');
+
+        // Pasang efek partikel ke pratinjau & semua kotak pilihan
+        if (window.AvatarFX) AvatarFX.auto();
 
         function apply() {
             var checked = document.querySelector('input[name="avatar_border"]:checked');
@@ -1654,13 +1665,15 @@
 
             preview.className = 'avatar-wrap lg bd-' + checked.value;
             nameEl.textContent = checked.getAttribute('data-label') || '';
+
+            // Ganti jenis partikel mengikuti border yang dipilih
+            if (window.AvatarFX) AvatarFX.set(preview, checked.value);
         }
 
         radios.forEach(function (r) { r.addEventListener('change', apply); });
 
         // Kalau pengguna memilih foto profil baru, pratinjau border ikut berganti
         var avatarInput = document.getElementById('avatar');
-        var previewImg = document.getElementById('borderPreviewImg');
         var blobUrl = null;
 
         avatarInput.addEventListener('change', function () {

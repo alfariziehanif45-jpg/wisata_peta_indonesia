@@ -223,7 +223,7 @@
         }
 
         /* =====================================================================
-           BORDER FOTO PROFIL (efek animasi)
+           BORDER FOTO PROFIL (efek animasi + partikel)
            Kelas jenis border: bd-default, bd-none, bd-emas, bd-pelangi,
            bd-neon, bd-api, bd-es, bd-galaksi, bd-hati
            ===================================================================== */
@@ -255,6 +255,13 @@
             pointer-events: none;
             opacity: 0;
             border: 2px solid var(--bd-ring);
+        }
+
+        /* Kanvas partikel (dibuat oleh public/js/avatar-fx.js) */
+        .fx-canvas {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
         }
 
         @keyframes bdSpin   { to { transform: rotate(360deg); } }
@@ -1243,7 +1250,9 @@
 
         {{-- INFORMASI PROFIL --}}
         <section class="head">
-            <div class="avatar-wrap bd-{{ $avatarBorder }}">
+            <div class="avatar-wrap bd-{{ $avatarBorder }}"
+                 data-fx="{{ $avatarBorder }}"
+                 data-fx-pad="34">
                 @if($user->avatar_path)
                     <img
                         class="avatar"
@@ -1710,6 +1719,12 @@
             requestAnimationFrame(step);
         });
     })();
+</script>
+
+{{-- Efek partikel border foto profil (public/js/avatar-fx.js) --}}
+<script src="{{ asset('js/avatar-fx.js') }}"></script>
+<script>
+    AvatarFX.auto();
 </script>
 
 @if($bgType === 'salju')
