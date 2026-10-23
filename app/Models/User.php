@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Concerns\HasFriends;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -14,6 +15,22 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasFriends;
+
+    /**
+     * Daftar border foto profil yang valid.
+     * Harus sama dengan kelas CSS .bd-* di halaman profil & edit profil.
+     */
+    public const AVATAR_BORDERS = [
+        'default',
+        'none',
+        'emas',
+        'pelangi',
+        'neon',
+        'api',
+        'es',
+        'galaksi',
+        'hati',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -33,6 +50,9 @@ class User extends Authenticatable
         'domicile',
         'bio',
         'avatar_path',
+
+        // Border foto profil
+        'avatar_border',
 
         // Sampul profil
         'cover_type',
@@ -70,6 +90,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -81,5 +102,32 @@ class User extends Authenticatable
     public function favoritePlaces(): HasMany
     {
         return $this->hasMany(FavoritePlace::class);
+    }
+
+    /* ----------------------------- ADMIN ----------------------------- */
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /** Rencana perjalanan milik pengguna. */
+    public function travelPlans(): HasMany
+    {
+        return $this->hasMany(TravelPlan::class);
+    }
+
+    /** Hitung teman (status accepted) tanpa query berulang. */
+    public function scopeWithFriendsCount(Builder $query): Builder
+    {
+        return $query->withCount([
+            'sentRequests as sent_friends_count'         => fn ($q) => $q->where('status', 'accepted'),
+            'receivedRequests as received_friends_count' => fn ($q) => $q->where('status', 'accepted'),
+        ]);
+    }
+
+    public function getFriendsTotalAttribute(): int
+    {
+        return (int) ($this->sent_friends_count ?? 0) + (int) ($this->received_friends_count ?? 0);
     }
 }

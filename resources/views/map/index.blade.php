@@ -633,6 +633,236 @@
         white-space: nowrap;
     }
 
+    /* =====================================================
+       PANEL RUTE
+    ====================================================== */
+    #routePanel {
+        display: none;
+        position: absolute;
+        right: 20px;
+        bottom: 25px;
+        width: 340px;
+        max-height: 80vh;
+        z-index: 2500;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, .35);
+        overflow: hidden;
+        flex-direction: column;
+    }
+
+    #routePanel.show {
+        display: flex;
+    }
+
+    .route-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 13px 16px;
+        background: #111827;
+        color: #fff;
+    }
+
+    .route-header strong {
+        font-size: 14px;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    #routeClose {
+        border: none;
+        background: transparent;
+        color: #fff;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .route-body {
+        padding: 13px 14px 14px;
+        overflow-y: auto;
+    }
+
+    .route-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+
+    #routeOrigin {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 12.5px;
+        background: #fff;
+        color: #1f2937;
+        cursor: pointer;
+        margin-bottom: 12px;
+    }
+
+    .route-modes {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .route-mode-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 8px 4px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s;
+    }
+
+    .route-mode-btn .route-mode-icon {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .route-mode-btn:hover {
+        background: #f8fafc;
+    }
+
+    .route-mode-btn.active {
+        border-color: var(--mode-color, #2563eb);
+        background: #eff6ff;
+        color: #0f172a;
+    }
+
+    #routeSummary {
+        margin-bottom: 10px;
+    }
+
+    .route-info-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 10px;
+        background: #f1f5f9;
+    }
+
+    .route-info-time {
+        font-size: 20px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    .route-info-dist {
+        font-size: 12.5px;
+        color: #475569;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+
+    .route-info-icon {
+        font-size: 30px;
+    }
+
+    .route-note {
+        margin-top: 6px;
+        font-size: 10.5px;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+
+    .route-msg {
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    .route-msg.loading {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .route-msg.error {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    #routeSteps {
+        max-height: 190px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    #routeSteps:empty {
+        display: none;
+    }
+
+    .route-step {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 11px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 12px;
+        color: #334155;
+        line-height: 1.4;
+    }
+
+    .route-step:last-child {
+        border-bottom: none;
+    }
+
+    .route-step-dist {
+        flex-shrink: 0;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 11px;
+    }
+
+    #routeGmaps {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+    }
+
+    #routeGmaps:hover {
+        text-decoration: underline;
+    }
+
+    .route-origin-marker {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, .3), 0 2px 8px rgba(0, 0, 0, .4);
+    }
+
     /* RESPONSIVE */
     @media (max-width: 600px) {
         .header {
@@ -660,6 +890,15 @@
             right: 15px;
             bottom: 15px;
             max-width: none;
+        }
+
+        #routePanel {
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            width: auto;
+            max-height: 62vh;
+            z-index: 3000;
         }
     }
 </style>
@@ -693,6 +932,50 @@
 
     <!-- TOAST NOTIFIKASI -->
     <div id="toast" role="status" aria-live="polite"></div>
+
+
+    <!-- PANEL RUTE -->
+    <div id="routePanel">
+
+        <div class="route-header">
+            <strong id="routeTitle">🧭 Rute</strong>
+            <button type="button" id="routeClose" title="Tutup rute">×</button>
+        </div>
+
+        <div class="route-body">
+
+            <label class="route-label" for="routeOrigin">Titik awal</label>
+            <select id="routeOrigin">
+                <option value="me">📍 Lokasi saya</option>
+                <option value="city">🏙️ Pusat kota yang dipilih</option>
+            </select>
+
+            <span class="route-label">Pilih kendaraan</span>
+            <div class="route-modes" id="routeModes">
+                <button type="button" class="route-mode-btn active" data-mode="car" style="--mode-color:#2563eb">
+                    <span class="route-mode-icon">🚗</span><span>Mobil</span>
+                </button>
+                <button type="button" class="route-mode-btn" data-mode="motor" style="--mode-color:#ea580c">
+                    <span class="route-mode-icon">🏍️</span><span>Motor</span>
+                </button>
+                <button type="button" class="route-mode-btn" data-mode="bike" style="--mode-color:#16a34a">
+                    <span class="route-mode-icon">🚲</span><span>Sepeda</span>
+                </button>
+                <button type="button" class="route-mode-btn" data-mode="foot" style="--mode-color:#9333ea">
+                    <span class="route-mode-icon">🚶</span><span>Jalan</span>
+                </button>
+            </div>
+
+            <div id="routeSummary"></div>
+            <div id="routeSteps"></div>
+
+            <a id="routeGmaps" href="#" target="_blank" rel="noopener noreferrer">
+                Buka di Google Maps ↗
+            </a>
+
+        </div>
+
+    </div>
 
 
     <!-- SEARCH BUTTON -->
@@ -1034,6 +1317,16 @@
         const placeRatingFilter = document.getElementById('placeRatingFilter');
         const placeResultCount = document.getElementById('placeResultCount');
 
+        /* ROUTE ELEMENT */
+        const routePanel = document.getElementById('routePanel');
+        const routeTitle = document.getElementById('routeTitle');
+        const routeClose = document.getElementById('routeClose');
+        const routeOriginSelect = document.getElementById('routeOrigin');
+        const routeModesWrap = document.getElementById('routeModes');
+        const routeSummary = document.getElementById('routeSummary');
+        const routeSteps = document.getElementById('routeSteps');
+        const routeGmaps = document.getElementById('routeGmaps');
+
 
         /* =====================================================
            STATE
@@ -1061,6 +1354,15 @@
         let weatherTimer = null;
         let provinceRequestId = 0;
         const WEATHER_REFRESH_MS = 5 * 60 * 1000;
+
+        // State RUTE
+        let routeDestination = null;      // { lat, lng, name, googleUrl }
+        let routeMode = 'car';            // car | motor | bike | foot
+        let routeOriginType = 'me';       // me | city
+        let routeLayer = null;            // layer garis rute
+        let routeOriginMarker = null;     // marker titik awal
+        let routeRequestId = 0;           // untuk membatalkan request lama
+        let userLocation = null;          // { lat, lng } hasil GPS
 
         /* =====================================================
            WARNA UNIK UNTUK SETIAP KOTA
@@ -2159,8 +2461,8 @@
                 ).addTo(map);
 
             currentCityMarker.bindPopup(`
-                <div class="place-popup-title">${name}</div>
-                <div class="place-popup-type">${address}</div>
+                <div class="place-popup-title">${escapeHtml(name)}</div>
+                <div class="place-popup-type">${escapeHtml(address)}</div>
             `);
 
             currentCityMarker.openPopup();
@@ -2255,6 +2557,8 @@
 
                 currentProvince = null;
                 currentCity = null;
+
+                clearPlaceMarkers();
 
                 categoryOptions.style.display = 'none';
                 placeSearchPanel.style.display = 'none';
@@ -2452,7 +2756,7 @@
                                 </div>
 
                                 <a
-                                    href="${googleMapsUrl}"
+                                    href="${escapeHtml(googleMapsUrl)}"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="place-google-btn"
@@ -2590,6 +2894,7 @@
 
         function showSelectedPlace(place, category) {
 
+            // Hapus marker lama sekaligus rute lama
             clearPlaceMarkers();
 
             const icon = createPlaceIcon(category);
@@ -2655,15 +2960,15 @@
                 ` : ''}
 
                 <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-                    <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer"
+                    <a href="${escapeHtml(googleMapsUrl)}" target="_blank" rel="noopener noreferrer"
                         style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1a73e8;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         Google Maps ↗
                     </a>
-                    <a href="${directionUrl}" target="_blank" rel="noopener noreferrer"
-                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#fff;color:#1a73e8;border:1px solid #1a73e8;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;">
-                        🚗 Rute
-                    </a>
+                    <button type="button" class="route-open-btn"
+                        style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#fff;color:#1a73e8;border:1px solid #1a73e8;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;">
+                        🧭 Rute
+                    </button>
                     ${favoriteButton}
                 </div>
             `);
@@ -2692,6 +2997,22 @@
                 const popupEl = e.popup.getElement();
                 if (!popupEl) return;
 
+                /* ---- Tombol RUTE (garis langsung di peta) ---- */
+                const routeBtn = popupEl.querySelector('.route-open-btn');
+                if (routeBtn) {
+                    routeBtn.onclick = function (ev) {
+                        ev.stopPropagation();
+                        map.closePopup();
+                        openRoutePanel({
+                            lat: latitude,
+                            lng: longitude,
+                            name: place.name || 'Tempat tujuan',
+                            googleUrl: directionUrl
+                        });
+                    };
+                }
+
+                /* ---- Tombol FAVORIT ---- */
                 const btn = popupEl.querySelector('.favorite-toggle-btn');
                 if (!btn) return;
 
@@ -2788,10 +3109,413 @@
             placeMarkers = [];
             selectedPlaceMarker = null;
             clearPlaces.style.display = 'none';
+
+            // Rute ikut dihapus karena tujuannya sudah tidak ada
+            closeRoutePanel();
         }
 
         clearPlaces.addEventListener('click', function () {
             clearPlaceMarkers();
+        });
+
+
+        /* =====================================================
+           RUTE DI PETA (OSRM - routing.openstreetmap.de)
+           - Mobil  : profil mobil
+           - Motor  : jaringan jalan mobil, estimasi waktu disesuaikan
+           - Sepeda : profil sepeda
+           - Jalan  : profil pejalan kaki
+        ====================================================== */
+
+        const ROUTE_BASE = 'https://routing.openstreetmap.de/';
+
+        const routeModes = {
+            car: {
+                label: 'Mobil',
+                icon: '🚗',
+                profile: 'routed-car',
+                color: '#2563eb',
+                dash: null,
+                speedKmh: null,        // pakai durasi dari server
+                durationFactor: 1,
+                note: ''
+            },
+            motor: {
+                label: 'Motor',
+                icon: '🏍️',
+                profile: 'routed-car',
+                color: '#ea580c',
+                dash: null,
+                speedKmh: null,
+                durationFactor: 0.85,  // motor biasanya sedikit lebih cepat di kota
+                note: 'Jalur memakai jaringan jalan mobil. Waktu hanya perkiraan.'
+            },
+            bike: {
+                label: 'Sepeda',
+                icon: '🚲',
+                profile: 'routed-bike',
+                color: '#16a34a',
+                dash: null,
+                speedKmh: 15,
+                durationFactor: 1,
+                note: 'Estimasi waktu dihitung dengan kecepatan rata-rata 15 km/jam.'
+            },
+            foot: {
+                label: 'Jalan kaki',
+                icon: '🚶',
+                profile: 'routed-foot',
+                color: '#9333ea',
+                dash: '2 10',
+                speedKmh: 5,
+                durationFactor: 1,
+                note: 'Estimasi waktu dihitung dengan kecepatan rata-rata 5 km/jam.'
+            }
+        };
+
+        function formatDistance(meters) {
+            const m = Number(meters);
+            if (!Number.isFinite(m)) return '-';
+            if (m < 1000) return Math.round(m) + ' m';
+            return (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+        }
+
+        function formatDuration(seconds) {
+            const s = Number(seconds);
+            if (!Number.isFinite(s)) return '-';
+            const totalMinutes = Math.max(1, Math.round(s / 60));
+            if (totalMinutes < 60) return totalMinutes + ' mnt';
+            const h = Math.floor(totalMinutes / 60);
+            const mnt = totalMinutes % 60;
+            if (h >= 24) {
+                const d = Math.floor(h / 24);
+                return d + ' hr ' + (h % 24) + ' j';
+            }
+            return h + ' j' + (mnt ? ' ' + mnt + ' mnt' : '');
+        }
+
+        function stepInstruction(step) {
+            const m = step.maneuver || {};
+            const road = step.name ? ' ke ' + step.name : '';
+            const modMap = {
+                'left': 'kiri',
+                'right': 'kanan',
+                'slight left': 'serong kiri',
+                'slight right': 'serong kanan',
+                'sharp left': 'tajam ke kiri',
+                'sharp right': 'tajam ke kanan',
+                'straight': 'lurus',
+                'uturn': 'putar balik'
+            };
+            const mod = modMap[m.modifier] || '';
+
+            switch (m.type) {
+                case 'depart':
+                    return 'Mulai perjalanan' + (step.name ? ' di ' + step.name : '');
+                case 'arrive':
+                    return 'Anda tiba di tujuan';
+                case 'turn':
+                    if (m.modifier === 'straight') return 'Lurus' + road;
+                    if (m.modifier === 'uturn') return 'Putar balik';
+                    return 'Belok ' + mod + road;
+                case 'end of road':
+                    if (m.modifier === 'uturn') return 'Putar balik di ujung jalan';
+                    return 'Di ujung jalan belok ' + mod + road;
+                case 'fork':
+                    return 'Ambil percabangan ' + (mod || 'lurus') + road;
+                case 'merge':
+                    return 'Bergabung' + road;
+                case 'on ramp':
+                    return 'Masuk jalur' + road;
+                case 'off ramp':
+                    return 'Keluar dari jalur' + road;
+                case 'roundabout':
+                case 'rotary':
+                    return 'Masuk bundaran' + (m.exit ? ', ambil exit ke-' + m.exit : '') + road;
+                case 'roundabout turn':
+                    return 'Di bundaran belok ' + mod + road;
+                case 'new name':
+                case 'continue':
+                    return 'Lanjut' + (road || ' lurus');
+                default:
+                    return 'Lanjut' + road;
+            }
+        }
+
+        function clearRouteLayers() {
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+                routeLayer = null;
+            }
+            if (routeOriginMarker) {
+                map.removeLayer(routeOriginMarker);
+                routeOriginMarker = null;
+            }
+        }
+
+        function closeRoutePanel() {
+            routeRequestId++;           // batalkan request yang masih jalan
+            routeDestination = null;
+            clearRouteLayers();
+            if (routePanel) routePanel.classList.remove('show');
+            if (routeSummary) routeSummary.innerHTML = '';
+            if (routeSteps) routeSteps.innerHTML = '';
+        }
+
+        function setRouteModeButtons() {
+            routeModesWrap.querySelectorAll('.route-mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === routeMode);
+            });
+        }
+
+        function openRoutePanel(destination) {
+            routeDestination = destination;
+
+            routeTitle.textContent = '🧭 Rute ke ' + destination.name;
+            routeGmaps.href = destination.googleUrl || '#';
+
+            // Jika kota sudah dipilih, "pusat kota" tersedia sebagai titik awal
+            const cityOption = routeOriginSelect.querySelector('option[value="city"]');
+            if (cityOption) {
+                const cityName = currentCity ? currentCity.name : 'kota';
+                cityOption.textContent = '🏙️ Pusat ' + cityName;
+            }
+
+            routeOriginSelect.value = routeOriginType;
+            setRouteModeButtons();
+
+            routePanel.classList.add('show');
+            loadRoute();
+        }
+
+        async function getUserLocation() {
+            if (userLocation) return userLocation;
+
+            if (!('geolocation' in navigator)) {
+                throw new Error('Browser tidak mendukung GPS.');
+            }
+
+            return new Promise(function (resolve, reject) {
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        userLocation = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+                        resolve(userLocation);
+                    },
+                    function (err) {
+                        reject(new Error(
+                            err && err.code === 1
+                                ? 'Izin lokasi ditolak.'
+                                : 'Lokasi Anda tidak dapat ditentukan.'
+                        ));
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            });
+        }
+
+        function getCityOrigin() {
+            if (currentCity && Number.isFinite(Number(currentCity.latitude)) && Number.isFinite(Number(currentCity.longitude))) {
+                return {
+                    lat: Number(currentCity.latitude),
+                    lng: Number(currentCity.longitude),
+                    label: 'Pusat ' + currentCity.name
+                };
+            }
+            return null;
+        }
+
+        async function resolveRouteOrigin() {
+
+            if (routeOriginType === 'me') {
+                try {
+                    const loc = await getUserLocation();
+                    return { lat: loc.lat, lng: loc.lng, label: 'Lokasi saya' };
+                } catch (err) {
+                    const fallback = getCityOrigin();
+                    if (fallback) {
+                        routeOriginType = 'city';
+                        routeOriginSelect.value = 'city';
+                        showToast((err.message || 'Lokasi tidak tersedia.') + ' Memakai pusat kota sebagai titik awal.', null, true);
+                        return fallback;
+                    }
+                    throw err;
+                }
+            }
+
+            const cityOrigin = getCityOrigin();
+            if (cityOrigin) return cityOrigin;
+
+            throw new Error('Pusat kota belum tersedia. Pilih kota terlebih dahulu.');
+        }
+
+        function renderRouteMessage(type, html) {
+            routeSummary.innerHTML = `<div class="route-msg ${type}">${html}</div>`;
+            routeSteps.innerHTML = '';
+        }
+
+        async function loadRoute() {
+
+            if (!routeDestination) return;
+
+            const requestId = ++routeRequestId;
+            const mode = routeModes[routeMode];
+
+            clearRouteLayers();
+            renderRouteMessage('loading', '⏳ Mencari rute ' + mode.label.toLowerCase() + '...');
+
+            try {
+                const origin = await resolveRouteOrigin();
+                if (requestId !== routeRequestId) return;
+
+                const dest = routeDestination;
+
+                const url =
+                    ROUTE_BASE + mode.profile + '/route/v1/driving/' +
+                    origin.lng + ',' + origin.lat + ';' +
+                    dest.lng + ',' + dest.lat + '?' +
+                    new URLSearchParams({
+                        overview: 'full',
+                        geometries: 'geojson',
+                        steps: 'true',
+                        alternatives: 'false'
+                    });
+
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Layanan rute tidak merespons (' + response.status + ').');
+                }
+
+                const data = await response.json();
+                if (requestId !== routeRequestId) return;
+
+                if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                    throw new Error(
+                        data.code === 'NoRoute'
+                            ? 'Rute ' + mode.label.toLowerCase() + ' tidak ditemukan (mungkin terpisah laut/pulau atau tidak ada akses jalan).'
+                            : 'Rute tidak ditemukan.'
+                    );
+                }
+
+                drawRoute(data.routes[0], origin, mode);
+
+            } catch (error) {
+                if (requestId !== routeRequestId) return;
+                console.error('Rute:', error);
+                renderRouteMessage('error', '❌ ' + escapeHtml(error.message || 'Gagal mengambil rute.'));
+            }
+        }
+
+        function drawRoute(route, origin, mode) {
+
+            clearRouteLayers();
+
+            const distance = route.distance;
+
+            // Hitung durasi sesuai kendaraan
+            let duration;
+            if (mode.speedKmh) {
+                duration = (distance / 1000) / mode.speedKmh * 3600;
+            } else {
+                duration = route.duration * mode.durationFactor;
+            }
+
+            // Garis rute: lapisan putih (casing) + lapisan warna
+            const casing = L.geoJSON(route.geometry, {
+                style: { color: '#ffffff', weight: 10, opacity: 0.95, lineCap: 'round', lineJoin: 'round' },
+                interactive: false
+            });
+
+            const line = L.geoJSON(route.geometry, {
+                style: {
+                    color: mode.color,
+                    weight: 6,
+                    opacity: 0.95,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    dashArray: mode.dash || null
+                },
+                interactive: false
+            });
+
+            routeLayer = L.layerGroup([casing, line]).addTo(map);
+
+            // Marker titik awal
+            routeOriginMarker = L.marker([origin.lat, origin.lng], {
+                icon: L.divIcon({
+                    className: '',
+                    html: '<div class="route-origin-marker"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                }),
+                keyboard: false
+            }).addTo(map);
+
+            routeOriginMarker.bindTooltip(escapeHtml(origin.label), { direction: 'top', offset: [0, -8] });
+
+            // Pastikan marker tujuan tetap di atas garis
+            if (selectedPlaceMarker) selectedPlaceMarker.setZIndexOffset(1000);
+
+            // Zoom agar seluruh rute terlihat
+            map.fitBounds(line.getBounds(), {
+                padding: [70, 70],
+                maxZoom: 17,
+                animate: true,
+                duration: 1.2
+            });
+
+            // Ringkasan
+            routeSummary.innerHTML = `
+                <div class="route-info-card" style="border-left:4px solid ${mode.color};">
+                    <div>
+                        <div class="route-info-time">${escapeHtml(formatDuration(duration))}</div>
+                        <div class="route-info-dist">${escapeHtml(formatDistance(distance))} • dari ${escapeHtml(origin.label)}</div>
+                    </div>
+                    <div class="route-info-icon">${mode.icon}</div>
+                </div>
+                ${mode.note ? `<div class="route-note">${escapeHtml(mode.note)}</div>` : ''}
+            `;
+
+            // Petunjuk belokan
+            const steps = [];
+            (route.legs || []).forEach(leg => {
+                (leg.steps || []).forEach(step => steps.push(step));
+            });
+
+            routeSteps.innerHTML = steps.map(step => `
+                <div class="route-step">
+                    <span>${escapeHtml(stepInstruction(step))}</span>
+                    <span class="route-step-dist">${step.distance > 0 ? escapeHtml(formatDistance(step.distance)) : ''}</span>
+                </div>
+            `).join('');
+        }
+
+        /* Event: pilih kendaraan */
+        routeModesWrap.addEventListener('click', function (event) {
+            const btn = event.target.closest('.route-mode-btn');
+            if (!btn) return;
+
+            const newMode = btn.dataset.mode;
+            if (!routeModes[newMode] || newMode === routeMode) return;
+
+            routeMode = newMode;
+            setRouteModeButtons();
+            loadRoute();
+        });
+
+        /* Event: ganti titik awal */
+        routeOriginSelect.addEventListener('change', function () {
+            routeOriginType = this.value;
+            loadRoute();
+        });
+
+        /* Event: tutup rute */
+        routeClose.addEventListener('click', function () {
+            closeRoutePanel();
         });
 
 

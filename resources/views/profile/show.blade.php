@@ -222,11 +222,106 @@
             z-index: 1;
         }
 
+        /* =====================================================================
+           BORDER FOTO PROFIL (efek animasi)
+           Kelas jenis border: bd-default, bd-none, bd-emas, bd-pelangi,
+           bd-neon, bd-api, bd-es, bd-galaksi, bd-hati
+           ===================================================================== */
         .avatar-wrap {
+            --bd-glow: rgba(225, 29, 72, .32);
+            --bd-ring: transparent;
+            position: relative;
+            isolation: isolate;
             padding: 5px;
             border-radius: 50%;
+            box-shadow: 0 14px 30px var(--bd-glow);
+        }
+
+        .avatar-wrap::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            z-index: -1;
             background: var(--grad);
-            box-shadow: 0 14px 30px rgba(225, 29, 72, .32);
+        }
+
+        .avatar-wrap::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            z-index: -2;
+            pointer-events: none;
+            opacity: 0;
+            border: 2px solid var(--bd-ring);
+        }
+
+        @keyframes bdSpin   { to { transform: rotate(360deg); } }
+        @keyframes bdRipple {
+            0%   { transform: scale(1);    opacity: .85; }
+            100% { transform: scale(1.3);  opacity: 0; }
+        }
+        @keyframes bdGlow {
+            from { box-shadow: 0 0 8px 0 var(--bd-glow); }
+            to   { box-shadow: 0 0 30px 6px var(--bd-glow); }
+        }
+        @keyframes bdFlicker {
+            0%, 100% { box-shadow: 0 0 14px 2px var(--bd-glow); }
+            30%      { box-shadow: 0 0 28px 7px var(--bd-glow); }
+            55%      { box-shadow: 0 0 10px 1px var(--bd-glow); }
+            78%      { box-shadow: 0 0 24px 5px var(--bd-glow); }
+        }
+        @keyframes bdBeat {
+            0%, 100% { transform: scale(1); }
+            14%      { transform: scale(1.06); }
+            28%      { transform: scale(1); }
+            42%      { transform: scale(1.09); }
+            70%      { transform: scale(1); }
+        }
+
+        /* Polos */
+        .bd-none { --bd-glow: rgba(15, 23, 42, .18); }
+        .bd-none::before { background: #fff; }
+
+        /* Emas */
+        .bd-emas { --bd-glow: rgba(245, 158, 11, .6); --bd-ring: #fbbf24; animation: bdGlow 2.4s ease-in-out infinite alternate; }
+        .bd-emas::before { background: conic-gradient(from 0deg, #b45309, #fde68a, #f59e0b, #fff7ad, #b45309); animation: bdSpin 4s linear infinite; }
+        .bd-emas::after { animation: bdRipple 2.2s ease-out infinite; }
+
+        /* Pelangi */
+        .bd-pelangi { --bd-glow: rgba(139, 92, 246, .4); }
+        .bd-pelangi::before { background: conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444); animation: bdSpin 3s linear infinite; }
+
+        /* Neon */
+        .bd-neon { --bd-glow: rgba(34, 211, 238, .75); --bd-ring: #22d3ee; animation: bdGlow 1.4s ease-in-out infinite alternate; }
+        .bd-neon::before { background: conic-gradient(#22d3ee, #a855f7, #22d3ee, #a855f7, #22d3ee); animation: bdSpin 6s linear infinite; }
+        .bd-neon::after { animation: bdRipple 1.8s ease-out infinite; }
+
+        /* Api */
+        .bd-api { --bd-glow: rgba(249, 115, 22, .75); --bd-ring: #fb923c; animation: bdFlicker 1.1s ease-in-out infinite; }
+        .bd-api::before { background: conic-gradient(#ef4444, #f97316, #facc15, #f97316, #ef4444); animation: bdSpin 2.4s linear infinite; }
+        .bd-api::after { animation: bdRipple 1.5s ease-out infinite; }
+
+        /* Es */
+        .bd-es { --bd-glow: rgba(56, 189, 248, .6); --bd-ring: #7dd3fc; animation: bdGlow 3s ease-in-out infinite alternate; }
+        .bd-es::before { background: conic-gradient(#e0f2fe, #38bdf8, #ffffff, #7dd3fc, #e0f2fe); animation: bdSpin 5s linear infinite; }
+        .bd-es::after { animation: bdRipple 2.6s ease-out infinite; }
+
+        /* Galaksi */
+        .bd-galaksi { --bd-glow: rgba(124, 58, 237, .65); --bd-ring: #a78bfa; animation: bdGlow 2s ease-in-out infinite alternate; }
+        .bd-galaksi::before { background: conic-gradient(#1e1b4b, #7c3aed, #ec4899, #3b82f6, #1e1b4b); animation: bdSpin 4s linear infinite; }
+        .bd-galaksi::after { animation: bdRipple 2.4s ease-out infinite; }
+
+        /* Hati (detak jantung) */
+        .bd-hati { --bd-glow: rgba(244, 63, 94, .6); --bd-ring: #fb7185; animation: bdBeat 1.4s ease-in-out infinite; }
+        .bd-hati::before { background: linear-gradient(135deg, #f472b6, #e11d48 55%, #fb7185); }
+        .bd-hati::after { animation: bdRipple 1.4s ease-out infinite; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .avatar-wrap,
+            .avatar-wrap::before,
+            .avatar-wrap::after { animation: none !important; }
         }
 
         .avatar {
@@ -1005,6 +1100,12 @@
         return asset('storage/' . $path);
     };
 
+    // ===== Border foto profil =====
+    $allowedBorders = ['default', 'none', 'emas', 'pelangi', 'neon', 'api', 'es', 'galaksi', 'hati'];
+    $avatarBorder   = in_array($user->avatar_border ?? null, $allowedBorders, true)
+        ? $user->avatar_border
+        : 'default';
+
     // ===== Teman =====
     // Butuh: trait HasFriends di model User + tabel friendships.
     $friendCount        = $user->friends()->count();
@@ -1142,7 +1243,7 @@
 
         {{-- INFORMASI PROFIL --}}
         <section class="head">
-            <div class="avatar-wrap">
+            <div class="avatar-wrap bd-{{ $avatarBorder }}">
                 @if($user->avatar_path)
                     <img
                         class="avatar"

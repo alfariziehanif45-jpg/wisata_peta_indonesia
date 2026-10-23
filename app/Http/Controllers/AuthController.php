@@ -34,6 +34,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // Catat waktu login terakhir (untuk panel admin)
+        $user->forceFill(['last_login_at' => now()])->save();
+
         // Hapus URL "intended" lama agar tidak nyasar ke endpoint API
         $request->session()->forget('url.intended');
 
@@ -61,6 +64,18 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+
+        $user = Auth::user();
+
+        // Catat waktu login terakhir (untuk panel admin)
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        // ADMIN: langsung masuk ke dashboard admin
+        if ($user->isAdmin()) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('admin.dashboard');
+        }
 
         // Jika URL tujuan sebelumnya adalah endpoint API / AJAX, abaikan
         $intended = $request->session()->get('url.intended', '');

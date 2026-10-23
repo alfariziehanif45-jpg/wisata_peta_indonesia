@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\FavoritePlaceController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\Admin;
 
 /*
 |--------------------------------------------------------------------------
@@ -155,7 +156,7 @@ Route::middleware('auth')->group(function () {
         ->name('friends.index');
 
     // Lihat profil teman (hanya baca). Memakai {user} sehingga tidak bentrok
-    // dengan route PATCH/DELETE {friendship} di bawah (beda method).
+    // dengan route PATCH/DELETE {friendship} di bawah (beda method & segmen).
     Route::get('/friends/{user}', [FriendController::class, 'show'])
         ->name('friends.show');
 
@@ -172,3 +173,28 @@ Route::middleware('auth')->group(function () {
     Route::delete('/friends/{friendship}', [FriendController::class, 'destroy'])
         ->name('friends.destroy');
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        Route::get('/', [Admin\DashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/users', [Admin\UserController::class, 'index'])
+            ->name('users.index');
+
+        Route::get('/users/{user}', [Admin\UserController::class, 'show'])
+            ->name('users.show');
+
+        Route::get('/places', [Admin\PlaceController::class, 'index'])
+            ->name('places.index');
+    });

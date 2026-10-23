@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FavoritePlace;
 use App\Models\TravelPlan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -79,6 +80,9 @@ class ProfileController extends Controller
 
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
+            // ===== Border foto profil =====
+            'avatar_border' => ['nullable', Rule::in(User::AVATAR_BORDERS)],
+
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
 
             // ===== Sampul profil (foto/video bagian atas) =====
@@ -118,6 +122,9 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($oldAvatar);
             }
         }
+
+        // Border foto profil (kosong / tidak dikenal = 'default')
+        $user->avatar_border = $validated['avatar_border'] ?? 'default';
 
         // Password
         if (!empty($validated['password'])) {
