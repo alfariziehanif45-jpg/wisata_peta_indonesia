@@ -2,6 +2,14 @@
 @section('title', 'Daftar')
 @section('heading', 'Buat akun baru')
 @section('content')
+
+{{-- Pesulap membuka pertunjukan: tirai terbuka, menyapa, lalu halaman daftar muncul --}}
+@include('auth.partials.magic-show', [
+    'id'      => 'regIntro',
+    'variant' => 'open',
+    'line'    => 'Selamat datang di pertunjukan!',
+])
+
 <form method="POST" action="{{ route('register.store') }}">
     @csrf
     <label for="name">Nama lengkap</label>
