@@ -3,10 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\FavoritePlaceController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\Admin;
 
 /*
@@ -32,6 +34,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])
         ->middleware('throttle:10,1')
         ->name('register.store');
+
+    // Login / daftar dengan Google
+    Route::get('/auth/google', [GoogleController::class, 'redirect'])
+        ->name('google.redirect');
+
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])
+        ->name('google.callback');
 });
 
 // Logout
@@ -168,6 +177,12 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/friends/{friendship}', [FriendController::class, 'destroy'])
         ->name('friends.destroy');
+
+
+    // Laporan & Saran (kirim ke zaykayla575@gmail.com)
+    Route::post('/feedback', [FeedbackController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('feedback.store');
 });
 
 
@@ -185,12 +200,45 @@ Route::middleware(['auth', 'admin'])
         Route::get('/', [Admin\DashboardController::class, 'index'])
             ->name('dashboard');
 
+        // Pengguna (pantau)
         Route::get('/users', [Admin\UserController::class, 'index'])
             ->name('users.index');
 
         Route::get('/users/{user}', [Admin\UserController::class, 'show'])
             ->name('users.show');
 
+        // Daftar role kustom (pantau)
+        Route::get('/roles', [Admin\CustomRoleController::class, 'index'])
+            ->name('roles.index');
+
+        // Tempat (pantau)
         Route::get('/places', [Admin\PlaceController::class, 'index'])
             ->name('places.index');
+
+        // =====================================================================
+        // AKSI KHUSUS OWNER (Admin hanya bisa memantau, tidak bisa ubah/cabut role)
+        // =====================================================================
+        Route::middleware('owner')->group(function () {
+            // Ubah role sistem (Pengguna Biasa, Admin, Owner) - berikan atau cabut admin
+            Route::put('/users/{user}/system-role', [Admin\UserRoleController::class, 'updateSystemRole'])
+                ->name('users.system-role.update');
+
+            // Atur role kustom milik satu pengguna (boleh banyak)
+            Route::put('/users/{user}/roles', [Admin\UserRoleController::class, 'update'])
+                ->name('users.roles.update');
+
+            // Buat role kustom baru langsung dari daftar pengguna + otomatis diberikan ke user itu
+            Route::post('/users/{user}/roles/create', [Admin\CustomRoleController::class, 'storeAndAssign'])
+                ->name('users.roles.create');
+
+            // Kelola daftar role kustom (tambah, edit, hapus)
+            Route::post('/roles', [Admin\CustomRoleController::class, 'store'])
+                ->name('roles.store');
+
+            Route::put('/roles/{role}', [Admin\CustomRoleController::class, 'update'])
+                ->name('roles.update');
+
+            Route::delete('/roles/{role}', [Admin\CustomRoleController::class, 'destroy'])
+                ->name('roles.destroy');
+        });
     });

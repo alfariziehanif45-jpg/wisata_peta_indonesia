@@ -7,6 +7,7 @@ use App\Models\Concerns\HasFriends;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -44,6 +45,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+
+        // Login Google
+        'google_id',
 
         // Profil
         'username',
@@ -104,11 +108,55 @@ class User extends Authenticatable
         return $this->hasMany(FavoritePlace::class);
     }
 
-    /* ----------------------------- ADMIN ----------------------------- */
+    /* ---------------------- ROLE & AKSES SISTEM ---------------------- */
 
+    /**
+     * Apakah pengguna adalah Owner (hak akses tertinggi, bisa atur semua role).
+     */
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    /**
+     * Apakah pengguna adalah Admin (hanya bisa memantau, tidak bisa atur role).
+     */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Apakah pengguna memiliki akses masuk ke panel manajemen (Admin / Owner).
+     */
+    public function hasAdminAccess(): bool
+    {
+        return in_array($this->role, ['admin', 'owner'], true);
+    }
+
+    /**
+     * Label nama role sistem pengguna.
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'owner' => 'Owner',
+            'admin' => 'Admin',
+            default => 'Pengguna',
+        };
+    }
+
+    /* ------------------------- ROLE KUSTOM --------------------------- */
+
+    /**
+     * Role kustom (label) milik pengguna. Boleh lebih dari satu.
+     * Diurutkan sesuai waktu role diberikan.
+     */
+    public function customRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(CustomRole::class, 'custom_role_user')
+            ->withTimestamps()
+            ->orderByPivot('created_at');
     }
 
     /** Rencana perjalanan milik pengguna. */

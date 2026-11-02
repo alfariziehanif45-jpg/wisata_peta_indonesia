@@ -3,19 +3,50 @@
 @section('title', 'Daftar Pengguna')
 
 @section('content')
+@php $allRoles = \App\Models\CustomRole::orderBy('name')->get(); @endphp
+
 <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
     <div>
         <h1 class="text-3xl font-bold">Daftar Pengguna</h1>
-        <p class="mt-1 text-gray-500">Lihat siapa saja yang login, favorit, rencana perjalanan, dan jumlah teman.</p>
+        <p class="mt-1 text-gray-500">
+            Lihat siapa saja yang login, favorit, rencana perjalanan, jumlah teman, dan
+            @if(auth()->user()->isOwner())
+                kelola role pengguna.
+            @else
+                pantau aktivitas pengguna (Mode Pantau).
+            @endif
+        </p>
     </div>
 
-    <form method="GET" class="flex gap-2">
-        <input type="hidden" name="status" value="{{ $status }}">
-        <input type="text" name="q" value="{{ $search }}" placeholder="Cari nama / email / username"
-               class="w-64 rounded-lg border px-3 py-2 text-sm">
-        <button class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">Cari</button>
-    </form>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('admin.roles.index') }}"
+           class="rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+            @if(auth()->user()->isOwner())
+                🏷️ Kelola Role
+            @else
+                👁️ Lihat Daftar Role
+            @endif
+        </a>
+
+        <form method="GET" class="flex gap-2">
+            <input type="hidden" name="status" value="{{ $status }}">
+            <input type="text" name="q" value="{{ $search }}" placeholder="Cari nama / email / username"
+                   class="w-64 rounded-lg border px-3 py-2 text-sm">
+            <button class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">Cari</button>
+        </form>
+    </div>
 </div>
+
+@if (session('success'))
+    <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">{{ session('success') }}</div>
+@endif
+@if ($errors->any())
+    <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+        </ul>
+    </div>
+@endif
 
 {{-- Filter status login --}}
 <div class="mb-4 flex flex-wrap gap-2 text-sm">
@@ -32,6 +63,7 @@
         <thead class="bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
                 <th class="px-4 py-3">Pengguna</th>
+                <th class="px-4 py-3">Role</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3">Login Terakhir</th>
                 <th class="px-4 py-3 text-center">Favorit</th>
@@ -46,18 +78,71 @@
                 $last   = $activity[$u->id] ?? null;
                 $st     = $presence->status($last);
             @endphp
-            <tr class="border-t hover:bg-gray-50">
+            <tr class="border-t align-top hover:bg-gray-50">
                 <td class="px-4 py-3">
                     <p class="font-semibold">
                         {{ $u->name }}
-                        @if ($u->isAdmin())
-                            <span class="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">ADMIN</span>
+                        @if ($u->isOwner())
+                            <span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">👑 OWNER</span>
+                        @elseif ($u->isAdmin())
+                            <span class="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">🛡️ ADMIN</span>
                         @endif
                     </p>
                     <p class="text-xs text-gray-500">
                         @if ($u->username) &#64;{{ $u->username }} &middot; @endif{{ $u->email }}
                     </p>
                 </td>
+
+                {{-- ROLE SISTEM & KUSTOM --}}
+                <td class="px-4 py-3">
+                    {{-- Role Sistem --}}
+                    <div class="mb-1.5">
+                        @if ($u->isOwner())
+                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
+                                👑 Owner
+                            </span>
+                        @elseif ($u->isAdmin())
+                            <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700">
+                                🛡️ Admin
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
+                                👤 Pengguna
+                            </span>
+                        @endif
+                    </div>
+
+                    {{-- Role Kustom (Badges) --}}
+                    <div class="mb-2 flex max-w-xs flex-wrap gap-1">
+                        @forelse ($u->customRoles as $role)
+                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
+                                  style="background: {{ $role->color }}"
+                                  title="{{ $role->description }}">
+                                @if ($role->icon)<span>{{ $role->icon }}</span>@endif
+                                {{ $role->name }}
+                            </span>
+                        @empty
+                            <span class="text-xs text-gray-400">—</span>
+                        @endforelse
+                    </div>
+
+                    {{-- Aksi: Hanya Owner yang dapat mengatur/mencabut role --}}
+                    @if (auth()->user()->isOwner())
+                        <details class="group relative">
+                            <summary class="cursor-pointer text-xs font-semibold text-red-600 hover:text-red-700">
+                                ⚙️ Atur role
+                            </summary>
+                            <div class="absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+                                @include('admin.partials.user-roles-form', ['user' => $u, 'allRoles' => $allRoles])
+                            </div>
+                        </details>
+                    @else
+                        <span class="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium" title="Admin hanya dapat memantau role pengguna">
+                            <span>👁️</span> Mode Pantau
+                        </span>
+                    @endif
+                </td>
+
                 <td class="px-4 py-3">
                     @include('admin.partials.status-badge', ['status' => $st])
                     @if ($last && $st !== 'offline')
@@ -76,7 +161,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="7" class="px-4 py-10 text-center text-gray-500">Tidak ada pengguna yang cocok.</td></tr>
+            <tr><td colspan="8" class="px-4 py-10 text-center text-gray-500">Tidak ada pengguna yang cocok.</td></tr>
         @endforelse
         </tbody>
     </table>

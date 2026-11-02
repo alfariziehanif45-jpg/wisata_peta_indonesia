@@ -201,7 +201,6 @@
             backface-visibility: hidden;
         }
 
-        /* Gradasi halus di bawah sampul agar menyatu dengan kartu */
         .cover.is-media::after {
             content: "";
             position: absolute;
@@ -224,8 +223,6 @@
 
         /* =====================================================================
            BORDER FOTO PROFIL (efek animasi + partikel)
-           Kelas jenis border: bd-default, bd-none, bd-emas, bd-pelangi,
-           bd-neon, bd-api, bd-es, bd-galaksi, bd-hati
            ===================================================================== */
         .avatar-wrap {
             --bd-glow: rgba(225, 29, 72, .32);
@@ -257,7 +254,6 @@
             border: 2px solid var(--bd-ring);
         }
 
-        /* Kanvas partikel (dibuat oleh public/js/avatar-fx.js) */
         .fx-canvas {
             position: absolute;
             pointer-events: none;
@@ -287,40 +283,32 @@
             70%      { transform: scale(1); }
         }
 
-        /* Polos */
         .bd-none { --bd-glow: rgba(15, 23, 42, .18); }
         .bd-none::before { background: #fff; }
 
-        /* Emas */
         .bd-emas { --bd-glow: rgba(245, 158, 11, .6); --bd-ring: #fbbf24; animation: bdGlow 2.4s ease-in-out infinite alternate; }
         .bd-emas::before { background: conic-gradient(from 0deg, #b45309, #fde68a, #f59e0b, #fff7ad, #b45309); animation: bdSpin 4s linear infinite; }
         .bd-emas::after { animation: bdRipple 2.2s ease-out infinite; }
 
-        /* Pelangi */
         .bd-pelangi { --bd-glow: rgba(139, 92, 246, .4); }
         .bd-pelangi::before { background: conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444); animation: bdSpin 3s linear infinite; }
 
-        /* Neon */
         .bd-neon { --bd-glow: rgba(34, 211, 238, .75); --bd-ring: #22d3ee; animation: bdGlow 1.4s ease-in-out infinite alternate; }
         .bd-neon::before { background: conic-gradient(#22d3ee, #a855f7, #22d3ee, #a855f7, #22d3ee); animation: bdSpin 6s linear infinite; }
         .bd-neon::after { animation: bdRipple 1.8s ease-out infinite; }
 
-        /* Api */
         .bd-api { --bd-glow: rgba(249, 115, 22, .75); --bd-ring: #fb923c; animation: bdFlicker 1.1s ease-in-out infinite; }
         .bd-api::before { background: conic-gradient(#ef4444, #f97316, #facc15, #f97316, #ef4444); animation: bdSpin 2.4s linear infinite; }
         .bd-api::after { animation: bdRipple 1.5s ease-out infinite; }
 
-        /* Es */
         .bd-es { --bd-glow: rgba(56, 189, 248, .6); --bd-ring: #7dd3fc; animation: bdGlow 3s ease-in-out infinite alternate; }
         .bd-es::before { background: conic-gradient(#e0f2fe, #38bdf8, #ffffff, #7dd3fc, #e0f2fe); animation: bdSpin 5s linear infinite; }
         .bd-es::after { animation: bdRipple 2.6s ease-out infinite; }
 
-        /* Galaksi */
         .bd-galaksi { --bd-glow: rgba(124, 58, 237, .65); --bd-ring: #a78bfa; animation: bdGlow 2s ease-in-out infinite alternate; }
         .bd-galaksi::before { background: conic-gradient(#1e1b4b, #7c3aed, #ec4899, #3b82f6, #1e1b4b); animation: bdSpin 4s linear infinite; }
         .bd-galaksi::after { animation: bdRipple 2.4s ease-out infinite; }
 
-        /* Hati (detak jantung) */
         .bd-hati { --bd-glow: rgba(244, 63, 94, .6); --bd-ring: #fb7185; animation: bdBeat 1.4s ease-in-out infinite; }
         .bd-hati::before { background: linear-gradient(135deg, #f472b6, #e11d48 55%, #fb7185); }
         .bd-hati::after { animation: bdRipple 1.4s ease-out infinite; }
@@ -370,6 +358,34 @@
             font-size: 15px;
             overflow-wrap: anywhere;
         }
+
+        /* ===== ROLE PENGGUNA (diberikan oleh admin) ===== */
+        .roles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .role-chip {
+            --rc: #e11d48;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: var(--rc);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .01em;
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--rc) 40%, transparent);
+            text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+            cursor: default;
+            transition: transform .2s;
+        }
+
+        .role-chip:hover { transform: translateY(-2px); }
 
         .chips {
             display: flex;
@@ -618,7 +634,8 @@
         /* ===== SECTION UMUM ===== */
         .friend-section,
         .favorite-section,
-        .achievement-section {
+        .achievement-section,
+        .feedback-section {
             margin-top: 30px;
             padding: 28px 32px 32px;
             scroll-margin-top: 20px;
@@ -1024,6 +1041,73 @@
         .done-item strong { overflow-wrap: anywhere; }
         .done-item span { color: var(--muted); font-size: 13px; white-space: nowrap; }
 
+        /* ===== FORM LAPORAN & SARAN ===== */
+        .feedback-form {
+            display: grid;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--ink-2);
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 14.5px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: rgba(225, 29, 72, .45);
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, .12);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 130px;
+            line-height: 1.6;
+        }
+
+        .form-help {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .form-help.err { color: var(--red); }
+
+        .feedback-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .feedback-hint {
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+
         /* ===== FOOTER ACTIONS ===== */
         .actions {
             display: flex;
@@ -1053,6 +1137,7 @@
 
             .avatar { width: 112px; height: 112px; }
             .chips { justify-content: center; }
+            .roles { justify-content: center; }
             .head-action { padding-bottom: 0; }
 
             h1 { font-size: 25px; }
@@ -1072,7 +1157,8 @@
 
             .friend-section,
             .favorite-section,
-            .achievement-section { padding: 22px 16px 26px; border-radius: 22px; }
+            .achievement-section,
+            .feedback-section { padding: 22px 16px 26px; border-radius: 22px; }
 
             .favorite-heading h2 { font-size: 19px; }
             .favorite-list { grid-template-columns: 1fr; }
@@ -1085,11 +1171,6 @@
 
 @php
     // ===== Helper URL foto profil =====
-    // Menormalkan berbagai format avatar_path yang mungkin tersimpan di database:
-    //   - "avatars/x.jpg"          -> /storage/avatars/x.jpg
-    //   - "public/avatars/x.jpg"   -> /storage/avatars/x.jpg
-    //   - "storage/avatars/x.jpg"  -> /storage/avatars/x.jpg
-    //   - "https://..."            -> dipakai apa adanya
     $avatarUrl = function (?string $path) {
         if (!$path) {
             return null;
@@ -1113,20 +1194,19 @@
         ? $user->avatar_border
         : 'default';
 
+    // ===== Role kustom dari admin (boleh lebih dari satu) =====
+    $userRoles = $user->customRoles()->get();
+
     // ===== Teman =====
-    // Butuh: trait HasFriends di model User + tabel friendships.
     $friendCount        = $user->friends()->count();
     $friendPreview      = $user->friends()->latest()->limit(7)->get();
     $pendingFriendCount = $user->receivedRequests()->where('status', 'pending')->count();
 
     // ===== Destinasi favorit =====
-    // Dibaca langsung dari database, sehingga favorit dari tombol hati di peta
-    // dan favorit manual sama-sama tampil otomatis.
     $favoritePlaces = $user->favoritePlaces()->latest()->get();
     $favoriteCount  = $favoritePlaces->count();
 
     // ===== Pencapaian penjelajah =====
-    // Dihitung dari rencana perjalanan yang sudah ditandai selesai.
     $completedTrips = \App\Models\TravelPlan::where('user_id', $user->id)
         ->whereNotNull('completed_at')
         ->withCount('places')
@@ -1136,7 +1216,6 @@
     $completedCount = $completedTrips->count();
     $visitedTotal   = (int) $completedTrips->sum('places_count');
 
-    // [syarat jumlah perjalanan selesai, ikon, nama level]
     $levels = [
         [0,  '🌱', 'Penjelajah Pemula'],
         [1,  '🧭', 'Penjelajah'],
@@ -1163,7 +1242,6 @@
     $coverColor1 = $user->cover_color ?: '#dc2626';
     $coverColor2 = $user->cover_color2 ?: '#f97316';
 
-    // Posisi & zoom foto/video sampul (diatur di halaman edit profil).
     $coverPosX = max(0, min(100, (float) ($user->cover_pos_x ?? 50)));
     $coverPosY = max(0, min(100, (float) ($user->cover_pos_y ?? 50)));
     $coverZoom = max(1, min(3, (float) ($user->cover_zoom ?? 1)));
@@ -1187,7 +1265,6 @@
     $bgC1   = $user->bg_color ?: '#f6f7fb';
     $bgC2   = $user->bg_color2 ?: '#fde68a';
 
-    // Gambar latar salju (taruh di public/images/bg/salju-bg.png)
     $bgSnowUrl = asset('images/bg/salju-bg.png');
 
     $pageBgStyle = '';
@@ -1206,13 +1283,11 @@
 <div class="page-bg" style="{{ $pageBgStyle }}"></div>
 
 @if($bgType === 'salju')
-    {{-- Hiasan salju di pinggir layar --}}
     <div class="snow-side left"></div>
     <div class="snow-side right"></div>
     <div class="snow-frame top" style="background-image: url('{{ $bgSnowUrl }}')"></div>
     <div class="snow-frame bottom" style="background-image: url('{{ $bgSnowUrl }}')"></div>
 
-    {{-- Salju jatuh --}}
     <canvas class="snow-canvas" id="snowCanvas"></canvas>
 @endif
 
@@ -1272,6 +1347,30 @@
                     @ {{ $user->username ?: \Illuminate\Support\Str::slug($user->name, '_') }}
                 </div>
 
+                {{-- ROLE SISTEM (Owner / Admin) & ROLE KUSTOM --}}
+                @if($user->isOwner() || $user->isAdmin() || $userRoles->isNotEmpty())
+                    <div class="roles">
+                        @if($user->isOwner())
+                            <span class="role-chip" style="--rc: #d97706;" title="Owner Sistem">
+                                👑 Owner
+                            </span>
+                        @elseif($user->isAdmin())
+                            <span class="role-chip" style="--rc: #e11d48;" title="Administrator">
+                                🛡️ Admin
+                            </span>
+                        @endif
+
+                        @foreach($userRoles as $role)
+                            <span class="role-chip"
+                                  style="--rc: {{ $role->color }}"
+                                  @if($role->description) title="{{ $role->description }}" @endif>
+                                @if($role->icon)<span>{{ $role->icon }}</span>@endif
+                                {{ $role->name }}
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="chips">
                     <span class="chip">
                         📍 {{ $user->domicile ?: 'Domisili belum ditambahkan' }}
@@ -1289,7 +1388,6 @@
             </div>
 
             <div class="head-action">
-                {{-- Icon tambah teman --}}
                 <a class="btn icon-only"
                    href="{{ route('friends.index') }}"
                    title="Tambah teman"
@@ -1383,6 +1481,12 @@
             Pencapaian penjelajah
             <span class="item-arrow">›</span>
         </a>
+
+        <a class="item" href="#laporan-saran">
+            <span class="item-icon">📮</span>
+            Laporan &amp; Saran
+            <span class="item-arrow">›</span>
+        </a>
     </nav>
 
     {{-- TEMAN --}}
@@ -1441,7 +1545,7 @@
         @endif
     </section>
 
-    {{-- DAFTAR FAVORIT (dari tombol hati di peta + input manual) --}}
+    {{-- DAFTAR FAVORIT --}}
     <section class="favorite-section glass anim d3" id="destinasi-favorit">
         <div class="favorite-heading">
             <h2><span class="h-ico">♡</span> Destinasi Favorit Saya</h2>
@@ -1457,18 +1561,21 @@
                     @php
                         $attrs = $place->getAttributes();
 
-                        // Tautan peta: kolom lama "url" atau "google_maps_url" dari tombol hati
                         $mapsLink = $attrs['url'] ?? ($attrs['google_maps_url'] ?? null);
 
                         $hasCoords = isset($attrs['latitude'], $attrs['longitude'])
                             && $attrs['latitude'] !== null
                             && $attrs['longitude'] !== null;
 
+                        // Rute dibuka di peta milik aplikasi sendiri (bukan Google Maps)
                         $routeUrl = $hasCoords
-                            ? 'https://www.google.com/maps/dir/?api=1&destination=' . $attrs['latitude'] . ',' . $attrs['longitude']
+                            ? route('map.index', [
+                                'route_lat'  => $attrs['latitude'],
+                                'route_lng'  => $attrs['longitude'],
+                                'route_name' => $place->name,
+                            ])
                             : null;
 
-                        // Semua kategori yang bisa disimpan dari peta
                         $categoryLabel = match (strtolower((string) $place->category)) {
                             'wisata'  => '🏞️ Wisata',
                             'kuliner' => '🍜 Kuliner',
@@ -1531,10 +1638,7 @@
 
                         <div class="card-actions">
                             @if($routeUrl)
-                                <a class="small-btn"
-                                   href="{{ $routeUrl }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
+                                <a class="small-btn" href="{{ $routeUrl }}">
                                     🚗 Rute
                                 </a>
                             @endif
@@ -1583,7 +1687,6 @@
             <a class="btn" href="{{ route('achievements.index') }}">Lihat semua ›</a>
         </div>
 
-        {{-- Level --}}
         <div class="achievement-level">
             <div class="level-ring" style="--p: {{ $levelProgress }}">
                 <span class="level-icon">{{ $currentLevel[1] }}</span>
@@ -1607,7 +1710,6 @@
             </div>
         </div>
 
-        {{-- Statistik --}}
         <div class="achievement-stats">
             <div class="stat">
                 <div class="stat-icon">✅</div>
@@ -1622,7 +1724,6 @@
             </div>
         </div>
 
-        {{-- Lencana --}}
         <div class="badge-grid">
             @foreach($levels as $lv)
                 @continue($lv[0] === 0)
@@ -1634,7 +1735,6 @@
             @endforeach
         </div>
 
-        {{-- Perjalanan terakhir yang selesai --}}
         @if($completedTrips->isNotEmpty())
             <div class="done-list">
                 <h3>Perjalanan selesai terbaru</h3>
@@ -1658,6 +1758,57 @@
         @endif
     </section>
 
+    {{-- LAPORAN & SARAN --}}
+    <section class="feedback-section glass anim d5" id="laporan-saran">
+        <div class="favorite-heading">
+            <h2><span class="h-ico">📮</span> Laporan &amp; Saran</h2>
+        </div>
+
+        @if(session('feedback_success'))
+            <div class="success anim" style="margin-bottom:16px">{{ session('feedback_success') }}</div>
+        @endif
+
+        <p style="color:var(--muted); font-size:14px; margin:0 0 14px; line-height:1.65;">
+            Menemukan bug atau punya ide untuk meningkatkan <strong>Jelajah Wisata Indonesia</strong>?
+            Kirim laporan atau saranmu di sini — laporan akan langsung diteruskan ke tim developer. 💌
+        </p>
+
+        <form method="POST" action="{{ route('feedback.store') }}" class="feedback-form" novalidate>
+            @csrf
+
+            <div class="form-group">
+                <label for="fb-type">Jenis</label>
+                <select id="fb-type" name="type" required>
+                    <option value="bug"     {{ old('type') === 'bug'     ? 'selected' : '' }}>🐛 Laporan Bug</option>
+                    <option value="saran"   {{ old('type') === 'saran'   ? 'selected' : '' }}>💡 Saran</option>
+                    <option value="lainnya" {{ old('type') === 'lainnya' ? 'selected' : '' }}>📝 Lainnya</option>
+                </select>
+                @error('type')<span class="form-help err">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="fb-subject">Subjek</label>
+                <input id="fb-subject" type="text" name="subject" maxlength="150" required
+                       value="{{ old('subject') }}"
+                       placeholder="Ringkasan singkat laporan/saran…">
+                @error('subject')<span class="form-help err">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="fb-message">Pesan</label>
+                <textarea id="fb-message" name="message" maxlength="3000" required
+                          placeholder="Jelaskan detail laporan atau saranmu. Bila melaporkan bug, sertakan langkah-langkah yang kamu lakukan…">{{ old('message') }}</textarea>
+                <span class="form-help">Maksimal 3.000 karakter.</span>
+                @error('message')<span class="form-help err">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="feedback-actions">
+                <button class="btn red" type="submit">📤 Kirim Laporan</button>
+                <span class="feedback-hint">🔒 Laporanmu dikirim langsung ke tim developer.</span>
+            </div>
+        </form>
+    </section>
+
     {{-- TOMBOL AKSI --}}
     <div class="actions anim d5">
         <a class="btn" href="{{ route('map.index') }}">
@@ -1672,7 +1823,7 @@
 
 </main>
 
-{{-- Fallback foto profil: kalau gambar gagal dimuat, ganti dengan inisial / ikon --}}
+{{-- Fallback foto profil --}}
 <script>
     (function () {
         function useFallback(img) {
@@ -1688,7 +1839,6 @@
         document.querySelectorAll('img[data-fallback]').forEach(function (img) {
             img.addEventListener('error', function () { useFallback(img); });
 
-            // Kalau error sudah terjadi sebelum script ini berjalan
             if (img.complete && img.naturalWidth === 0) {
                 useFallback(img);
             }
@@ -1721,7 +1871,7 @@
     })();
 </script>
 
-{{-- Efek partikel border foto profil (public/js/avatar-fx.js) --}}
+{{-- Efek partikel border foto profil --}}
 <script src="{{ asset('js/avatar-fx.js') }}"></script>
 <script>
     AvatarFX.auto();

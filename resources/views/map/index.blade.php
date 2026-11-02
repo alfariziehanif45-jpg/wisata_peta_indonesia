@@ -586,6 +586,69 @@
         color: #b91c1c;
     }
 
+    /* =====================================================
+       TOMBOL SEMBUNYIKAN / TAMPILKAN BAGIAN PANEL
+    ====================================================== */
+    .section-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        margin: 0 0 6px;
+        padding: 7px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #475569;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        text-align: left;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .section-toggle:hover {
+        background: #e2e8f0;
+    }
+
+    .section-toggle:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 2px;
+    }
+
+    .section-toggle .toggle-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: none;
+        color: #64748b;
+    }
+
+    .section-toggle .chev {
+        display: inline-block;
+        transition: transform .2s;
+    }
+
+    .section-toggle.collapsed .chev {
+        transform: rotate(-90deg);
+    }
+
+    .is-collapsed {
+        display: none !important;
+    }
+
+    #provinceWeatherToggle {
+        margin-top: 4px;
+    }
+
     /* TOMBOL FAVORIT */
     .favorite-toggle-btn:disabled {
         opacity: .65;
@@ -863,6 +926,30 @@
         box-shadow: 0 0 0 4px rgba(37, 99, 235, .3), 0 2px 8px rgba(0, 0, 0, .4);
     }
 
+    /* =====================================================
+       TOMBOL ADMIN (hanya role admin & owner)
+    ====================================================== */
+    .admin-access-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+        border-radius: 9px;
+        padding: 10px 14px;
+        background: #f59e0b;
+        color: #111827;
+        font-size: 13px;
+        font-weight: 800;
+        border: 1px solid rgba(255, 255, 255, .35);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, .3);
+        transition: transform .15s, background .15s;
+    }
+
+    .admin-access-btn:hover {
+        background: #fbbf24;
+        transform: translateY(-1px);
+    }
+
     /* RESPONSIVE */
     @media (max-width: 600px) {
         .header {
@@ -908,9 +995,25 @@
 
 <body>
 
+    @php
+        // Hanya role "admin" dan "owner" yang boleh melihat tombol ke halaman admin.
+        // Sesuaikan nama kolom/route di bawah jika berbeda di proyek Anda.
+        $authUser = auth()->user();
+        $authRole = $authUser ? strtolower(trim((string) ($authUser->role ?? ''))) : '';
+        $canAccessAdmin = in_array($authRole, ['admin', 'owner'], true);
+        $adminUrl = \Illuminate\Support\Facades\Route::has('admin.dashboard')
+            ? route('admin.dashboard')
+            : url('/admin');
+    @endphp
+
     <!-- Akses akun: ditambahkan tanpa mengubah tampilan dan fungsi peta -->
     <div style="position:fixed;top:18px;right:20px;z-index:5000;display:flex;align-items:center;gap:8px;font-family:Arial,Helvetica,sans-serif">
         @auth
+            @if ($canAccessAdmin)
+                <a href="{{ $adminUrl }}" title="Buka Halaman Admin" class="admin-access-btn">
+                    <span aria-hidden="true">🛠️</span><span>Admin</span>
+                </a>
+            @endif
             <a href="{{ route('profile.show') }}" title="Profil Saya" style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;border-radius:9px;padding:10px 14px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;font-weight:700;border:1px solid rgba(255,255,255,.25)">
                 <span aria-hidden="true">👤</span><span>Profil</span>
             </a>
@@ -1021,10 +1124,18 @@
         <!-- INFO PROVINSI + CUACA REAL TIME -->
         <div id="provinceInfo">
 
-            <div class="prov-section-title">ℹ️ Informasi Provinsi</div>
+            <button type="button" class="section-toggle" id="provinceSummaryToggle"
+                    data-target="provinceSummary" aria-expanded="true" aria-controls="provinceSummary">
+                <span>ℹ️ Informasi Provinsi</span>
+                <span class="toggle-state"><span class="toggle-label">Sembunyikan</span><span class="chev">▾</span></span>
+            </button>
             <div id="provinceSummary"></div>
 
-            <div class="prov-section-title">🌦️ Cuaca Saat Ini</div>
+            <button type="button" class="section-toggle" id="provinceWeatherToggle"
+                    data-target="provinceWeather" aria-expanded="true" aria-controls="provinceWeather">
+                <span>🌦️ Cuaca Saat Ini</span>
+                <span class="toggle-state"><span class="toggle-label">Sembunyikan</span><span class="chev">▾</span></span>
+            </button>
             <div id="provinceWeather"></div>
 
         </div>
@@ -1086,6 +1197,14 @@
                 width:100%;
             "
         >
+
+            <button type="button" class="section-toggle" id="placeSearchToggle"
+                    data-target="placeSearchBody" aria-expanded="true" aria-controls="placeSearchBody">
+                <span>📋 Daftar Tempat</span>
+                <span class="toggle-state"><span class="toggle-label">Sembunyikan</span><span class="chev">▾</span></span>
+            </button>
+
+            <div id="placeSearchBody">
 
             <input
                 type="text"
@@ -1155,6 +1274,8 @@
                     overflow-y:auto;
                 "
             ></div>
+
+            </div><!-- /#placeSearchBody -->
 
         </div>
 
@@ -2642,6 +2763,7 @@
             placeSearchResults.innerHTML = '';
 
             placeSearchPanel.style.display = 'block';
+            setSectionCollapsed('placeSearchBody', false);
             placesLoading.style.display = 'block';
             clearPlaces.style.display = 'none';
 
@@ -3306,7 +3428,7 @@
                     function (err) {
                         reject(new Error(
                             err && err.code === 1
-                                ? 'Izin lokasi ditolak.'
+                                ? 'Izin lokasi ditolak. Izinkan akses lokasi pada browser, lalu pilih ulang "Lokasi saya".'
                                 : 'Lokasi Anda tidak dapat ditentukan.'
                         ));
                     },
@@ -3520,6 +3642,86 @@
 
 
         /* =====================================================
+           SEMBUNYIKAN / TAMPILKAN BAGIAN PANEL
+           (Informasi Provinsi, Cuaca, dan Daftar Tempat)
+        ====================================================== */
+
+        function setSectionCollapsed(targetId, collapsed) {
+            const target = document.getElementById(targetId);
+            const toggle = document.querySelector('.section-toggle[data-target="' + targetId + '"]');
+            if (!target || !toggle) return;
+
+            target.classList.toggle('is-collapsed', collapsed);
+            toggle.classList.toggle('collapsed', collapsed);
+            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+
+            const label = toggle.querySelector('.toggle-label');
+            if (label) label.textContent = collapsed ? 'Tampilkan' : 'Sembunyikan';
+        }
+
+        document.addEventListener('click', function (event) {
+            const toggle = event.target.closest('.section-toggle');
+            if (!toggle) return;
+
+            const target = document.getElementById(toggle.dataset.target);
+            if (!target) return;
+
+            setSectionCollapsed(toggle.dataset.target, !target.classList.contains('is-collapsed'));
+        });
+
+
+        /* =====================================================
+           RUTE DARI HALAMAN PROFIL (tombol "🚗 Rute" di favorit)
+           Link: /?route_lat=...&route_lng=...&route_name=...
+           Membuka panel rute yang sama dengan tombol "🧭 Rute"
+           pada popup tempat, tanpa perlu memilih provinsi/kota.
+        ====================================================== */
+
+        function openRouteFromUrl() {
+
+            const params = new URLSearchParams(window.location.search);
+
+            const latitude = parseFloat(params.get('route_lat'));
+            const longitude = parseFloat(params.get('route_lng'));
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+
+            const name = String(params.get('route_name') || 'Tempat tujuan').slice(0, 120);
+            const directionUrl =
+                'https://www.google.com/maps/dir/?api=1&destination=' + latitude + ',' + longitude;
+
+            // Bersihkan parameter dari address bar agar refresh tidak mengulang rute
+            try {
+                window.history.replaceState(null, '', window.location.pathname);
+            } catch (e) { /* abaikan */ }
+
+            // Marker tujuan
+            const marker = L.marker([latitude, longitude], { icon: createProvinceIcon() });
+
+            marker.bindPopup(
+                '<div class="place-popup-title">' + escapeHtml(name) + '</div>' +
+                '<div class="place-popup-type">📍 Tujuan rute</div>'
+            );
+
+            marker.addTo(map);
+            placeMarkers.push(marker);
+            selectedPlaceMarker = marker;
+            clearPlaces.style.display = 'block';
+
+            // Posisikan peta ke tujuan dulu (akan diganti zoom ke seluruh rute setelah rute dimuat)
+            map.setView([latitude, longitude], 15);
+
+            openRoutePanel({
+                lat: latitude,
+                lng: longitude,
+                name: name,
+                googleUrl: directionUrl
+            });
+        }
+
+
+        /* =====================================================
            TOAST
         ====================================================== */
 
@@ -3575,6 +3777,9 @@
             console.warn('Cache lama negara lain tidak dapat dihapus:', error);
         }
         renderProvinceResults();
+
+        // Jika dibuka dari tombol "🚗 Rute" di halaman profil, langsung tampilkan rute
+        openRouteFromUrl();
 
     </script>
 

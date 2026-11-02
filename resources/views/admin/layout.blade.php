@@ -37,6 +37,7 @@
         ],
         'Kelola' => [
             ['admin.users.index',  'Pengguna',         'admin.users.*',    'users'],
+            ['admin.roles.index',  'Role Pengguna',    'admin.roles.*',    'user-check'],
             ['admin.places.index', 'Statistik Tempat', 'admin.places.*',   'map-pin'],
         ],
         'Situs' => [
@@ -126,7 +127,9 @@
                 <span class="grid size-9 place-items-center rounded-full bg-white text-xs font-semibold shadow-sm">{{ $initials }}</span>
                 <div class="min-w-0 flex-1 leading-tight">
                     <p class="truncate text-sm font-medium">{{ $userName }}</p>
-                    <p class="text-xs text-neutral-500">Administrator</p>
+                    <p class="text-xs font-semibold {{ $authUser?->isOwner() ? 'text-amber-600' : 'text-neutral-500' }}">
+                        {{ $authUser?->isOwner() ? '👑 Owner' : ($authUser?->isAdmin() ? '🛡️ Administrator' : 'Pengguna') }}
+                    </p>
                 </div>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf

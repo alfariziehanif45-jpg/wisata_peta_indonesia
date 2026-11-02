@@ -70,8 +70,8 @@ class AuthController extends Controller
         // Catat waktu login terakhir (untuk panel admin)
         $user->forceFill(['last_login_at' => now()])->save();
 
-        // ADMIN: langsung masuk ke dashboard admin
-        if ($user->isAdmin()) {
+        // ADMIN & OWNER: langsung masuk ke dashboard admin
+        if ($user->hasAdminAccess()) {
             $request->session()->forget('url.intended');
 
             return redirect()->route('admin.dashboard');

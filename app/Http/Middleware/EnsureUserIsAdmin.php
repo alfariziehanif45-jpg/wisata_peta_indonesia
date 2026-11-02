@@ -12,8 +12,8 @@ class EnsureUserIsAdmin
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isAdmin()) {
-            abort(403, 'Halaman ini khusus admin.');
+        if (! $user || ! $user->hasAdminAccess()) {
+            abort(403, 'Halaman ini khusus admin dan owner.');
         }
 
         return $next($request);

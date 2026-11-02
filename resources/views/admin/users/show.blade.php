@@ -9,8 +9,12 @@
     <div>
         <h1 class="text-3xl font-bold">
             {{ $user->name }}
-            @if ($user->isAdmin())
-                <span class="ml-1 rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 align-middle">ADMIN</span>
+            @if ($user->isOwner())
+                <span class="ml-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 align-middle">👑 OWNER</span>
+            @elseif ($user->isAdmin())
+                <span class="ml-1 rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 align-middle">🛡️ ADMIN</span>
+            @else
+                <span class="ml-1 rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 align-middle">👤 PENGGUNA</span>
             @endif
         </h1>
         <p class="mt-1 text-gray-500">
@@ -42,6 +46,67 @@
         </div>
     @endforeach
 </div>
+
+{{-- ROLE PENGGUNA --}}
+<section class="mt-6 rounded-xl bg-white p-5 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold">Role &amp; Hak Akses</h2>
+            <p class="text-xs text-gray-500">Role sistem dan label kustom milik {{ $user->name }}.</p>
+        </div>
+        @if (! auth()->user()->isOwner())
+            <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                👁️ Mode Pantau (Hanya Owner yang dapat mengubah role)
+            </span>
+        @endif
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+        <div class="space-y-4">
+            <div>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Role Sistem</p>
+                <div class="mt-1.5">
+                    @if ($user->isOwner())
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                            👑 Owner (Hak Akses Penuh)
+                        </span>
+                    @elseif ($user->isAdmin())
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                            🛡️ Admin (Hanya Memantau)
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                            👤 Pengguna Biasa
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <div>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Role Kustom (Badge)</p>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    @forelse ($user->customRoles as $role)
+                        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold text-white shadow-sm"
+                              style="background: {{ $role->color }}"
+                              title="{{ $role->description }}">
+                            @if ($role->icon)<span>{{ $role->icon }}</span>@endif
+                            {{ $role->name }}
+                        </span>
+                    @empty
+                        <span class="text-xs text-gray-400">Tidak ada role kustom yang diberikan.</span>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        @if (auth()->user()->isOwner())
+            <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                <p class="text-xs font-bold text-gray-700 mb-2">⚙️ Kelola Role {{ $user->name }}</p>
+                @include('admin.partials.user-roles-form', ['user' => $user])
+            </div>
+        @endif
+    </div>
+</section>
 
 {{-- FAVORIT --}}
 <section class="mt-8 rounded-xl bg-white p-5 shadow-sm">

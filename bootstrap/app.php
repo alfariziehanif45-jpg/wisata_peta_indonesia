@@ -14,11 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'owner' => \App\Http\Middleware\EnsureUserIsOwner::class,
         ]);
 
         // Tujuan jika user yang SUDAH login membuka halaman /login atau /register
         $middleware->redirectUsersTo(function (Request $request) {
-            return $request->user()?->isAdmin()
+            return $request->user()?->hasAdminAccess()
                 ? route('admin.dashboard')
                 : route('map.index');
         });
