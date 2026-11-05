@@ -3,10 +3,19 @@
 @section('heading', 'Masuk ke akun')
 @section('subtitle', 'Jelajahi keindahan Nusantara. Mulai perjalanan Anda.')
 
+@section('styles')
+<style>
+    @keyframes cardShake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-10px); } 35% { transform: translateX(9px); } 55% { transform: translateX(-7px); } 75% { transform: translateX(5px); } }
+    .stage-right.is-shaking { animation: cardShake .5s ease-in-out; }
+    .remember { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; font-weight: 400; color: var(--cream); cursor: pointer; }
+    .remember input { width: 16px; height: 16px; margin: 0; }
+</style>
+@endsection
+
 @section('content')
 <div class="stage-container">
     <div class="stage-left">
-        @include('auth.partials.nusantara-show', ['variant' => 'idle', 'id' => 'loginIdle'])
+        @include('auth.partials.nusantara-scene', ['id' => 'loginScene', 'start' => 'sawah'])
     </div>
 
     <div class="stage-right" id="loginFormContainer">
@@ -27,32 +36,26 @@
             'line'    => 'Terima kasih telah bertani di Nusantara!',
         ])
 
-        <div class="alert" id="loginInlineError" role="alert" hidden style="background:#fdecea;color:#b3261e;border:1px solid #f5c6c2;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14px;">Email atau kata sandi salah. Silakan coba lagi.</div>
+        <div class="alert" id="loginInlineError" role="alert" hidden>Email atau kata sandi salah. Silakan coba lagi.</div>
 
         <form method="POST" action="{{ route('login.store') }}" id="loginForm">
             @csrf
             <label for="email">Email</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" class="@error('email') has-error @enderror">
+            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" placeholder="nama@email.com" class="@error('email') has-error @enderror">
 
             <label for="password">Kata sandi</label>
-            <input id="password" type="password" name="password" required autocomplete="current-password" class="@error('email') has-error @enderror">
+            <input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Masukkan kata sandi" class="@error('email') has-error @enderror">
 
-            <label style="display:flex;align-items:center;gap:8px;font-weight:400;text-transform:none;letter-spacing:0;color:#e0d8c3;margin-bottom:20px;">
-                <input type="checkbox" name="remember" value="1" style="width:auto;margin:0;"> Ingat saya
+            <label class="remember">
+                <input type="checkbox" name="remember" value="1"> Ingat saya
             </label>
 
-            <button class="submit" type="submit" id="loginBtn">Mulai Bertani</button>
+            <button class="submit" type="submit" id="loginBtn">Mulai bertani</button>
         </form>
 
         <p class="bottom">Belum punya lahan? <a href="{{ route('register') }}">Daftar sekarang</a></p>
     </div>
 </div>
-
-<style>
-    @keyframes cardShake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-10px); } 35% { transform: translateX(9px); } 55% { transform: translateX(-7px); } 75% { transform: translateX(5px); } }
-    .stage-right.is-shaking { animation: cardShake .5s ease-in-out; }
-    input.has-error { border-color: #ff7a8f !important; box-shadow: 0 0 0 3px #ff7a8f33 !important; }
-</style>
 
 <script>
     (function () {
@@ -110,7 +113,7 @@
             }).catch(function () { nativeSubmit(); });
         });
 
-        skip.addEventListener('click', go);
+        if (skip) skip.addEventListener('click', go);
         window.addEventListener('pageshow', function (e) {
             if (e.persisted) { reset(); outro.classList.remove('is-playing'); }
         });
